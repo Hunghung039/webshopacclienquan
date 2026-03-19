@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <% if(typeof schemaData !== 'undefined') { %>
+        <script type="application/ld+json"><%- schemaData %></script>
+    <% } %>
+    <style>
+        /* ==========================================
+           CSS TỔNG THỂ & LAYOUT (ĐÃ FIX RESPONSIVE)
+           ========================================== */
+        * { box-sizing: border-box; }
+        :root { 
+            --primary: #e74c3c; 
+            --secondary: #3498db; 
+            --dark: #2c3e50; 
+            --bg-light: #f8f9fa;
+            --border: #edf2f7;
+        }
+        body { background-color: #f4f7f6; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+
+        .page-layout { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; width: 100%; }
+        @media (min-width: 1024px) { 
+            .page-layout { grid-template-columns: 6fr 4fr; gap: 25px; } 
+        }
+
+        /* Box Styles */
+        .ui-box { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 25px; border: 1px solid var(--border); width: 100%; min-width: 0; overflow: hidden; }
+        .box-title { font-size: 18px; color: var(--dark); margin: 0 0 20px 0; text-transform: uppercase; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        
+        /* Radio Buttons UI */
+        .grid-select { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px; }
+        
+        .radio-box { display: none; }
+        .radio-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px 10px; background: var(--bg-light); border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; font-weight: 700; color: #64748b; transition: all 0.2s ease; text-align: center; font-size: 14px; }
+        .radio-label i { font-size: 24px; margin-bottom: 8px; color: #94a3b8; transition: 0.2s; }
+        
+        .radio-box:checked + .radio-label { border-color: var(--primary); background: #fff5f5; color: var(--primary); box-shadow: 0 4px 15px rgba(231,76,60,0.15); transform: translateY(-2px); }
+        .radio-box:checked + .radio-label i { color: var(--primary); }
+
+        /* Nút Mua */
+        .btn-buy { background: linear-gradient(135deg, var(--primary), #c0392b); color: #fff; border: none; padding: 16px 20px; font-size: 16px; font-weight: 900; border-radius: 30px; cursor: pointer; transition: 0.3s; width: 100%; box-shadow: 0 8px 20px rgba(231,76,60,0.3); text-transform: uppercase; letter-spacing: 0.5px;}
+        .btn-buy:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(231,76,60,0.4); }
+        .btn-buy:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* Lịch Sử Mua Thẻ Box (FIX TRÀN VIỀN) */
+        .history-wrapper { width: 100%; max-width: 100%; display: block; overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+        .history-table { width: 100%; border-collapse: collapse; min-width: 450px; font-size: 13px; }
+        .history-table th { background: #f1f5f9; color: var(--dark); font-weight: 700; padding: 12px 15px; text-align: left; white-space: nowrap; }
+        .history-table td { padding: 12px 15px; border-bottom: 1px solid var(--border); color: #475569; }
+        .history-table tr:last-child td { border-bottom: none; }
+        .history-table tr:hover { background: #f8fafc; }
+        .badge-success { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px; white-space: nowrap; display: inline-block; }
+
+        /* Kết Quả Trả Về (FIX TRÀN VIỀN) */
+        .result-card { background: #f0fdf4; border: 2px dashed #22c55e; padding: 25px; border-radius: 15px; margin-top: 25px; text-align: center; display: none; animation: slideDown 0.4s ease; width: 100%; }
+        .card-info-box { background: #fff; padding: 15px; border-radius: 10px; text-align: left; margin-top: 15px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0; flex-wrap: wrap; gap: 10px; }
+        .info-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .info-text { flex: 1; min-width: 0; word-break: break-all; } /* Ép chữ dài xuống dòng */
+        
+        .btn-copy { background: #f1f5f9; border: none; color: var(--secondary); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; white-space: nowrap; flex-shrink: 0;}
+        .btn-copy:hover { background: var(--secondary); color: #fff; }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Hướng Dẫn Box */
+        .guide-section { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 30px; margin-top: 30px; border: 1px solid var(--border); width: 100%; }
+        .guide-title { font-size: 20px; color: var(--dark); text-transform: uppercase; font-weight: 800; text-align: center; margin-bottom: 30px; }
+        .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding-top: 10px; }
+        
+        .step-item { background: var(--bg-light); border-radius: 12px; padding: 25px 20px 20px; text-align: center; position: relative; border: 1px dashed #cbd5e1; transition: 0.3s; display: flex; flex-direction: column; align-items: center; }
+        .step-item:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 8px 15px rgba(231,76,60,0.1); background: #fff;}
+        .step-num { width: 34px; height: 34px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; position: absolute; top: -17px; left: 50%; transform: translateX(-50%); border: 4px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2;}
+        .step-icon { font-size: 35px; color: var(--secondary); margin-bottom: 12px; margin-top: 5px;}
+        .step-title { font-size: 16px; font-weight: 800; color: var(--dark); margin-bottom: 8px; text-transform: uppercase;}
+        .step-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+        .step-desc a { color: var(--primary); font-weight: bold; text-decoration: none; border-bottom: 1px dashed var(--primary); transition: 0.2s;}
+        .step-desc a:hover { color: #c0392b; border-bottom-style: solid; }
+
+        /* SEO Block */
+        .seo-content { background: #fff; padding: 25px; border-radius: 15px; margin-top: 40px; font-size: 13px; color: #555; line-height: 1.6; border: 1px dashed #cbd5e1; }
+        .seo-content h2 { font-size: 18px; color: var(--dark); margin-bottom: 10px; text-transform: uppercase; }
+        .seo-content strong { color: var(--primary); }
+
+        /* ==========================================
+           TỐI ƯU GIAO DIỆN MOBILE (Chống Vỡ Layout)
+           ========================================== */
+        @media (max-width: 1024px) {
+            .steps-grid { grid-template-columns: repeat(2, 1fr); gap: 30px 20px; }
+        }
+        
+        @media (max-width: 768px) {
+            .ui-box { padding: 15px; }
+            .history-wrapper { margin: 0; width: 100%; border-radius: 8px; }
+            .btn-buy { padding: 14px 20px; font-size: 15px; }
+            
+            /* Sắp xếp lại Radio cho Mobile */
+            .grid-select { gap: 8px; }
+            .radio-label { padding: 12px 5px; font-size: 12px; }
+            .radio-label i { font-size: 20px; margin-bottom: 5px; }
+            
+            /* Sắp xếp lại HD cho mobile */
+            .guide-section { padding: 20px 15px; margin-top: 20px; }
+            .guide-title { font-size: 17px; margin-bottom: 20px; }
+            .steps-grid { grid-template-columns: 1fr; gap: 12px; padding-top: 0; }
+            
+            .step-item { 
+                flex-direction: row; text-align: left; padding: 12px 15px; align-items: center; 
+                border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 0; background: #fff;
+            }
+            .step-item:hover { transform: none; box-shadow: none; border-color: var(--primary); }
+            
+            .step-num { 
+                position: static; transform: none; width: 30px; height: 30px; font-size: 14px; 
+                margin-right: 12px; border: none; flex-shrink: 0; box-shadow: none;
+            }
+            .step-icon { display: none; }
+            .step-content { flex: 1; }
+            .step-title { font-size: 14px; margin-bottom: 4px; }
+            .step-desc { font-size: 12px; line-height: 1.4; margin: 0;}
+            
+            .result-card { padding: 15px; }
+            .card-info-box { padding: 12px; }
+        }
+        
+        @media (max-width: 480px) {
+            .grid-select { grid-template-columns: repeat(2, 1fr); }
+            /* Cột lịch sử cần hiện scroll rõ hơn */
+            .history-table td, .history-table th { padding: 10px; font-size: 12px; }
+            
+            .info-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .btn-copy { width: 100%; text-align: center; padding: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container" style="margin-top: 40px; margin-bottom: 60px;">
+        
+        <div style="text-align: center; margin-bottom: 30px; padding: 0 10px;">
+            <h1 style="color: var(--dark); font-size: 26px; margin-bottom: 8px; text-transform: uppercase; font-weight: 900;"><i class="fa-solid fa-bolt" style="color:var(--primary);"></i> Mua Thẻ Trực Tuyến</h1>
+            <p style="color: #64748b; font-size: 14px; margin: 0;">Chiết khấu cực cao - Nhận thẻ tức thì ngay trong 1 giây.</p>
+        </div>
+
+        <div class="page-layout">
+            <div class="ui-box">
+                <h2 class="box-title"><i class="fa-solid fa-cart-shopping" style="color: var(--secondary);"></i> Thông Tin Giao Dịch</h2>
+                
+                <form id="buyCardForm">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    
+                    <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--dark);">1. Chọn nhà cung cấp</h3>
+                    <div class="grid-select">
+                        <input type="radio" name="service_code" value="garena" id="t-garena" class="radio-box" checked>
+                        <label for="t-garena" class="radio-label">
+                            <i class="fa-solid fa-gamepad"></i>
+                            Garena (-5%)
+                        </label>
+
+                        <input type="radio" name="service_code" value="viettel" id="t-viettel" class="radio-box">
+                        <label for="t-viettel" class="radio-label">
+                            <i class="fa-solid fa-signal"></i>
+                            Viettel
+                        </label>
+
+                        <input type="radio" name="service_code" value="zing" id="t-zing" class="radio-box">
+                        <label for="t-zing" class="radio-label">
+                            <i class="fa-solid fa-z"></i>
+                            Zing
+                        </label>
+                    </div>
+
+                    <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--dark);">2. Chọn mệnh giá thẻ</h3>
+                    <div class="grid-select">
+                        <input type="radio" name="amount" value="20000" id="p-20" class="radio-box" checked>
+                        <label for="p-20" class="radio-label">20.000đ</label>
+
+                        <input type="radio" name="amount" value="50000" id="p-50" class="radio-box">
+                        <label for="p-50" class="radio-label">50.000đ</label>
+
+                        <input type="radio" name="amount" value="100000" id="p-100" class="radio-box">
+                        <label for="p-100" class="radio-label">100.000đ</label>
+                        
+                        <input type="radio" name="amount" value="200000" id="p-200" class="radio-box">
+                        <label for="p-200" class="radio-label">200.000đ</label>
+
+                        <input type="radio" name="amount" value="500000" id="p-500" class="radio-box">
+                        <label for="p-500" class="radio-label">500.000đ</label>
+                    </div>
+
+                    <div id="resultBox" class="result-card">
+                        <h3 style="color: #16a085; margin: 0 0 10px 0; font-size: 18px;"><i class="fa-solid fa-circle-check"></i> GIAO DỊCH THÀNH CÔNG!</h3>
+                        <p style="margin:0; color: #475569; font-size: 14px;">Loại thẻ: <b id="r-name" style="color:var(--primary); text-transform: uppercase;"></b></p>
+                        
+                        <div class="card-info-box">
+                            <div class="info-row">
+                                <div class="info-text">
+                                    <div style="font-size: 11px; color: #94a3b8; margin-bottom: 3px;">Mã nạp (PIN)</div>
+                                    <b id="r-code" style="font-size: 18px; color: var(--dark);"></b>
+                                </div>
+                                <button type="button" class="btn-copy" onclick="copyToClipboard('r-code', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-text">
+                                    <div style="font-size: 11px; color: #94a3b8; margin-bottom: 3px;">Số Serial</div>
+                                    <b id="r-serial" style="font-size: 14px; color: #64748b;"></b>
+                                </div>
+                                <button type="button" class="btn-copy" onclick="copyToClipboard('r-serial', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <% if (user) { %>
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                                <div style="background: #f8fafc; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); font-size: 14px;">
+                                    <span style="color: #64748b;">Số dư hiện tại:</span> 
+                                    <b style="color: #22c55e; font-size: 16px;"><%= new Intl.NumberFormat('vi-VN').format(user.money) %>đ</b>
+                                </div>
+                                <button type="submit" id="btnSubmit" class="btn-buy">Xác Nhận Mua Thẻ</button>
+                            </div>
+                        <% } else { %>
+                            <div style="text-align: center;">
+                                <a href="/auth/login" class="btn-buy" style="display: inline-block; text-decoration: none; background: linear-gradient(135deg, var(--secondary), #2980b9);">Đăng Nhập Để Mua</a>
+                            </div>
+                        <% } %>
+                    </div>
+                </form>
+            </div>
+
+            <div class="ui-box">
+                <h2 class="box-title"><i class="fa-solid fa-clock-rotate-left" style="color: #f39c12;"></i> Lịch Sử Gần Đây</h2>
+                
+                <div class="history-wrapper">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Thẻ</th>
+                                <th>Mệnh Giá</th>
+                                <th>Mã / Serial</th>
+                                <th>Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (typeof cardHistory !== 'undefined' && cardHistory.length > 0) { %>
+                                <% cardHistory.forEach(function(item) { %>
+                                    <tr>
+                                        <td><b style="color: var(--dark); text-transform: uppercase;"><%= item.service_name %></b></td>
+                                        <td><b style="color: var(--primary);"><%= new Intl.NumberFormat('vi-VN').format(item.amount) %>đ</b></td>
+                                        <td>
+                                            <div style="font-size: 12px;">
+                                                Mã: <b style="color: var(--dark);"><%= item.pin %></b><br>
+                                                SR: <span style="color: #64748b;"><%= item.serial %></span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge-success">Thành công</span></td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 30px 10px; color: #94a3b8;">
+                                        <i class="fa-solid fa-box-open" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i><br>
+                                        Bạn chưa có lịch sử mua thẻ nào!
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+                <% if (typeof cardHistory !== 'undefined' && cardHistory.length > 0) { %>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="/user/lich-su-mua-the" style="font-size: 13px; color: var(--secondary); text-decoration: none; font-weight: bold;">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <section class="guide-section">
+            <h2 class="guide-title"><i class="fa-solid fa-book-open" style="color: var(--secondary);"></i> Hướng Dẫn Mua Thẻ Cho Người Mới</h2>
+            <div class="steps-grid">
+                
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <i class="fa-solid fa-user-check step-icon"></i>
+                    <div class="step-content">
+                        <div class="step-title">Đăng Nhập</div>
+                        <div class="step-desc">Hãy <a href="/auth/login">Đăng nhập</a> vào hệ thống, hoặc tạo tài khoản mới.</div>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <i class="fa-solid fa-wallet step-icon" style="color: #2ecc71;"></i>
+                    <div class="step-content">
+                        <div class="step-title">Nạp Tiền</div>
+                        <div class="step-desc">Để có tiền mua thẻ, nạp tiền tại <a href="/#nap-the">Nạp Thẻ / Chuyển Khoản</a>.</div>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <i class="fa-solid fa-hand-pointer step-icon" style="color: #f39c12;"></i>
+                    <div class="step-content">
+                        <div class="step-title">Chọn Thẻ</div>
+                        <div class="step-desc">Chọn loại nhà mạng (Garena, Viettel...) và mệnh giá bạn muốn mua.</div>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <i class="fa-solid fa-check-to-slot step-icon" style="color: var(--primary);"></i>
+                    <div class="step-content">
+                        <div class="step-title">Nhận Mã Thẻ</div>
+                        <div class="step-desc">Bấm <b>"Xác Nhận"</b>. Mã nạp và Serial sẽ hiện ra để copy.</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        
+        <article class="seo-content">
+            <h2>Đổi Thẻ Garena & Mua Thẻ Cào Giá Rẻ</h2>
+            <p>Tại <strong>ShopLienQuan.Site</strong>, chúng tôi không chỉ cung cấp tài khoản game mà còn mang đến dịch vụ <strong>mua thẻ Garena</strong> và các loại thẻ điện thoại (Viettel, Vina, Mobi) với mức chiết khấu cực kỳ ưu đãi. Nếu bạn có thẻ cào không dùng đến, bạn có thể dễ dàng sử dụng chức năng nạp thẻ tự động để <strong>đổi thẻ cào thành tiền mặt</strong> hoặc đổi sang thẻ game khác ngay trên hệ thống.</p>
+            <p>Hệ thống kết nối trực tiếp qua API với nhà mạng, đảm bảo mã thẻ trả về chỉ trong 3 giây. Tuyệt đối an toàn, bảo mật thông tin và mã thẻ chưa từng qua sử dụng.</p>
+        </article>
+    </main>
+
+    <%- include('../../includes/footer') %>
+    
+    <script>
+        // JS Xử lý mua thẻ bằng AJAX
+        const form = document.getElementById('buyCardForm');
+        if(form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btnSubmit');
+                
+                // UX Feedback
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+                document.getElementById('resultBox').style.display = 'none';
+
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const res = await fetch('/mua-the', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || data._csrf
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    
+                    if (result.success) {
+                        // Hiện thông báo thẻ
+                        document.getElementById('resultBox').style.display = 'block';
+                        document.getElementById('r-name').innerText = result.card.name || data.service_code;
+                        document.getElementById('r-code').innerText = result.card.code;
+                        document.getElementById('r-serial').innerText = result.card.serial;
+                        
+                        // Thông báo ngọt ngào cho người dùng
+                        alert("Giao dịch thành công! Mã thẻ đã được cấp.");
+                        
+                    } else {
+                        alert("Lỗi: " + result.message);
+                    }
+                } catch(err) {
+                    alert('Lỗi kết nối Server! Vui lòng thử lại.');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Xác Nhận Mua Thẻ';
+                }
+            });
+        }
+
+        // Tính năng Copy nội dung (Fix pass element to this function)
+        function copyToClipboard(elementId, btnElement) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                // Tạm thời đổi text nút copy để tạo UX tốt
+                const originalHtml = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Đã Copy';
+                btnElement.style.background = '#22c55e';
+                btnElement.style.color = '#fff';
+                
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHtml;
+                    btnElement.style.background = '#f1f5f9';
+                    btnElement.style.color = 'var(--secondary)';
+                }, 2000);
+            }).catch(err => {
+                alert('Không thể copy, vui lòng bôi đen và copy thủ công!');
+            });
+        }
+    </script>
+</body>
+</html>

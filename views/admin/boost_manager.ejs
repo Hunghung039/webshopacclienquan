@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Đơn Cày Thuê</title>
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'boost_manager' }) %>
+
+    <div class="main-content">
+        <h1 class="page-title"><i class="fa-solid fa-gamepad"></i> Quản Lý Đơn & Bằng Chứng Cày</h1>
+
+        <div class="card" style="border-top: 4px solid var(--primary); margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fa-solid fa-money-bill-wave"></i> Bảng Giá Bán Ra & Link Ảnh</h3>
+            <form action="/admin/cay-thue/settings?_csrf=<%= csrfToken %>" method="POST" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px;">
+                <% settings.forEach(s => { %>
+                    <div style="background: #1a1a2e; padding: 15px; border-radius: 8px; border: 1px dashed #555; text-align: center;">
+                        <input type="hidden" name="tier_keys[]" value="<%= s.tier_key %>">
+                        <div style="font-weight: bold; color: var(--warning); font-size: 13px; margin-bottom: 10px; height: 35px;"><%= s.tier_name %></div>
+                        <label style="font-size: 11px; color:#aaa; display:block; text-align:left;">Giá 1 Sao (VNĐ)</label>
+                        <input type="number" name="prices[]" value="<%= s.price_per_star %>" required style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #000; font-weight: 900; color: #d35400;">
+                        <label style="font-size: 11px; color:#aaa; display:block; text-align:left;">Link Ảnh (URL)</label>
+                        <input type="text" name="images[]" value="<%= s.image_url %>" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #000; font-size: 11px; background: #222; color: #fff;">
+                    </div>
+                <% }) %>
+                <div style="grid-column: 1 / -1; text-align: right;">
+                    <button type="submit" style="background: var(--primary); color: #fff; padding: 12px 30px; font-size: 16px; font-weight: 900; border: none; border-radius: 8px; cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> LƯU CẤU HÌNH</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--warning);">
+            <h3 style="margin-top: 0; color: var(--warning);"><i class="fa-solid fa-list-check"></i> Danh Sách Đơn Cần Cày</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn / Khách</th>
+                            <th>Thông tin Đăng Nhập</th>
+                            <th>Tiến độ Cày</th>
+                            <th>Trạng Thái & Bằng Chứng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if(orders.length === 0) { %>
+                            <tr><td colspan="4" style="text-align:center;">Chưa có đơn cày thuê nào.</td></tr>
+                        <% } %>
+                        <% orders.forEach(o => { %>
+                        <tr>
+                            <td>
+                                <b style="color:var(--primary)">#<%= o.id %></b> - <b style="color:#fff;"><%= o.client_name %></b><br>
+                                <span style="font-size:11px; color:#888;"><%= new Date(o.created_at).toLocaleString('vi-VN') %></span><br>
+                                <b style="color:var(--danger); font-size: 14px;"><%= new Intl.NumberFormat('vi-VN').format(o.price) %>đ</b>
+                            </td>
+                            <td>
+                                <span style="color: var(--success); font-weight: bold; background: #000; padding: 2px 5px; border-radius: 4px;">[<%= o.login_type %>]</span><br>
+                                <b>TK:</b> <%= o.account_user %><br>
+                                <b style="color: var(--danger);">MK & Lưu ý:</b> <%= o.account_pass %>
+                            </td>
+                            <td>
+                                <%= o.current_rank %> <br><i class="fa-solid fa-arrow-down" style="color:var(--warning)"></i><br> <%= o.target_rank %><br>
+                                <span style="font-size:12px; color:#aaa;">Cần cày: <b style="color:#fff;"><%= o.star_count %></b> Sao</span>
+                            </td>
+                            <td style="min-width: 300px;">
+                                <form action="/admin/cay-thue/update?_csrf=<%= csrfToken %>" method="POST" style="display:flex; flex-direction:column; gap:5px;">
+                                    <input type="hidden" name="order_id" value="<%= o.id %>">
+                                    <input type="text" name="hero_used" value="<%= o.hero_used %>" placeholder="Tướng đang cầm cày" style="padding:8px; font-size:12px; border:1px solid #444; background:#1a1a2e; color:#fff; border-radius: 4px;">
+                                    
+                                    <input type="text" name="proof_images" value="<%= o.proof_images %>" placeholder="Link ảnh xong đơn (Nếu nhiều ảnh cách nhau dấu phẩy)" style="padding:8px; font-size:12px; border:1px solid #444; background:#111; color:var(--success); border-radius: 4px;">
+                                    
+                                    <div style="display:flex; gap:5px;">
+                                        <select name="status" style="padding:8px; font-size:12px; flex:1; border-radius: 4px; background: #222; color: #fff; border: 1px solid #444;">
+                                            <option value="pending" <%= o.status==='pending'?'selected':'' %>>🕒 Đang chờ</option>
+                                            <option value="running" <%= o.status==='running'?'selected':'' %>>🔥 Đang cày</option>
+                                            <option value="completed" <%= o.status==='completed'?'selected':'' %>>✅ Đã Xong</option>
+                                            <option value="cancelled" <%= o.status==='cancelled'?'selected':'' %>>❌ Hủy (Hoàn tiền)</option>
+                                        </select>
+                                        <button type="submit" style="background:var(--success); color:#fff; border:none; padding:8px 15px; border-radius: 4px; cursor:pointer;" title="Lưu Trạng Thái"><i class="fa-solid fa-save"></i></button>
+                                    </div>
+                                </form>
+                                <form action="/admin/cay-thue/delete?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Sếp có chắc chắn muốn XÓA VĨNH VIỄN đơn này không? (Lưu ý: Xóa đơn sẽ không hoàn tiền, nếu muốn hoàn tiền hãy chọn Hủy trước khi Xóa)');" style="margin-top: 5px;">
+                        <input type="hidden" name="order_id" value="<%= o.id %>">
+                        <button type="submit" style="background:var(--danger); color:#fff; border:none; padding:8px 15px; border-radius: 4px; cursor:pointer; width: 100%; font-size: 12px; font-weight: bold;" title="Xóa Đơn Khỏi Hệ Thống">
+                            <i class="fa-solid fa-trash-can"></i> XÓA ĐƠN NÀY KHỎI BẢNG
+                        </button>
+                    </form>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

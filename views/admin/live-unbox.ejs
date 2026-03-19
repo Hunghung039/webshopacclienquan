@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>BÀN BÓC TÚI MÙ (LIVE TIKTOK)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <style>
+        body { background: radial-gradient(circle at center, #1a1a2e, #000); color: #fff; font-family: 'Open Sans', sans-serif; text-align: center; margin: 0; min-height: 100vh; overflow-x: hidden;}
+        
+        .live-header { padding: 20px; background: #e14eca; color: #fff; font-size: 24px; font-weight: 900; text-transform: uppercase; box-shadow: 0 5px 20px rgba(225, 78, 202, 0.5); margin-bottom: 40px;}
+
+        .live-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        
+        .input-group { margin-bottom: 30px; }
+        .input-code { font-size: 40px; padding: 15px 30px; text-align: center; font-weight: 900; border-radius: 15px; width: 60%; color: #f1c40f; background: rgba(0,0,0,0.5); border: 4px solid #f1c40f; text-transform: uppercase; letter-spacing: 5px; box-shadow: 0 0 20px rgba(241,196,15,0.3); outline: none;}
+        .input-code::placeholder { color: #555; font-size: 25px; letter-spacing: 0; }
+
+        .btn-khui { background: linear-gradient(45deg, #e74c3c, #c0392b); color: #fff; font-size: 35px; padding: 20px 60px; border: 4px solid #ff7979; border-radius: 50px; font-weight: 900; cursor: pointer; margin-top: 20px; box-shadow: 0 10px 30px rgba(231, 76, 60, 0.5); text-transform: uppercase; transition: 0.3s;}
+        .btn-khui:hover { transform: scale(1.05); }
+
+        /* Vùng bóc túi */
+        .stage { margin-top: 30px; position: relative; min-height: 400px; }
+        .bag-img { width: 350px; transition: 0.3s; filter: drop-shadow(0 0 30px rgba(241,196,15,0.4)); }
+        
+        .shaking { animation: shakeLive 0.15s infinite; }
+        @keyframes shakeLive { 
+            0% { transform: translate(2px, 2px) rotate(0deg) scale(1.1); } 
+            25% { transform: translate(-3px, -2px) rotate(-5deg) scale(1.1); } 
+            50% { transform: translate(3px, -2px) rotate(5deg) scale(1.1); } 
+            75% { transform: translate(-2px, 3px) rotate(-3deg) scale(1.1); } 
+            100% { transform: translate(2px, -3px) rotate(3deg) scale(1.1); } 
+        }
+
+        .flash-bang { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 999; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .flash-bang.active { opacity: 1; }
+
+        /* Bảng Kết Quả an toàn (KHÔNG PASS) */
+        .result-box { display: none; background: #1e272e; padding: 40px; border-radius: 20px; border: 4px dashed #00f2c3; box-shadow: 0 0 50px rgba(0,242,195,0.4); animation: popUp 0.5s ease-out forwards; }
+        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .r-title { font-size: 50px; color: #f1c40f; font-weight: 900; margin-bottom: 20px; text-shadow: 0 5px 15px rgba(241,196,15,0.5); }
+        .r-info { font-size: 35px; color: #fff; margin-bottom: 30px; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; border-left: 5px solid #00f2c3;}
+        
+        .r-vip { font-size: 45px; color: #e74c3c; font-weight: 900; margin-top: 20px; animation: pulse 1s infinite; display: flex; align-items: center; justify-content: center; gap: 15px;}
+        .r-vip img { width: 80px; filter: drop-shadow(0 0 20px #f1c40f); }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .btn-reset { background: #34495e; color: #fff; padding: 15px 30px; font-size: 20px; border: none; border-radius: 10px; margin-top: 30px; cursor: pointer; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+    <div class="flash-bang" id="flashBang"></div>
+
+    <div class="live-header">
+        🔴 BÀN BÓC TÚI MÙ TRỰC TIẾP
+    </div>
+
+    <div class="live-container">
+        <div id="controlPanel">
+            <div class="input-group">
+                <input type="text" id="orderCode" class="input-code" placeholder="Nhập mã đơn (VD: M-8899)" autocomplete="off">
+            </div>
+            
+            <div class="stage" id="stage">
+                <img src="/images/tui-mu-dong.png" id="bagImage" class="bag-img" alt="Túi Mù">
+            </div>
+
+            <button class="btn-khui" id="btnKhui" onclick="khuiLive()">🔥 KHUI ĐƠN NÀY 🔥</button>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <div class="r-title" id="r-order-display">MÃ ĐƠN: M-XXXX</div>
+            
+            <div class="r-info">
+                <i class="fa-solid fa-gamepad" style="color:#00f2c3;"></i> <span id="r-acc-info">...</span>
+            </div>
+
+            <div id="r-vip-zone"></div>
+
+            <button class="btn-reset" onclick="window.location.reload()"><i class="fa-solid fa-rotate-right"></i> Đơn Tiếp Theo</button>
+        </div>
+    </div>
+
+    <script>
+        // Lắng nghe sự kiện bấm Enter để khui cho lẹ
+        document.getElementById("orderCode").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                khuiLive();
+            }
+        });
+
+        async function khuiLive() {
+            const code = document.getElementById('orderCode').value.trim();
+            if (!code) {
+                alert("Sếp chưa nhập mã kìa!");
+                return;
+            }
+
+            const btn = document.getElementById('btnKhui');
+            const bagImg = document.getElementById('bagImage');
+            const flash = document.getElementById('flashBang');
+            const resultBox = document.getElementById('resultBox');
+            const controlPanel = document.getElementById('controlPanel');
+
+            // Bắt đầu rung
+            btn.style.display = 'none';
+            document.getElementById('orderCode').style.display = 'none';
+            bagImg.classList.add('shaking');
+
+            try {
+                const res = await fetch('/admin/live-unbox/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ orderCode: code })
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                    return;
+                }
+
+                // CÂU GIỜ TẠO HỒI HỘP 3 GIÂY
+                setTimeout(() => {
+                    bagImg.classList.remove('shaking');
+                    flash.classList.add('active'); // Lóa trắng màn hình
+
+                    // Đổi nhạc, đổi ảnh (nếu sếp có nhạc mp3 gắn vào đây)
+                    
+                    setTimeout(() => {
+                        flash.classList.remove('active');
+                        controlPanel.style.display = 'none'; // Ẩn khu vực nhập
+                        resultBox.style.display = 'block'; // Hiện kết quả
+
+                        document.getElementById('r-order-display').innerText = `ĐƠN: ${code.toUpperCase()}`;
+                        document.getElementById('r-acc-info').innerText = data.infoSummary; // CHỈ HIỆN THÔNG TIN, KHÔNG HIỆN PASS
+
+                        const vipZone = document.getElementById('r-vip-zone');
+                        if (data.isVipDrop) {
+                            vipZone.innerHTML = `
+                                <div class="r-vip">
+                                    <img src="/images/the-vip.png"> 
+                                    <span>VÀ 1 THẺ VIP!</span>
+                                    <img src="/images/the-vip.png"> 
+                                </div>
+                            `;
+                        } else {
+                            vipZone.innerHTML = `
+                                <div style="color: #aaa; font-size: 25px; margin-top: 20px;">
+                                    (Chưa rơi Thẻ VIP - Chúc sếp may mắn lần sau!)
+                                </div>
+                            `;
+                        }
+                    }, 400); // 0.4s chớp sáng
+                }, 3000); // 3s rung lắc câu view
+
+            } catch (err) {
+                alert("Lỗi kết nối. Khởi động lại!");
+                window.location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

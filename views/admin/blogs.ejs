@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Tin Tức & Blog</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    
+    <script src="https://cdn.tiny.cloud/1/uv2tulmssrn4v76l6z3jbkdhc1l8pl902vvb82wgop6laprb/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+
+    <script>
+      tinymce.init({
+        selector: '#content',
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+        height: 600,
+        skin: "oxide-dark",
+        content_css: "dark",
+        entity_encoding: "raw", 
+        
+        paste_data_images: true, 
+        automatic_uploads: true,
+        
+        images_upload_handler: function (blobInfo, progress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.withCredentials = true; 
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                xhr.open('POST', `/admin/images/upload?_csrf=${csrfToken}`);
+                xhr.setRequestHeader('CSRF-Token', csrfToken);
+                xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+
+                xhr.upload.onprogress = (e) => { progress(e.loaded / e.total * 100); };
+
+                xhr.onload = function () {
+                    if (xhr.status === 403) { reject('Bị chặn bởi bảo mật CSRF (Lỗi 403).'); return; }
+                    if (xhr.status === 413) { reject('Ảnh quá nặng! Server không tải nổi (Lỗi 413).'); return; }
+                    if (xhr.status < 200 || xhr.status >= 300) { reject('Lỗi HTTP: ' + xhr.status + ' - ' + xhr.responseText); return; }
+
+                    try {
+                        const json = JSON.parse(xhr.responseText);
+                        const finalUrl = json.location || json.url || json.image_url || json.path;
+                        if (!finalUrl) { reject('Lỗi: Server không trả về đường link của ảnh!'); return; }
+                        resolve(finalUrl); 
+                    } catch (e) { reject('Máy chủ trả về dữ liệu không hợp lệ: ' + xhr.responseText); }
+                };
+
+                xhr.onerror = function () { reject('Lỗi kết nối mạng khi tải ảnh lên.'); };
+
+                const formData = new FormData();
+                formData.append('image_file', blobInfo.blob(), blobInfo.filename());
+                formData.append('_csrf', csrfToken);
+
+                xhr.send(formData);
+            });
+        }
+      });
+    </script>
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+
+    <%- include('partials/sidebar', { page: 'blogs' }) %>
+
+    <div class="main-content">
+        
+        <% if(typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+            <div style="background: rgba(253, 93, 147, 0.2); border-left: 4px solid var(--danger); color: var(--text); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Lỗi: <%= error_msg %>
+            </div>
+        <% } %>
+
+        <h1 style="margin: 0 0 30px 0; font-weight: 300; border-left: 4px solid var(--accent); padding-left: 15px;">Quản Lý Bài Viết / Tin Tức</h1>
+
+        <div class="card">
+            <h3 style="margin-top: 0; color: var(--accent);"><i class="fa-solid fa-pen-nib"></i> Viết Bài Mới</h3>
+            
+            <form action="/admin/blogs/add?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data" id="blogForm">
+                 
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                    <div>
+                        <label>Tiêu đề bài viết (H1)</label>
+                        <input type="text" name="title" placeholder="VD: Hướng dẫn nhận code Liên Quân..." required>
+
+                        <label>Đoạn tóm tắt (Meta Description SEO)</label>
+                        <textarea name="summary" rows="3" placeholder="Đoạn văn ngắn 1-2 câu hấp dẫn người đọc click vào..." required></textarea>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label>Tags (Phân cách bằng dấu phẩy)</label>
+                                <input type="text" name="tags" placeholder="VD: lien-quan, giftcode, skin-ss">
+                            </div>
+                            <div>
+                                <label>Chuyên mục</label>
+                                <input type="text" name="category" list="category-list" placeholder="Chọn hoặc nhập mới..." required>
+                                <datalist id="category-list">
+                                    <% if (typeof existingCategories !== 'undefined') { %>
+                                        <% existingCategories.forEach(cat => { %>
+                                            <option value="<%= cat.category %>">
+                                        <% }) %>
+                                    <% } %>
+                                    <option value="Cẩm nang">
+                                    <option value="Tin tức">
+                                    <option value="Hướng dẫn">
+                                    <option value="Sự kiện">
+                                </datalist>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label>Ảnh đại diện (Thumbnail)</label>
+                        <div class="upload-box">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 35px; color: #aaa; margin-bottom: 10px; display: block;"></i>
+                            <span style="font-size: 13px; color: #888;">Click để chọn ảnh (Dưới 2MB)</span>
+                            <input type="file" id="thumbnailInput" name="thumbnail" accept="image/jpeg, image/png, image/webp" required style="opacity: 0; position: absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" onchange="previewImage(event)">
+                            <img id="thumb-preview" class="preview-img" alt="Xem trước">
+                        </div>
+                        <p id="error-msg" style="color: var(--danger); font-size: 12px; margin-top: 5px; display: none;"></p>
+                    </div>
+                </div>
+
+                <label style="margin-top: 10px;">Nội dung bài viết (Rich Text Editor)</label>
+                <textarea id="content" name="content"></textarea>
+
+                <div style="text-align: right; margin-top: 25px;">
+                    <button type="submit" class="btn-add" id="btnSubmit"><i class="fa-solid fa-paper-plane"></i> XUẤT BẢN BÀI VIẾT</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="table-controls">
+                <h3 style="margin: 0;"><i class="fa-solid fa-list"></i> Danh Sách Bài Viết Đã Đăng</h3>
+                <input type="text" id="searchInput" class="search-box" placeholder="🔍 Tìm kiếm tiêu đề..." onkeyup="searchTable()">
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hình Ảnh</th>
+                        <th>Thông tin bài viết</th>
+                        <th>Chuyên mục</th>
+                        <th>Thống kê</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="blogTableBody">
+                    <% if (blogs.length === 0) { %>
+                        <tr><td colspan="5" style="text-align: center; color: #888;">Chưa có bài viết nào được đăng.</td></tr>
+                    <% } else { %>
+                        <% blogs.forEach(b => { %>
+                            <tr>
+                                <td><img src="<%= b.thumbnail %>" class="blog-img" onerror="this.src='https://placehold.co/200x150/27293d/cccccc?text=Blog'"></td>
+                                <td>
+                                    <b style="color: var(--accent); font-size: 15px;"><%= b.title %></b><br>
+                                    <span style="font-size:12px; color:#888;">Slug: <%= b.slug %></span>
+                                </td>
+                                <td><span style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 15px; font-size: 12px;"><%= b.category || 'Chưa phân loại' %></span></td>
+                                <td>
+                                    <div style="font-size: 13px; margin-bottom: 4px;"><i class="fa-solid fa-eye" style="color:var(--success);"></i> <%= b.views || 0 %> view</div>
+                                    <div style="font-size: 12px; color: #888;"><i class="fa-regular fa-clock"></i> <%= new Date(b.created_at).toLocaleDateString('vi-VN') %></div>
+                                </td>
+                                <td>
+                                    <a href="/tin-tuc/<%= b.slug %>" target="_blank" class="action-link btn-view"><i class="fa-solid fa-arrow-up-right-from-square"></i> Xem</a>
+                                    
+                                    <a href="/admin/blogs/edit/<%= b.id %>" class="action-link btn-edit"><i class="fa-solid fa-pen-to-square"></i> Sửa</a>
+                                    
+                                    <form action="/admin/blogs/delete/<%= b.id %>?_csrf=<%= csrfToken %>" method="POST" style="display:inline;" onsubmit="return confirm('Chắc chắn xóa bài viết này?')">
+                                        <button type="submit" class="btn-del"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const btnSubmit = document.getElementById('btnSubmit');
+            const errorMsg = document.getElementById('error-msg');
+
+            if (file) {
+                if (file.size > 2097152) { 
+                    errorMsg.innerText = 'Ảnh tải lên quá nặng! Vui lòng chọn ảnh dung lượng dưới 2MB.';
+                    errorMsg.style.display = 'block';
+                    btnSubmit.disabled = true;
+                    
+                    event.target.value = ''; 
+                    document.getElementById('thumb-preview').style.display = 'none';
+                    return;
+                } else {
+                    errorMsg.style.display = 'none';
+                    btnSubmit.disabled = false;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(){
+                    const output = document.getElementById('thumb-preview');
+                    output.src = reader.result;
+                    output.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function searchTable() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#blogTableBody tr");
+            
+            rows.forEach(row => {
+                if(row.cells.length === 1) return; 
+                const titleText = row.cells[1].innerText.toLowerCase();
+                const catText = row.cells[2].innerText.toLowerCase();
+                
+                if (titleText.includes(input) || catText.includes(input)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

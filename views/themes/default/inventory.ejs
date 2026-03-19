@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .inven-bg { background: #0f111a; min-height: 100vh; color: #fff; padding-bottom: 50px; font-family: 'Open Sans', sans-serif;}
+        .inven-header { background: #1e2235; padding: 40px 15px; text-align: center; border-bottom: 2px solid #2d3450; }
+        .inven-header h1 { font-size: 32px; font-weight: 900; color: #00f2c3; margin-bottom: 10px; text-transform: uppercase; }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 15px; }
+        
+        /* KHU VỰC THẺ VIP */
+        .vip-wallet { background: linear-gradient(135deg, #f1c40f 0%, #e67e22 100%); border-radius: 20px; padding: 30px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(241,196,15,0.3); margin-bottom: 40px; position: relative; overflow: hidden;}
+        .vip-wallet::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: url('https://www.transparenttextures.com/patterns/cubes.png'); opacity: 0.1; pointer-events: none;}
+        
+        .wallet-left { display: flex; align-items: center; gap: 20px; position: relative; z-index: 2;}
+        .wallet-left img { width: 80px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); animation: float 3s ease-in-out infinite; }
+        .wallet-info h2 { margin: 0; font-size: 20px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .wallet-info .amount { font-size: 45px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        
+        .wallet-right { position: relative; z-index: 2; }
+        .btn-go-vault { background: #fff; color: #e67e22; padding: 12px 25px; border-radius: 30px; font-weight: 900; text-decoration: none; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.3s; }
+        .btn-go-vault:hover { transform: scale(1.05); background: #fdfbfb; }
+
+        @media (max-width: 768px) {
+            .vip-wallet { flex-direction: column; text-align: center; gap: 20px; }
+        }
+
+        /* KHU VỰC TÀI KHOẢN ĐÃ NHẬN */
+        .section-title { font-size: 22px; font-weight: bold; border-left: 4px solid #e14eca; padding-left: 10px; margin-bottom: 20px; color: #fff; display: flex; align-items: center; gap: 10px;}
+        
+        .acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 50px; }
+        .acc-card { background: #1e2235; border-radius: 12px; border: 1px solid #2d3450; padding: 20px; transition: 0.3s; position: relative;}
+        .acc-card:hover { border-color: #00f2c3; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        
+        .acc-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px dashed #444; padding-bottom: 10px; }
+        .acc-bag-name { color: #e14eca; font-weight: bold; font-size: 14px; }
+        .acc-date { color: #888; font-size: 12px; }
+        
+        .acc-code { background: #0f111a; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;}
+        .acc-code span { color: #fff; font-family: monospace; font-size: 15px; }
+        .btn-copy { background: #00f2c3; color: #000; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;}
+        .btn-copy:hover { background: #00b894; }
+
+        .acc-info { font-size: 13px; color: #aaa; margin-top: 15px; line-height: 1.5; }
+        .vip-badge { position: absolute; top: -10px; right: -10px; background: #f1c40f; color: #000; font-size: 11px; font-weight: 900; padding: 5px 10px; border-radius: 20px; box-shadow: 0 5px 10px rgba(241,196,15,0.4); transform: rotate(15deg); }
+
+        /* DANH SÁCH LỊCH SỬ THẺ ĐỔI */
+        .history-list { background: #1e2235; border-radius: 12px; padding: 20px; }
+        .history-item { padding: 15px 0; border-bottom: 1px solid #2d3450; display: flex; justify-content: space-between; align-items: center; }
+        .history-item:last-child { border-bottom: none; }
+        .h-desc { color: #f1c40f; font-weight: bold; font-size: 15px; }
+        .h-date { color: #888; font-size: 13px; }
+
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+    </style>
+</head>
+<body class="inven-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <div class="inven-header">
+        <h1><i class="fa-solid fa-backpack"></i> Tủ Đồ Của Bạn</h1>
+        <p style="color: #aaa;">Nơi cất giữ những chiến lợi phẩm tuyệt vời nhất!</p>
+    </div>
+
+    <div class="container">
+        
+        <div class="vip-wallet">
+            <div class="wallet-left">
+                <img src="/images/the-vip.png" alt="Thẻ VIP" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5619/5619374.png'">
+                <div class="wallet-info">
+                    <h2>SỐ THẺ VIP CỦA BẠN</h2>
+                    <div class="amount"><%= vipCards %></div>
+                </div>
+            </div>
+            <div class="wallet-right">
+                <a href="/kho-vip" class="btn-go-vault"><i class="fa-solid fa-crown"></i> VÀO KHO VIP ĐỔI THƯỞNG</a>
+            </div>
+        </div>
+
+        <h3 class="section-title"><i class="fa-solid fa-box-open"></i> Tài Khoản Game Nhận Từ Túi Mù</h3>
+        
+        <% if (openedBags && openedBags.length > 0) { %>
+            <div class="acc-grid">
+                <% openedBags.forEach(bag => { %>
+                    <div class="acc-card">
+                        <% if (bag.dropped_vip) { %>
+                            <div class="vip-badge"><i class="fa-solid fa-star"></i> NỔ VIP</div>
+                        <% } %>
+
+                        <div class="acc-header">
+                            <span class="acc-bag-name"><%= bag.bag_name %> (Đơn: <%= bag.order_code %>)</span>
+                            <span class="acc-date"><%= new Date(bag.created_at).toLocaleDateString('vi-VN') %></span>
+                        </div>
+
+                        <div class="acc-code">
+                            <span id="user-<%= bag.order_code %>">TK: <%= bag.acc_username %></span>
+                            <button class="btn-copy" onclick="copyText('user-<%= bag.order_code %>', '<%= bag.acc_username %>')">COPY</button>
+                        </div>
+                        <div class="acc-code">
+                            <span id="pass-<%= bag.order_code %>">MK: <%= bag.acc_password %></span>
+                            <button class="btn-copy" onclick="copyText('pass-<%= bag.order_code %>', '<%= bag.acc_password %>')">COPY</button>
+                        </div>
+
+                        <div class="acc-info">
+                            <b>Thông tin:</b> <%= bag.info_summary %>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div style="text-align: center; padding: 40px; background: #1e2235; border-radius: 12px; margin-bottom: 50px; color: #888;">
+                <i class="fa-solid fa-ghost" style="font-size: 40px; margin-bottom: 15px;"></i>
+                <p>Bạn chưa bóc cái túi mù nào cả. Khởi nghiệp ngay thôi!</p>
+                <a href="/tui-mu" style="color: #00f2c3; text-decoration: underline;">Đến Cửa Hàng Túi Mù</a>
+            </div>
+        <% } %>
+
+        <h3 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Nhận Thẻ Đặc Quyền (Kho VIP)</h3>
+        
+        <% if (vipRewards && vipRewards.length > 0) { %>
+            <div class="history-list">
+                <% vipRewards.forEach(reward => { %>
+                    <div class="history-item">
+                        <div class="h-desc"><i class="fa-solid fa-gift" style="margin-right: 8px;"></i> <%= reward.description %></div>
+                        <div class="h-date"><%= new Date(reward.created_at).toLocaleString('vi-VN') %></div>
+                    </div>
+                <% }) %>
+            </div>
+            <p style="color: #aaa; font-size: 13px; margin-top: 15px; text-align: center;">* Vui lòng chụp màn hình Lịch sử này và gửi cho Admin (Zalo/Fanpage) để nhận Acc theo Thẻ Đặc Quyền nhé!</p>
+        <% } else { %>
+            <div style="text-align: center; padding: 30px; background: #1e2235; border-radius: 12px; color: #888;">
+                Chưa có lịch sử đổi Thẻ Đặc Quyền nào.
+            </div>
+        <% } %>
+
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        // Hàm hỗ trợ copy nhanh Text mà không copy chữ "TK:" hay "MK:"
+        function copyText(elementId, realText) {
+            navigator.clipboard.writeText(realText).then(() => {
+                alert("Đã Copy: " + realText);
+            }).catch(err => {
+                alert("Lỗi Copy!");
+            });
+        }
+    </script>
+</body>
+</html>

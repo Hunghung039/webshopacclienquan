@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <meta name="description" content="Săn acc Liên Quân 1đ - Shop bán tài khoản Liên Quân giá rẻ, uy tín. Cơ hội nhận nick VIP chỉ với 1 VNĐ. Hệ thống giao dịch tự động, an toàn 100%.">
+    <meta name="keywords" content="bán tài khoản liên quân giá rẻ, săn acc liên quân 1đ, shop nick liên quân, mua acc liên quân vip, nick liên quân 1k, shop acc liên quân uy tín">
+    
+    <style>
+        .fs-bg { background: #0f111a; min-height: 100vh; color: #fff; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif;}
+        
+        /* Banner & Header SEO */
+        .fs-banner { background: linear-gradient(45deg, #c0392b, #8e44ad); padding: 50px 15px 40px; text-align: center; position: relative; overflow: hidden; }
+        .fs-banner::before { content: ''; position: absolute; top:0; left:0; width: 100%; height: 100%; background: url('https://www.transparenttextures.com/patterns/stardust.png'); opacity: 0.3; }
+        
+        .fs-title { font-size: 38px; font-weight: 900; color: #f1c40f; text-transform: uppercase; margin: 0 0 10px; text-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; z-index: 2;}
+        .fs-subtitle { font-size: 18px; color: #ecf0f1; margin: 0 0 15px; position: relative; z-index: 2; font-weight: 500;}
+        
+        .rule-box { background: rgba(0,0,0,0.5); border: 1px solid #f1c40f; border-radius: 10px; max-width: 700px; margin: 20px auto 0; padding: 20px; position: relative; z-index: 2; text-align: left; font-size: 14px; color: #bdc3c7; line-height: 1.6; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
+        .rule-box h2 { color: #f1c40f; font-size: 18px; margin: 0 0 10px 0; text-transform: uppercase; }
+
+        /* Lưới Sản Phẩm */
+        .fs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 1200px; margin: -30px auto 0; padding: 0 15px; position: relative; z-index: 5;}
+        
+        .fs-card { background: #1e2235; border-radius: 12px; overflow: hidden; border: 1px solid #2d3450; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: all 0.3s ease; display: flex; flex-direction: column;}
+        .fs-card:hover { transform: translateY(-5px); border-color: #e74c3c; box-shadow: 0 15px 40px rgba(231,76,60,0.4);}
+        
+        .fs-thumb { position: relative; padding-top: 56.25%; overflow: hidden; }
+        .fs-thumb img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+        .fs-card:hover .fs-thumb img { transform: scale(1.1); }
+        
+        .fs-price-tag { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: #fff; font-weight: 900; font-size: 18px; padding: 5px 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); animation: pulse 1s infinite;}
+        
+        .fs-body { padding: 15px; text-align: center; flex: 1; display: flex; flex-direction: column;}
+        .fs-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+        
+        /* Đồng hồ đếm ngược */
+        .countdown-box { background: rgba(0,0,0,0.4); padding: 8px; border-radius: 8px; margin-bottom: 12px; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; color: #00f2c3; border: 1px dashed #00f2c3;}
+        
+        .btn-fs { margin-top: auto; padding: 12px; width: 100%; border-radius: 8px; font-size: 14px; font-weight: 800; border: none; cursor: pointer; text-transform: uppercase; transition: 0.3s;}
+        
+        /* Trạng thái nút */
+        .btn-wait { background: #34495e; color: #95a5a6; cursor: not-allowed; }
+        .btn-buy-now { background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000; box-shadow: 0 4px 15px rgba(241,196,15,0.4); }
+        .btn-buy-now:hover { transform: scale(1.05); }
+        .btn-sold { background: #111; color: #e74c3c; border: 1px solid #e74c3c; cursor: not-allowed; }
+
+        /* Vùng nội dung SEO chuẩn */
+        .seo-content-box { max-width: 1200px; margin: 50px auto 0; padding: 30px 20px; background: #16192b; border-radius: 12px; border: 1px solid #2d3450; color: #a0a5b5; line-height: 1.8; }
+        .seo-content-box h2, .seo-content-box h3 { color: #f1c40f; margin-bottom: 15px; }
+        .seo-content-box h2 { font-size: 24px; text-transform: uppercase; text-align: center; border-bottom: 1px dashed #2d3450; padding-bottom: 15px;}
+        .seo-content-box h3 { font-size: 18px; margin-top: 20px;}
+        .seo-content-box ul { padding-left: 20px; }
+        .seo-content-box a { color: #e74c3c; text-decoration: none; font-weight: bold; }
+        .seo-content-box a:hover { text-decoration: underline; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CSS CHO MODAL THÔNG BÁO TÙY CHỈNH */
+        .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 15px; backdrop-filter: blur(5px);}
+        .custom-content { background: #1a202c; max-width: 400px; width: 100%; border-radius: 20px; border: 2px solid #3182ce; padding: 40px 20px; position: relative; text-align: center; animation: slideDown 0.3s ease-out; }
+
+        /* RESPONSIVE CHO MOBILE & TABLET */
+        @media (max-width: 992px) {
+            .fs-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .fs-title { font-size: 24px; }
+            .fs-subtitle { font-size: 14px; }
+            .fs-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; padding: 0 10px; }
+            .fs-card { border-radius: 8px; }
+            .fs-body { padding: 10px; }
+            .fs-name { font-size: 13px; margin-bottom: 10px; }
+            .fs-price-tag { font-size: 14px; padding: 3px 8px; top: 5px; right: 5px; }
+            .countdown-box { font-size: 12px; padding: 6px; }
+            .btn-fs { padding: 8px; font-size: 12px; }
+            .seo-content-box { margin: 30px 10px 0; padding: 20px 15px; }
+            .seo-content-box h2 { font-size: 18px; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Săn Acc Liên Quân 1đ - Mua Bán Tài Khoản Liên Quân Giá Rẻ",
+      "description": "Sự kiện siêu sale săn nick Liên Quân VIP chỉ 1đ. Cửa hàng bán tài khoản Liên Quân giá rẻ, uy tín hàng đầu.",
+      "mainEntity": {
+        "@type": "SaleEvent",
+        "name": "Giờ Vàng Săn Acc Liên Quân 1đ",
+        "description": "Cơ hội rước siêu phẩm tài khoản Liên Quân Mobile giá hủy diệt chỉ với 1 VNĐ.",
+        "image": "https://shoplienquan.site/images/banner-share.png",
+        "startDate": "2024-01-01T00:00:00+07:00",
+        "endDate": "2027-12-31T23:59:59+07:00",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
+        "location": {
+          "@type": "VirtualLocation",
+          "url": "https://shoplienquan.site/san-acc-1d"
+        },
+        "organizer": {
+          "@type": "Organization",
+          "name": "Shop Liên Quân Uy Tín",
+          "url": "https://shoplienquan.site"
+        },
+        "performer": {
+          "@type": "Organization",
+          "name": "Shop Liên Quân Uy Tín"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "url": "https://shoplienquan.site/san-acc-1d",
+          "priceCurrency": "VND",
+          "lowPrice": "1",
+          "highPrice": "1",
+          "offerCount": "<%= (typeof products !== 'undefined' && products.length > 0) ? products.length : 1 %>",
+          "availability": "https://schema.org/InStock",
+          "validFrom": "2024-01-01T00:00:00+07:00"
+        }
+      }
+    }
+    </script>
+</head>
+<body class="fs-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <div class="fs-banner">
+        <h1 class="fs-title">🔥 GIỜ VÀNG SĂN ACC 1Đ 🔥</h1>
+        <p class="fs-subtitle">Shop bán tài khoản Liên Quân giá rẻ - Cơ hội rước siêu phẩm VIP chỉ với 1đ!</p>
+        
+        <div class="rule-box">
+            <h2><i class="fa-solid fa-triangle-exclamation"></i> Thể lệ săn Nick Liên Quân 1đ:</h2>
+            <div style="margin-top: 5px;">- <b>Giới hạn:</b> Mỗi người chơi chỉ được săn tối đa <b>1 Tài Khoản</b> mỗi đợt Flash Sale.</div>
+            <div>- <b>Điều kiện mở khóa:</b> Để săn đợt tiếp theo, hệ thống yêu cầu phát sinh giao dịch <b>nạp thẻ tối thiểu 10.000đ</b> kể từ lần săn trước đó (Nhằm chống bot/clone nick giành giật acc của game thủ chân chính).</div>
+        </div>
+    </div>
+
+    <div class="fs-grid">
+        <% if(products && products.length > 0) { %>
+            <% products.forEach(p => { %>
+                <article class="fs-card" title="Mua <%= p.title %> giá 1đ">
+                    <div class="fs-thumb">
+                        <img src="<%= p.image_url %>" alt="<%= p.title %> - Bán tài khoản Liên Quân giá rẻ">
+                        <div class="fs-price-tag">1đ</div>
+                    </div>
+                    <div class="fs-body">
+                        <h3 class="fs-name" title="<%= p.title %>"><%= p.title %></h3>
+                        
+                        <% if(p.status === 'sold') { %>
+                            <div class="countdown-box" style="color: #e74c3c; border-color: #e74c3c;">ĐÃ BÁN</div>
+                            <button class="btn-fs btn-sold" disabled>HẸN ĐỢT SAU</button>
+                        <% } else { %>
+                            <div class="countdown-box" id="timer-<%= p.id %>" data-time="<%= new Date(p.flash_sale_time).getTime() %>">
+                                Đang đồng bộ...
+                            </div>
+                            
+                            <button class="btn-fs btn-wait" id="btn-<%= p.id %>" disabled>ĐANG CHỜ MỞ BÁN</button>
+                        <% } %>
+                    </div>
+                </article>
+            <% }) %>
+        <% } else { %>
+            <div style="grid-column: 1/-1; text-align:center; padding: 50px; color:#aaa;">
+                <i class="fa-solid fa-hourglass-empty" style="font-size: 50px; margin-bottom: 20px;"></i>
+                <h2>Hiện chưa có acc Liên Quân 1đ nào được lên lịch!</h2>
+                <p>Vui lòng quay lại sau hoặc xem các <a href="/tai-khoan" style="color:#f1c40f;">tài khoản Liên Quân giá rẻ</a> khác của shop nhé.</p>
+            </div>
+        <% } %>
+    </div>
+
+    <section class="seo-content-box">
+        <h2>Shop Săn Acc Liên Quân 1đ - Mua Bán Tài Khoản Liên Quân Giá Rẻ Uy Tín</h2>
+        <p>Chào mừng bạn đến với chuyên mục <strong>Săn Acc 1đ</strong>! Tự hào là một trong những hệ thống <strong>bán tài khoản Liên Quân giá rẻ</strong> hàng đầu, chúng tôi luôn mang đến cho cộng đồng game thủ những cơ hội sở hữu <strong>nick Liên Quân VIP</strong>, full tướng, full trang phục với mức giá "cho không" chỉ 1 VNĐ.</p>
+        
+        <h3>Tại sao bạn nên săn acc giá rẻ tại shop của chúng tôi?</h3>
+        <ul>
+            <li><strong>Uy tín & Tự động:</strong> Giao dịch diễn ra hoàn toàn tự động 24/7. Nhận tài khoản ngay lập tức sau khi bấm mua thành công.</li>
+            <li><strong>Nguồn acc chất lượng:</strong> Dù là acc 1đ, nhưng 100% tài khoản đều là nick sạch, trắng thông tin, nhiều tướng và skin hot.</li>
+            <li><strong>Công bằng:</strong> Hệ thống đếm ngược trực tiếp trên server chống tool, chống hack time, đảm bảo cơ hội chia đều cho mọi game thủ thao tác tay nhanh nhất.</li>
+        </ul>
+
+        <h3>Từ khóa được tìm kiếm nhiều:</h3>
+        <p>
+            <i>Shop nick liên quân, mua acc liên quân 9k, thử vận may liên quân vip, bán tài khoản liên quân uy tín, săn acc lq giá rẻ, shop acc liên quân trắng thông tin, mua nick lq mobile.</i>
+        </p>
+    </section>
+
+    <div id="infoModal" class="custom-modal">
+        <div class="custom-content" id="infoModalBorder">
+            <div id="infoModalIconBox" style="width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i id="infoModalIcon" class="" style="font-size: 35px;"></i>
+            </div>
+            <h2 id="infoModalTitle" style="color: #fff; margin-bottom: 10px; font-size: 20px;">Thông Báo</h2>
+            <p id="infoModalDesc" style="color: #a0aec0; font-size: 14px; margin-bottom: 25px;">Nội dung chi tiết...</p>
+            
+            <div id="infoModalAction">
+                </div>
+        </div>
+    </div>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/modals') %>
+
+    <script>
+        // Đồng hồ đếm ngược
+        let currentServerTime = <%= serverTime %>;
+        setInterval(() => { currentServerTime += 1000; }, 1000);
+
+        function updateTimers() {
+            const timers = document.querySelectorAll('.countdown-box[data-time]');
+            timers.forEach(box => {
+                const id = box.id.split('-')[1];
+                const btn = document.getElementById('btn-' + id);
+                const saleTime = parseInt(box.getAttribute('data-time'));
+                const distance = saleTime - currentServerTime;
+
+                if (distance <= 0) {
+                    box.innerHTML = "MỞ BÁN RỒI! MUA NGAY!";
+                    box.style.color = "#f1c40f";
+                    box.style.borderColor = "#f1c40f";
+                    
+                    if(btn.disabled) {
+                        btn.disabled = false;
+                        btn.className = "btn-fs btn-buy-now";
+                        btn.innerText = "🔥 CLICK MUA NGAY 🔥";
+                        btn.onclick = () => buyFlashSale(id);
+                    }
+                } else {
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    
+                    if(days > 0) {
+                        box.innerHTML = `Còn: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+                    } else {
+                        box.innerHTML = `Còn: ${hours}h ${minutes}m ${seconds}s`;
+                    }
+                }
+            });
+        }
+        setInterval(updateTimers, 1000);
+        updateTimers();
+
+        // ==========================================
+        // CÁC HÀM XỬ LÝ MODAL THÔNG BÁO XỊN XÒ
+        // ==========================================
+        function showCustomInfoModal(type, title, desc, actionHtml) {
+            const modal = document.getElementById('infoModal');
+            const boxBorder = document.getElementById('infoModalBorder');
+            const iconBox = document.getElementById('infoModalIconBox');
+            const icon = document.getElementById('infoModalIcon');
+            
+            document.getElementById('infoModalTitle').innerText = title;
+            document.getElementById('infoModalDesc').innerHTML = desc;
+            document.getElementById('infoModalAction').innerHTML = actionHtml;
+
+            if(type === 'error') {
+                boxBorder.style.borderColor = '#e74c3c';
+                iconBox.style.background = 'rgba(231, 76, 60, 0.1)';
+                icon.className = 'fa-solid fa-circle-xmark';
+                icon.style.color = '#e74c3c';
+            } 
+            else if(type === 'warning') {
+                boxBorder.style.borderColor = '#f1c40f';
+                iconBox.style.background = 'rgba(241, 196, 15, 0.1)';
+                icon.className = 'fa-solid fa-triangle-exclamation';
+                icon.style.color = '#f1c40f';
+            }
+            else {
+                boxBorder.style.borderColor = '#00f2c3';
+                iconBox.style.background = 'rgba(0, 242, 195, 0.1)';
+                icon.className = 'fa-solid fa-check-circle';
+                icon.style.color = '#00f2c3';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeInfoModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        // Tắt Modal khi nhấn ra vùng viền đen
+        window.onclick = function(event) {
+            const infoModal = document.getElementById('infoModal');
+            if (event.target == infoModal) closeInfoModal();
+        }
+
+        // ==========================================
+        // LOGIC MUA HÀNG KHÔNG DÙNG ALERT MẶC ĐỊNH NỮA
+        // ==========================================
+        async function buyFlashSale(productId) {
+            const isLogged = <%= typeof user !== 'undefined' && user ? 'true' : 'false' %>;
+            
+            // XỬ LÝ TRƯỜNG HỢP CHƯA ĐĂNG NHẬP
+            if(!isLogged) {
+                showCustomInfoModal(
+                    'warning', 
+                    'Chưa Đăng Nhập!', 
+                    'Sếp cần phải đăng nhập tài khoản để có thể đua top săn Acc 1đ nhé.', 
+                    `<button class="btn-fs btn-buy-now" style="width:100%; border:none; padding:15px; font-size:15px;" onclick="window.location.href='/auth/login'">ĐĂNG NHẬP NGAY</button>`
+                );
+                return;
+            }
+
+            const btn = document.getElementById('btn-' + productId);
+            btn.innerText = "ĐANG XỬ LÝ...";
+            btn.disabled = true;
+
+            // HIỆN THÔNG BÁO CHỜ XỬ LÝ
+            showCustomInfoModal(
+                'warning', 
+                'Đang Xử Lý...', 
+                'Hệ thống đang giành giật Acc cho sếp, xin vui lòng chờ 1 lát <i class="fa-solid fa-spinner fa-spin"></i>', 
+                ``
+            );
+
+            try {
+                const res = await fetch('/san-acc-1d/buy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ productId })
+                });
+
+                const data = await res.json();
+                
+                if(data.success) {
+                    // MUA THÀNH CÔNG
+                    showCustomInfoModal(
+                        'success', 
+                        '🎉 SĂN THÀNH CÔNG!', 
+                        data.message, 
+                        `<button class="btn-fs btn-buy-now" style="width:100%; border:none; background: #00f2c3; color: #000; padding:15px; font-size:15px;" onclick="window.location.href='/user/lich-su-mua-hang'">VÀO KHO LẤY NICK</button>`
+                    );
+                } else {
+                    // MUA THẤT BẠI (Do chậm tay hoặc chưa đủ 10k)
+                    let actionBtn = `<button class="btn-fs" style="width: 100%; background: #4a5568; color: #fff; padding:15px;" onclick="window.location.reload()">ĐÓNG VÀ TẢI LẠI TRANG</button>`;
+                    
+                    if(data.message.toLowerCase().includes("nạp") || data.message.toLowerCase().includes("1đ")) {
+                        actionBtn = `<a href="/#nap-the" class="btn-fs btn-buy-now" style="display:block; text-align:center; text-decoration:none; padding:15px; font-size:15px;">NẠP THÊM LÚA NGAY</a>`;
+                    }
+
+                    showCustomInfoModal('error', 'Rất Tiếc!', data.message, actionBtn);
+                    btn.innerText = "🔥 CLICK MUA NGAY 🔥";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                // LỖI MẠNG
+                showCustomInfoModal(
+                    'error', 
+                    'Mất Kết Nối', 
+                    'Lỗi mạng hoặc máy chủ đang quá tải vì có quá nhiều người săn cùng lúc. Vui lòng bấm thử lại.', 
+                    `<button class="btn-fs" style="width: 100%; background: #4a5568; color: #fff; padding:15px;" onclick="closeInfoModal()">ĐÓNG</button>`
+                );
+                btn.innerText = "🔥 CLICK MUA NGAY 🔥";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

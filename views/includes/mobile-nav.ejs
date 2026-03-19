@@ -1,0 +1,300 @@
+<style>
+    /* =========================================================================
+       MOBILE BOTTOM NAVIGATION BARS
+       ========================================================================= */
+    /* MẶC ĐỊNH ẨN TRÊN MÁY TÍNH */
+    .mobile-bottom-nav { display: none; }
+    .category-overlay { display: none; }
+
+    /* CHỈ HIỂN THỊ KHI LÀ MÀN HÌNH ĐIỆN THOẠI / TABLET */
+    @media (max-width: 992px) {
+        
+        /* Đẩy phần thân web lên một chút để không bị thanh Nav che mất nội dung cuối */
+        body { padding-bottom: 85px !important; }
+
+        /* THANH ĐIỀU HƯỚNG DƯỚI CÙNG (BOTTOM BAR) */
+        .mobile-bottom-nav {
+            display: flex;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            height: 70px;
+            z-index: 9998;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.08);
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #f1f2f6;
+            padding-bottom: env(safe-area-inset-bottom); /* Chống lẹm màn hình iPhone tai thỏ */
+        }
+
+        .mb-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #b2bec3; font-size: 11px; font-weight: 800; gap: 5px; width: 20%; height: 100%;
+            text-decoration: none; transition: 0.3s; cursor: pointer;
+        }
+        .mb-item i { font-size: 22px; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .mb-item.active { color: #e74c3c; } 
+        .mb-item.active i { transform: translateY(-3px) scale(1.1); }
+        .mb-item:active i { transform: scale(0.9); }
+
+        .mb-center { position: relative; width: 20%; height: 100%; }
+        .mb-center-btn {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            width: 65px; height: 65px; border-radius: 50%;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: 6px solid #f4f7f6; /* Viền tiệp màu nền web */
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #fff; font-size: 24px; box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+            text-decoration: none; transition: 0.3s;
+        }
+        .mb-center-btn:active { transform: translateX(-50%) scale(0.95); }
+        .mb-center-btn span { font-size: 10px; font-weight: 900; text-transform: uppercase; margin-top: 2px; }
+
+        /* =========================================================================
+           MENU OVERLAY (TRƯỢT TỪ DƯỚI LÊN - GIAO DIỆN SÁNG THANH LỊCH)
+           ========================================================================= */
+        .category-overlay {
+            display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f4f7f6; /* Nền Sáng / Xám nhạt */
+            z-index: 9999;
+            flex-direction: column;
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .category-overlay.active { transform: translateY(0); }
+
+        /* Header của Overlay */
+        .overlay-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 20px 25px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative; z-index: 2;
+        }
+        .close-btn { 
+            width: 40px; height: 40px; background: #f1f2f6; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            color: #2d3436; font-size: 20px; cursor: pointer; transition: 0.2s;
+        }
+        .close-btn:active { background: #dfe6e9; transform: scale(0.9); }
+        
+        /* Tiêu đề từng nhóm danh mục */
+        .overlay-title { 
+            font-size: 14px; font-weight: 900; margin: 25px 0 15px 0; 
+            text-transform: uppercase; padding-left: 10px; border-left: 4px solid;
+        }
+        
+        /* Lưới các nút Menu */
+        .category-grid { 
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 20px;
+        }
+        .cat-card { 
+            background: #fff; border: 1px solid #e1e8ed; border-radius: 16px; 
+            padding: 15px; text-align: center; text-decoration: none; 
+            transition: 0.2s; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            position: relative; overflow: hidden;
+        }
+        .cat-card:active { transform: scale(0.95); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .cat-icon { 
+            width: 45px; height: 45px; margin: 0 auto 10px; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; border-radius: 12px; color: #fff;
+        }
+        .cat-card span { font-size: 13px; font-weight: 800; display: block; color: #2d3436;}
+
+        /* Phối màu riêng từng Nút Menu */
+        .cat-card.c-muaacc .cat-icon { background: linear-gradient(135deg, #00b894, #00cec9); box-shadow: 0 4px 10px rgba(0,184,148,0.3);}
+        .cat-card.c-muaacc { border-color: #00cec9; }
+
+        .cat-card.c-checkuytin .cat-icon { background: linear-gradient(135deg, #34495e, #2c3e50); box-shadow: 0 4px 10px rgba(44,62,80,0.3);}
+        .cat-card.c-checkuytin { border-color: #34495e; }
+
+        .cat-card.c-gieoque .cat-icon { background: linear-gradient(135deg, #8e44ad, #c0392b); box-shadow: 0 4px 10px rgba(192,57,43,0.3);}
+        .cat-card.c-gieoque { border-color: #c0392b; }
+
+        .cat-card.c-tuimu .cat-icon { background: linear-gradient(135deg, #f1c40f, #e67e22); box-shadow: 0 4px 10px rgba(241,196,15,0.3);}
+        .cat-card.c-tuimu { border-color: #f1c40f; }
+
+        .cat-card.c-thueacc .cat-icon { background: linear-gradient(135deg, #9b59b6, #8e44ad); box-shadow: 0 4px 10px rgba(155,89,182,0.3);}
+        .cat-card.c-thueacc { border-color: #9b59b6; }
+
+        .cat-card.c-san1d .cat-icon { background: linear-gradient(135deg, #00cec9, #00b894); box-shadow: 0 4px 10px rgba(0,206,201,0.3);}
+        .cat-card.c-san1d { border-color: #00cec9; }
+
+        .cat-card.c-vongquay .cat-icon { background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 10px rgba(231,76,60,0.3);}
+        .cat-card.c-vongquay { border-color: #e74c3c; }
+
+        .cat-card.c-chungsuc .cat-icon { background: linear-gradient(135deg, #3498db, #2980b9); box-shadow: 0 4px 10px rgba(52,152,219,0.3);}
+        .cat-card.c-chungsuc { border-color: #3498db; }
+
+        .cat-card.c-caythue .cat-icon { background: linear-gradient(135deg, #fd79a8, #e84393); box-shadow: 0 4px 10px rgba(253,121,168,0.3);}
+        .cat-card.c-caythue { border-color: #fd79a8; }
+
+        .cat-card.c-muathe .cat-icon { background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 10px rgba(46,204,113,0.3);}
+        .cat-card.c-muathe { border-color: #2ecc71; }
+
+        .cat-card.c-khovip .cat-icon { background: linear-gradient(135deg, #f39c12, #e67e22); box-shadow: 0 4px 10px rgba(243,156,18,0.3);}
+        .cat-card.c-khovip { border-color: #f39c12; }
+
+        .tag-hot-badge { position: absolute; top: 10px; right: -25px; background: #e74c3c; color: #fff; font-size: 9px; font-weight: 900; padding: 3px 25px; transform: rotate(45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-transform: uppercase; animation: pulse-hot 1.5s infinite;}
+        @keyframes pulse-hot { 0% { transform: rotate(45deg) scale(1); } 50% { transform: rotate(45deg) scale(1.1); } 100% { transform: rotate(45deg) scale(1); } }
+        
+        .overlay-footer { text-align: center; padding: 25px 20px; color: #888; font-size: 12px; margin-top: auto; background: #fff; border-top: 1px solid #eee;}
+        .social-links { display: flex; justify-content: center; gap: 20px; margin-top: 10px; font-size: 24px;}
+        .social-links a { color: #b2bec3; transition: 0.3s;}
+        .social-links a.fb:hover { color: #1877f2;}
+        .social-links a.yt:hover { color: #ff0000;}
+        .social-links a.tt:hover { color: #000;}
+    }
+    body.no-scroll { overflow: hidden; }
+</style>
+
+<div class="mobile-bottom-nav">
+    <a href="/" class="mb-item <%= typeof originalUrl !== 'undefined' && originalUrl === '/' ? 'active' : '' %>">
+        <i class="fa-solid fa-house"></i>
+        <span>Trang chủ</span>
+    </a>
+
+    <a href="/check-uy-tin" class="mb-item <%= typeof originalUrl !== 'undefined' && originalUrl.includes('/check-uy-tin') ? 'active' : '' %>">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Uy Tín</span>
+    </a>
+
+    <div class="mb-center">
+        <a href="/#nap-the" class="mb-center-btn">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Nạp tiền</span>
+        </a>
+    </div>
+
+    <div class="mb-item" id="open-menu-btn">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Mở Menu</span>
+    </div>
+
+    <a href="/user/profile" class="mb-item <%= typeof originalUrl !== 'undefined' && originalUrl.includes('/user/') ? 'active' : '' %>">
+        <i class="fa-solid fa-circle-user"></i>
+        <span>Cá nhân</span>
+    </a>
+</div>
+
+<div id="mobile-category-overlay" class="category-overlay">
+    
+    <div class="overlay-header">
+        <div class="logo-mini">
+            <span style="font-size: 22px; font-weight: 900; color: #2d3436; font-family: 'Be Vietnam Pro', sans-serif;">
+                <i class="fa-solid fa-bolt" style="color: #e74c3c;"></i> SHOP<span style="color: #e74c3c;"> LQ</span>
+            </span>
+        </div>
+        <div id="close-menu-btn" class="close-btn">
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+    </div>
+
+    <div class="overlay-body" style="overflow-y: auto; padding-bottom: 30px; flex: 1;">
+        
+        <h3 class="overlay-title" style="border-color: #00cec9; color: #00b894;">DỊCH VỤ LIÊN QUÂN</h3>
+        <div class="category-grid">
+            <a href="/tai-khoan" class="cat-card c-muaacc">
+                <div class="cat-icon"><i class="fa-solid fa-store"></i></div>
+                <span>Kho Acc Trắng TT</span>
+            </a>
+
+            <a href="/cay-thue" class="cat-card c-caythue">
+                <div class="cat-icon"><i class="fa-solid fa-khanda"></i></div>
+                <span>Cày Thuê Rank</span>
+            </a>
+
+            <a href="/thue-acc" class="cat-card c-thueacc">
+                <div class="cat-icon"><i class="fa-solid fa-clock"></i></div>
+                <span>Thuê Acc VIP</span>
+            </a>
+
+            <a href="/check-uy-tin" class="cat-card c-checkuytin">
+                <div class="cat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <span>Check Uy Tín Shop</span>
+            </a>
+        </div>
+
+        <h3 class="overlay-title" style="border-color: #e74c3c; color: #c0392b; margin-top: 30px;">GACHA & NHÂN PHẨM</h3>
+        <div class="category-grid">
+            <a href="/gieo-que" class="cat-card c-gieoque">
+                <div class="tag-hot-badge">HOT</div>
+                <div class="cat-icon"><i class="fa-solid fa-yin-yang"></i></div>
+                <span>Gieo Quẻ Đầu Năm</span>
+            </a>
+
+            <a href="/tui-mu" class="cat-card c-tuimu">
+                <div class="cat-icon"><i class="fa-solid fa-gift"></i></div>
+                <span>Túi Mù Liên Quân</span>
+            </a>
+
+            <a href="/san-acc-1d" class="cat-card c-san1d">
+                <div class="cat-icon"><i class="fa-solid fa-bolt"></i></div>
+                <span>Săn Acc 1 Đồng</span>
+            </a>
+            
+            <a href="/minigame" class="cat-card c-vongquay">
+                <div class="cat-icon"><i class="fa-solid fa-rotate"></i></div>
+                <span>Vòng Quay VIP</span>
+            </a>
+
+            <a href="/chung-suc" class="cat-card c-chungsuc">
+                <div class="cat-icon"><i class="fa-solid fa-people-group"></i></div>
+                <span>Lật Thẻ Chung Sức</span>
+            </a>
+
+            <a href="/kho-vip" class="cat-card c-khovip">
+                <div class="cat-icon"><i class="fa-solid fa-gem"></i></div>
+                <span>Kho Đổi Acc VIP</span>
+            </a>
+        </div>
+        
+        <h3 class="overlay-title" style="border-color: #f39c12; color: #d35400; margin-top: 30px;">NẠP THẺ & HỖ TRỢ</h3>
+        <div class="category-grid">
+            <a href="/mua-the" class="cat-card c-muathe">
+                <div class="cat-icon"><i class="fa-solid fa-credit-card"></i></div>
+                <span>Mua Thẻ Giá Rẻ</span>
+            </a>
+
+            <a href="https://zalo.me/<%= typeof settings !== 'undefined' ? settings.admin_zalo : '0392232180' %>" target="_blank" class="cat-card c-checkuytin" style="border-color: #0068ff;">
+                <div class="cat-icon" style="background: linear-gradient(135deg, #0068ff, #00c6ff); box-shadow: 0 4px 10px rgba(0,104,255,0.3);"><i class="fa-solid fa-comment-dots"></i></div>
+                <span style="color: #0068ff;">Chat Zalo Admin</span>
+            </a>
+        </div>
+        
+    </div>
+    
+    <div class="overlay-footer">
+        <p style="margin: 0; font-weight: 700; color: #2d3436;">Hệ Thống Mua Bán Auto Uy Tín Số 1 VN</p>
+        <p style="margin: 5px 0 0 0;">Phát triển bởi ShopLienQuan.Site &copy; 2026</p>
+        <div class="social-links">
+            <a href="#" class="fb"><i class="fa-brands fa-facebook"></i></a>
+            <a href="#" class="yt"><i class="fa-brands fa-youtube"></i></a>
+            <a href="#" class="tt"><i class="fa-brands fa-tiktok"></i></a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Xử lý bật tắt Menu Mượt Mà Trên Mobile
+    const openBtn = document.getElementById('open-menu-btn');
+    const closeBtn = document.getElementById('close-menu-btn');
+    const overlay = document.getElementById('mobile-category-overlay');
+
+    if(openBtn && overlay) {
+        openBtn.addEventListener('click', () => {
+            overlay.classList.add('active');
+            document.body.classList.add('no-scroll'); // Khóa cuộn trang web bên dưới
+        });
+    }
+
+    if(closeBtn && overlay) {
+        closeBtn.addEventListener('click', () => {
+            overlay.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+        });
+    }
+</script>

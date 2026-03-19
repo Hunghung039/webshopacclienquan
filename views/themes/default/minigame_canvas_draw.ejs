@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .draw-bg { background: radial-gradient(circle at center, #1a0b2e, #000); min-height: 100vh; color: #fff; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif;}
+        .glass-box { background: rgba(20, 25, 45, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(241, 196, 15, 0.3); border-radius: 20px; padding: 30px; max-width: 900px; margin: 30px auto 0; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
+        
+        .game-title { font-size: 32px; font-weight: 900; color: #f1c40f; text-transform: uppercase; margin-bottom: 5px; text-shadow: 0 0 20px rgba(241, 196, 15, 0.6);}
+        
+        /* THANH NHÂN PHẨM (PITY SYSTEM) */
+        .pity-container { background: #111; border: 2px solid #00f2c3; border-radius: 30px; height: 25px; width: 100%; max-width: 400px; margin: 20px auto; position: relative; overflow: hidden; box-shadow: 0 0 15px rgba(0, 242, 195, 0.3);}
+        .pity-bar { background: linear-gradient(90deg, #00f2c3, #00b894); height: 100%; width: <%= user ? user.luck_points : 0 %>%; transition: width 0.8s ease-out; }
+        .pity-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; text-shadow: 1px 1px 2px #000; z-index: 2;}
+
+        /* KHU VỰC VẼ BÙA (CANVAS) */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            height: 450px;
+            margin: 20px auto;
+            border-radius: 15px;
+            /* Nền bùa phong cách huyền bí */
+            background: linear-gradient(180deg, #2c0e14, #0a0510), url('https://www.transparenttextures.com/patterns/rice-paper-2.png');
+            background-blend-mode: overlay;
+            border: 2px solid #f1c40f;
+            box-shadow: 0 0 30px rgba(241, 196, 15, 0.2), inset 0 0 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        /* Dòng chữ mờ gợi ý vẽ */
+        .canvas-hint {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: rgba(241, 196, 15, 0.3); font-size: 24px; font-weight: 900;
+            text-transform: uppercase; pointer-events: none; transition: 0.3s;
+        }
+
+        #drawCanvas { width: 100%; height: 100%; cursor: crosshair; position: relative; z-index: 2; }
+
+        /* HIỆU ỨNG BÙA CHÁY (KHI BẤM TRIỆU HỒI) */
+        .canvas-wrapper.burning::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(241,196,15,0.8) 40%, rgba(231,76,60,0.8) 70%, transparent 100%);
+            z-index: 5; animation: burnEffect 1.5s forwards; opacity: 0; pointer-events: none;
+        }
+        @keyframes burnEffect { 0% { opacity: 0; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0; transform: scale(1.5); } }
+
+        /* KẾT QUẢ NỔ RA GIỮA BÙA */
+        .result-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 10; display: none; flex-direction: column;
+            align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s;
+        }
+        .result-overlay.show { display: flex; opacity: 1; animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .result-overlay img { width: 100px; height: 100px; border-radius: 15px; box-shadow: 0 0 30px rgba(241, 196, 15, 0.8); border: 2px solid #fff; margin-bottom: 15px;}
+        .result-overlay .r-name { font-size: 20px; font-weight: 900; color: #f1c40f; text-shadow: 0 2px 5px #000;}
+
+        /* BỘ NÚT ĐIỀU KHIỂN */
+        .control-btns { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .btn-summon { background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000; font-size: 18px; font-weight: 900; padding: 15px 40px; border-radius: 50px; border: none; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(241,196,15,0.4); text-transform: uppercase; }
+        .btn-summon:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 10px 30px rgba(241,196,15,0.6); }
+        .btn-summon:disabled { background: #555; color: #888; cursor: not-allowed; box-shadow: none; transform: scale(1); }
+        
+        .btn-clear { background: transparent; color: #aaa; border: 2px solid #555; padding: 15px 25px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s;}
+        .btn-clear:hover { background: #333; color: #fff; border-color: #fff;}
+
+        /* KHO GIẢI THƯỞNG CHIM MỒI */
+        .prize-pool-grid { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; margin-top: 30px; scrollbar-width: none; }
+        .pool-item { min-width: 100px; background: #1e1e2f; padding: 10px; border-radius: 10px; border: 1px solid #333; text-align: center; flex-shrink: 0; }
+        .pool-item img { width: 40px; height: 40px; border-radius: 5px; margin-bottom: 5px; }
+        .pool-item .p-name { font-size: 11px; font-weight: bold; color: #ccc; height: 28px; overflow: hidden;}
+    </style>
+</head>
+<body class="draw-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+    <%- include('../../includes/modals') %>
+
+    <div class="glass-box">
+        <h1 class="game-title"><%= game.name %></h1>
+        <p style="color: #00f2c3; font-weight: bold; margin-bottom: 10px;">
+            Hao tổn: <%= game.price === 0 ? 'MIỄN PHÍ' : new Intl.NumberFormat('vi-VN').format(game.price) + 'đ' %> / Bùa
+        </p>
+
+        <% if (game.price > 0 && typeof user !== 'undefined') { %>
+            <div class="pity-container">
+                <div class="pity-bar" id="pityBar"></div>
+                <div class="pity-text">Linh Khí (Nhân Phẩm): <span id="pityText"><%= user.luck_points %></span>/100</div>
+            </div>
+        <% } %>
+
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <div class="canvas-hint" id="canvasHint">Vẽ Ký Tự Bất Kỳ</div>
+            
+            <canvas id="drawCanvas"></canvas>
+            
+            <div class="result-overlay" id="resultOverlay">
+                <img src="" id="resImg" alt="Phần Thưởng">
+                <div class="r-name" id="resText">...</div>
+            </div>
+        </div>
+
+        <div class="control-btns">
+            <button class="btn-clear" id="btnClear" onclick="clearCanvas()">Tẩy Xóa</button>
+            <button class="btn-summon" id="btnSummon" onclick="summonMagic()" disabled>TRIỆU HỒI</button>
+        </div>
+
+        <div class="prize-pool-grid">
+            <% prizes.forEach(p => { %>
+                <div class="pool-item" style="<%= p.is_special ? 'border-color: #f1c40f; box-shadow: 0 0 10px rgba(241,196,15,0.2);' : '' %>">
+                    <img src="<%= p.image_url %>" alt="<%= p.name %>">
+                    <div class="p-name"><%= p.name %></div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        const gameId = <%= game.id %>;
+        let isProcessing = false;
+        let hasDrawn = false;
+
+        // ==========================================
+        // KHỞI TẠO CANVAS (BÚT VẼ ÁNH SÁNG VÀNG)
+        // ==========================================
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvasWrapper');
+
+        // Setup kích thước thật cho canvas (fix lỗi nhòe nét)
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Cấu hình nét bút ma thuật
+        ctx.strokeStyle = '#f1c40f'; // Màu vàng hoàng kim
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#e67e22';
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Hỗ trợ cả chuột (clientX) và cảm ứng điện thoại (touches[0])
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            if (isProcessing) return;
+            isDrawing = true;
+            const pos = getMousePos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            
+            // Ẩn chữ gợi ý và bật nút Triệu hồi
+            document.getElementById('canvasHint').style.opacity = '0';
+            hasDrawn = true;
+            document.getElementById('btnSummon').disabled = false;
+        }
+
+        function draw(e) {
+            if (!isDrawing || isProcessing) return;
+            e.preventDefault(); // Chặn cuộn màn hình khi đang vẽ trên điện thoại
+
+            const pos = getMousePos(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // Gắn sự kiện Chuột
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Gắn sự kiện Cảm ứng (Mobile)
+        canvas.addEventListener('touchstart', startDrawing, {passive: false});
+        canvas.addEventListener('touchmove', draw, {passive: false});
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // HÀM TẨY XÓA BÙA
+        function clearCanvas() {
+            if (isProcessing) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('canvasHint').style.opacity = '1';
+            document.getElementById('btnSummon').disabled = true;
+            hasDrawn = false;
+            
+            // Tắt overlay kết quả nếu có
+            document.getElementById('resultOverlay').classList.remove('show');
+            wrapper.classList.remove('burning');
+            
+            // Khôi phục nút
+            document.getElementById('btnSummon').innerText = "TRIỆU HỒI";
+            document.getElementById('btnClear').style.display = "block";
+        }
+
+        // ==========================================
+        // GỌI API TRIỆU HỒI (RÚT GIẢI)
+        // ==========================================
+        async function summonMagic() {
+            if (!hasDrawn || isProcessing) return;
+
+            const isLogged = <%= typeof user !== 'undefined' && user ? 'true' : 'false' %>;
+            if(!isLogged) {
+                if(typeof showToast === 'function') showToast("Vui lòng đăng nhập để triệu hồi!", "error");
+                else alert("Vui lòng đăng nhập!");
+                setTimeout(() => window.location.href = '/auth/login', 1500);
+                return;
+            }
+
+            isProcessing = true;
+            document.getElementById('btnSummon').disabled = true;
+            document.getElementById('btnClear').style.display = 'none'; // Ẩn nút xóa đi
+            document.getElementById('btnSummon').innerText = "ĐANG TỤ LINH KHÍ...";
+
+            try {
+                // Rút phép - Gọi API
+                const res = await fetch('/minigame/play', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ game_id: gameId })
+                });
+
+                const data = await res.json();
+
+                if(!data.success) {
+                    if(typeof showToast === 'function') showToast(data.message, "error");
+                    else alert(data.message);
+                    clearCanvas();
+                    isProcessing = false;
+                    return;
+                }
+
+                // CÓ KẾT QUẢ -> THỰC THI HIỆU ỨNG BÙA CHÁY XỊN XÒ
+                wrapper.classList.add('burning');
+                document.getElementById('btnSummon').innerText = "PHÁT QUANG...";
+
+                // Chờ bùa cháy 1 giây rồi nổ kết quả ra giữa
+                setTimeout(() => {
+                    const overlay = document.getElementById('resultOverlay');
+                    document.getElementById('resImg').src = data.prize.image;
+                    document.getElementById('resText').innerText = data.prize.name;
+                    overlay.classList.add('show');
+
+                    // Update thanh nhân phẩm
+                    if(document.getElementById('pityText')) {
+                        document.getElementById('pityText').innerText = data.new_luck;
+                        document.getElementById('pityBar').style.width = data.new_luck + '%';
+                        if(data.pity_hit) {
+                            if(typeof showToast === 'function') showToast("💥 NỔ HŨ NHÂN PHẨM 100 ĐIỂM! 💥", "success");
+                        }
+                    }
+
+                    if(typeof showToast === 'function') showToast(`Triệu hồi thành công: ${data.prize.name}`, "success");
+                    
+                    document.getElementById('btnSummon').innerText = "VẼ BÙA MỚI";
+                    document.getElementById('btnSummon').disabled = false;
+                    document.getElementById('btnSummon').onclick = clearCanvas; // Biến nút thành nút làm mới
+                    isProcessing = false;
+                }, 1000);
+
+            } catch (err) {
+                if(typeof showToast === 'function') showToast("Lỗi mạng! Vui lòng thử lại", "error");
+                clearCanvas();
+                isProcessing = false;
+            }
+        }
+    </script>
+</body>
+</html>

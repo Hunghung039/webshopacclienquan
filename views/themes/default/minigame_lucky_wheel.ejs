@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .wheel-bg { background: url('https://shoplienquan.site/images/vault-bg.jpg') no-repeat center center fixed; background-size: cover; min-height: 100vh; color: #fff; padding-bottom: 50px; font-family: 'Be Vietnam Pro', sans-serif;}
+        .glass-box { background: rgba(20, 25, 45, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; max-width: 900px; margin: 30px auto 0; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
+        
+        .game-title { font-size: 32px; font-weight: 900; color: #f1c40f; text-transform: uppercase; margin-bottom: 5px; text-shadow: 0 0 15px rgba(241, 196, 15, 0.5);}
+        
+        /* THANH NHÂN PHẨM (PITY SYSTEM) */
+        .pity-container { background: #111; border: 2px solid #e14eca; border-radius: 30px; height: 25px; width: 100%; max-width: 400px; margin: 20px auto; position: relative; overflow: hidden; box-shadow: 0 0 15px rgba(225, 78, 202, 0.3);}
+        .pity-bar { background: linear-gradient(90deg, #e14eca, #f1c40f); height: 100%; width: <%= user ? user.luck_points : 0 %>%; transition: width 0.8s ease-out; }
+        .pity-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; text-shadow: 1px 1px 2px #000; z-index: 2;}
+
+        /* CSS VÒNG QUAY TỰ ĐỘNG CHIA LÁT CẮT */
+        .wheel-wrapper { position: relative; width: 350px; height: 350px; margin: 40px auto; }
+        
+        <% 
+            // Tự động sinh mã màu CSS cho vòng quay dựa trên số giải thưởng sếp nạp vào
+            let gradient = [];
+            let degPerSlice = 360 / prizes.length;
+            let colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#34495e', '#16a085'];
+            prizes.forEach((p, i) => {
+                let start = i * degPerSlice;
+                let end = (i + 1) * degPerSlice;
+                let color = colors[i % colors.length];
+                gradient.push(`${color} ${start}deg ${end}deg`);
+            });
+        %>
+        
+        .wheel { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #fff; box-shadow: 0 0 30px rgba(241,196,15,0.6), inset 0 0 20px rgba(0,0,0,0.5); transition: transform 4s cubic-bezier(0.175, 0.885, 0.32, 1.05); /* Hiệu ứng xoay cực phê */
+                 background: conic-gradient(<%- gradient.join(', ') %>); position: relative; overflow: hidden; }
+        
+        .wheel-slice { position: absolute; top: 50%; left: 50%; width: 50%; height: 20px; margin-top: -10px; transform-origin: 0 50%; color: #fff; font-weight: 800; font-size: 13px; text-shadow: 1px 1px 3px #000; display: flex; align-items: center; justify-content: flex-end; padding-right: 15px; box-sizing: border-box; }
+        .wheel-slice img { width: 25px; height: 25px; border-radius: 5px; margin-left: 8px; border: 1px solid #fff;}
+
+        /* Kim chỉ nhọn */
+        .pointer { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 40px; height: 50px; background: url('https://cdn-icons-png.flaticon.com/512/2874/2874130.png') no-repeat center center; background-size: contain; z-index: 10; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));}
+        
+        /* Cục tròn ở giữa */
+        .center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: radial-gradient(circle, #fff, #ddd); border-radius: 50%; z-index: 5; box-shadow: 0 0 15px rgba(0,0,0,0.5); border: 4px solid #333;}
+
+        .btn-spin { background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000; font-size: 20px; font-weight: 900; padding: 15px 40px; border-radius: 50px; border: none; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(241,196,15,0.4); text-transform: uppercase; margin-top: 20px; }
+        .btn-spin:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(241,196,15,0.6); }
+        .btn-spin:disabled { background: #555; color: #888; cursor: not-allowed; box-shadow: none; transform: scale(1); }
+
+        @media (max-width: 768px) { .wheel-wrapper { width: 280px; height: 280px; } .wheel-slice { font-size: 10px; } .wheel-slice img { width: 18px; height: 18px; } .game-title { font-size: 24px;} }
+    </style>
+</head>
+<body class="wheel-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+    <%- include('../../includes/modals') %> <div class="glass-box">
+        <h1 class="game-title"><%= game.name %></h1>
+        <p style="color: #00f2c3; font-weight: bold; margin-bottom: 20px;">
+            Giá: <%= game.price === 0 ? 'MIỄN PHÍ' : new Intl.NumberFormat('vi-VN').format(game.price) + 'đ' %> / Lượt
+        </p>
+
+        <% if (game.price > 0 && typeof user !== 'undefined') { %>
+            <div class="pity-container">
+                <div class="pity-bar" id="pityBar"></div>
+                <div class="pity-text">Thanh Nhân Phẩm: <span id="pityText"><%= user.luck_points %></span>/100</div>
+            </div>
+            <p style="font-size: 11px; color: #a0aec0; margin-top: -15px;">(Đạt 100 điểm chắc chắn quay trúng Giải Đặc Biệt)</p>
+        <% } %>
+
+        <div class="wheel-wrapper">
+            <div class="pointer"></div>
+            <div class="wheel" id="wheel">
+                <% prizes.forEach((p, i) => { 
+                    // Góc xoay để đặt chữ nằm giữa lát cắt
+                    let rotateDeg = (i * degPerSlice) + (degPerSlice / 2) - 90; 
+                %>
+                    <div class="wheel-slice" style="transform: rotate(<%= rotateDeg %>deg);">
+                        <%= p.name.substring(0, 15) %>... 
+                        <img src="<%= p.image_url %>" alt="<%= p.name %>">
+                    </div>
+                <% }) %>
+            </div>
+            <div class="center-dot"></div>
+        </div>
+
+        <button class="btn-spin" id="btnSpin" onclick="startSpin()">QUAY NGAY</button>
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        // DỮ LIỆU TỪ BACKEND
+        const gameId = <%= game.id %>;
+        const totalPrizes = <%= prizes.length %>;
+        const degPerSlice = 360 / totalPrizes;
+        
+        let currentRotation = 0;
+        let isSpinning = false;
+
+        async function startSpin() {
+            const isLogged = <%= typeof user !== 'undefined' && user ? 'true' : 'false' %>;
+            if(!isLogged) {
+                if(typeof showToast === 'function') showToast("Vui lòng đăng nhập để quay thưởng!", "error");
+                else alert("Vui lòng đăng nhập!");
+                setTimeout(() => window.location.href = '/auth/login', 1500);
+                return;
+            }
+
+            if(isSpinning) return;
+            isSpinning = true;
+            const btn = document.getElementById('btnSpin');
+            btn.disabled = true;
+            btn.innerText = "ĐANG QUAY...";
+
+            try {
+                // 1. GỌI API QUAY THƯỞNG
+                const res = await fetch('/minigame/play', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ game_id: gameId })
+                });
+
+                const data = await res.json();
+
+                if(!data.success) {
+                    if(typeof showToast === 'function') showToast(data.message, "error");
+                    else alert(data.message);
+                    isSpinning = false;
+                    btn.disabled = false;
+                    btn.innerText = "QUAY NGAY";
+                    return;
+                }
+
+                // 2. TÌM VỊ TRÍ GIẢI TRÚNG ĐỂ TÍNH GÓC XOAY
+                // Trick: Lấy mảng ID giải từ HTML EJS truyền ra mảng JS
+                const prizeIds = [<%- prizes.map(p => p.id).join(',') %>];
+                const winningIndex = prizeIds.indexOf(data.prize.id);
+                
+                // Thuật toán tính góc dừng (Pointer nằm ở hướng 12h = -90deg so với CSS 0deg)
+                // Cần quay lùi lại góc của ô trúng thưởng
+                // Random thêm 1 góc nhỏ trong nội bộ lát cắt để nhìn tự nhiên hơn
+                const randomOffset = Math.floor(Math.random() * (degPerSlice - 4)) + 2; 
+                const stopAngle = 360 - (winningIndex * degPerSlice) - randomOffset;
+
+                // Cộng thêm 3600 độ (10 vòng) để quay cho tít
+                currentRotation += 3600 + stopAngle; 
+                
+                // Tính bù sai số nếu lần quay trước bị lẻ vòng
+                const remainder = currentRotation % 360;
+                currentRotation += (stopAngle - remainder);
+
+                // 3. THỰC THI HIỆU ỨNG XOAY CSS
+                const wheel = document.getElementById('wheel');
+                wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+                // 4. CHỜ 4 GIÂY KHI VÒNG QUAY DỪNG HẲN MỚI HIỆN KẾT QUẢ
+                setTimeout(() => {
+                    // Update thanh nhân phẩm
+                    if(document.getElementById('pityText')) {
+                        document.getElementById('pityText').innerText = data.new_luck;
+                        document.getElementById('pityBar').style.width = data.new_luck + '%';
+                        if(data.pity_hit) {
+                            if(typeof showToast === 'function') showToast("💥 NỔ HŨ NHÂN PHẨM 100 ĐIỂM! 💥", "success");
+                        }
+                    }
+
+                    // Thông báo giải thưởng
+                    alert(`🎉 Chúc mừng bạn trúng: ${data.prize.name}`);
+                    
+                    isSpinning = false;
+                    btn.disabled = false;
+                    btn.innerText = "QUAY TIẾP";
+                }, 4000); // 4000ms = 4 giây bằng với time transition CSS
+
+            } catch (err) {
+                if(typeof showToast === 'function') showToast("Lỗi mạng! Vui lòng thử lại", "error");
+                isSpinning = false;
+                btn.disabled = false;
+                btn.innerText = "QUAY NGAY";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', { title: title, description: description, image: image }) %>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "<%= article.title %>",
+      "image": "https://shoplienquan.site<%= article.thumbnail %>",
+      "datePublished": "<%= new Date(article.created_at).toISOString() %>",
+      "dateModified": "<%= new Date(article.created_at).toISOString() %>",
+      "author": [{ "@type": "Organization", "name": "Shop Gen Z" }]
+    }
+    </script>
+
+    <style>
+        .article-wrapper { background: #fff; border-radius: 15px; padding: 40px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin: 30px 0; }
+        
+        /* Mobile responsive padding */
+        @media (max-width: 768px) {
+            .article-wrapper { padding: 20px; margin: 15px 0; }
+            .article-title { font-size: 24px !important; }
+        }
+
+        .breadcrumb { font-size: 13px; margin-bottom: 20px; color: #636e72; }
+        .breadcrumb a { color: var(--primary); text-decoration: none; font-weight: bold; transition: 0.2s; }
+        .breadcrumb a:hover { color: #d63031; }
+        
+        .article-title { font-size: 32px; font-weight: 900; color: #2d3436; margin-bottom: 15px; line-height: 1.3; }
+        .article-meta { display: flex; flex-wrap: wrap; gap: 15px; font-size: 14px; color: #888; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        
+        /* Box Mục lục tự động */
+        .toc-box { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 30px; }
+        .toc-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; color: #2d3436; }
+        #toc-list { list-style: none; padding-left: 0; margin: 0; }
+        #toc-list li { margin-bottom: 8px; }
+        #toc-list a { color: var(--primary); text-decoration: none; font-size: 15px; transition: 0.2s; }
+        #toc-list a:hover { text-decoration: underline; }
+
+        /* Style cho nội dung bài viết HTML */
+        .article-content { line-height: 1.8; font-size: 16px; color: #333; overflow-x: hidden; }
+        .article-content h2 { color: var(--primary); margin: 30px 0 15px; font-size: 24px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .article-content h3 { color: #2d3436; margin: 25px 0 10px; font-size: 20px; }
+        .article-content img { max-width: 100%; height: auto; border-radius: 10px; margin: 20px auto; display: block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .article-content a { color: var(--primary); font-weight: bold; text-decoration: underline; }
+        
+        /* Box chia sẻ bài viết */
+        .share-box { margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; display: flex; align-items: center; gap: 15px; }
+        .share-btn { padding: 8px 15px; border-radius: 5px; color: #fff; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.3s; }
+        .share-btn.fb { background: #1877F2; }
+        .share-btn.fb:hover { background: #166fe5; }
+        .share-btn.zl { background: #0068FF; }
+        .share-btn.zl:hover { background: #005ce6; }
+
+        /* Bài viết liên quan */
+        .related-section { margin-top: 40px; }
+        .related-title { font-size: 22px; font-weight: 800; margin-bottom: 20px; border-left: 4px solid var(--primary); padding-left: 10px; color: #2d3436; }
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .related-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.05); text-decoration: none; color: inherit; transition: 0.3s; border: 1px solid #f0f0f0; display: flex; flex-direction: column; height: 100%; }
+        .related-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-color: var(--primary); }
+        .related-img { width: 100%; height: 140px; object-fit: cover; }
+        .related-info { padding: 15px; flex: 1; }
+        .related-h4 { margin: 0; font-size: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #2d3436; }
+    </style>
+</head>
+<body>
+
+    <%- include('../../includes/ui-common') %>
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container">
+        <div class="article-wrapper">
+            <div class="breadcrumb">
+                <a href="/"><i class="fa-solid fa-house"></i> Trang Chủ</a> <i class="fa-solid fa-angle-right" style="margin: 0 10px; font-size: 12px;"></i> 
+                <a href="/tin-tuc">Tin Tức</a> <i class="fa-solid fa-angle-right" style="margin: 0 10px; font-size: 12px;"></i> 
+                <span><%= article.title %></span>
+            </div>
+
+            <h1 class="article-title"><%= article.title %></h1>
+            <div class="article-meta">
+                <span><i class="fa-solid fa-calendar-days"></i> <%= new Date(article.created_at).toLocaleDateString('vi-VN') %></span>
+                <span><i class="fa-solid fa-eye"></i> <%= article.views || 0 %> lượt xem</span>
+                <% if(article.tags) { %>
+                    <span><i class="fa-solid fa-tags"></i> <%= article.tags %></span>
+                <% } %>
+            </div>
+
+            <div class="toc-box" id="toc-container" style="display: none;">
+                <div class="toc-title"><i class="fa-solid fa-list"></i> Mục lục bài viết</div>
+                <ul id="toc-list"></ul>
+            </div>
+
+            <div class="article-content" id="article-content">
+                <%- article.content %>
+            </div>
+
+            <div class="share-box">
+                <span style="font-weight: bold; color: #2d3436;">Chia sẻ bài viết:</span>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=https://shoplienquan.site/tin-tuc/<%= article.slug %>" target="_blank" class="share-btn fb">
+                    <i class="fa-brands fa-facebook"></i> Facebook
+                </a>
+                <a href="https://zalo.me/share?url=https://shoplienquan.site/tin-tuc/<%= article.slug %>" target="_blank" class="share-btn zl">
+                    <i class="fa-solid fa-comment-dots"></i> Zalo
+                </a>
+            </div>
+        </div>
+
+        <% if (relatedArticles && relatedArticles.length > 0) { %>
+            <div class="related-section">
+                <h3 class="related-title">Bài viết cùng chuyên mục</h3>
+                <div class="related-grid">
+                    <% relatedArticles.forEach(r => { %>
+                        <a href="/tin-tuc/<%= r.slug %>" class="related-card">
+                            <img src="<%= r.thumbnail %>" alt="<%= r.title %>" class="related-img">
+                            <div class="related-info">
+                                <h4 class="related-h4"><%= r.title %></h4>
+                                <div style="font-size: 12px; color: #888; margin-top: 10px;">
+                                    <i class="fa-regular fa-clock"></i> <%= new Date(r.created_at).toLocaleDateString('vi-VN') %>
+                                </div>
+                            </div>
+                        </a>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+    </main>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/scripts') %>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Logic tạo Mục lục tự động
+            const content = document.getElementById('article-content');
+            const tocList = document.getElementById('toc-list');
+            const tocContainer = document.getElementById('toc-container');
+            
+            const headings = content.querySelectorAll('h2, h3');
+            
+            if (headings.length > 0) {
+                tocContainer.style.display = 'block'; 
+                
+                headings.forEach((heading, index) => {
+                    const id = 'muc-' + index;
+                    heading.id = id;
+                    
+                    const li = document.createElement('li');
+                    li.style.marginLeft = heading.tagName === 'H3' ? '20px' : '0';
+                    
+                    const a = document.createElement('a');
+                    a.href = '#' + id;
+                    a.textContent = heading.textContent;
+                    
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // Cộng thêm offset trừ đi thanh Header cố định (nếu có)
+                        const y = heading.getBoundingClientRect().top + window.scrollY - 80;
+                        window.scrollTo({top: y, behavior: 'smooth'});
+                    });
+
+                    li.appendChild(a);
+                    tocList.appendChild(li);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

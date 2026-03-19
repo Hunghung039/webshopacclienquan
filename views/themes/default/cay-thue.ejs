@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .ct-header { background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)), url('https://lienquan.garena.vn/files/skin/7b4f5b5f2b8b9f7f4a5c5d6e7f8a9b0c.jpg') center/cover; padding: 60px 20px; text-align: center; border-radius: 20px; margin-top: 20px; color: #fff; border: 2px solid var(--warning);}
+        .ct-title { font-size: 32px; font-weight: 900; text-transform: uppercase; color: var(--warning); margin-bottom: 10px;}
+        
+        /* BẢNG GIÁ CSS TỐI ƯU PC VÀ MOBILE */
+        .rank-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); /* PC mặc định 5 cột */
+            gap: 15px; 
+            margin-top: 30px;
+        }
+        .rank-card { 
+            background: #1a1a2e; border-radius: 12px; padding: 20px 10px; text-align: center; border: 1px solid #333; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: 0.3s;
+        }
+        .rank-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .rank-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;}
+        .rank-price { font-size: 18px; font-weight: 900; color: var(--warning);}
+        .rank-title-txt { font-size: 14px; font-weight: 700; color: #fff; margin: 0 0 5px 0;}
+        
+        .card-kc { border-bottom: 3px solid #3498db;} 
+        .card-ta { border-bottom: 3px solid #e67e22;} 
+        .card-ct1 { border-bottom: 3px solid #f1c40f;} 
+        .card-ct20 { border-bottom: 3px solid #ff9f43;} 
+        .card-ct40 { border-bottom: 3px solid #ff4757;}
+
+        .warning-box { background: rgba(231, 76, 60, 0.1); border: 2px dashed var(--danger); padding: 20px; border-radius: 12px; margin-top: 40px;}
+        .warning-title { color: var(--danger); font-size: 18px; font-weight: 900; margin-top: 0; display: flex; align-items: center; gap: 10px;}
+        .warning-list { color: var(--dark); font-size: 14px; font-weight: 600; padding-left: 20px;}
+
+        .book-form { background: #fff; padding: 30px; border-radius: 15px; box-shadow: var(--shadow-md); margin-top: 20px; border-top: 5px solid var(--primary);}
+        .form-label { font-weight: bold; color: var(--dark); font-size: 13px; display: block; margin-bottom: 5px;}
+        .form-control { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; background: #f8f9fa; color: #333;}
+        
+        .rank-select-group { display: flex; gap: 10px; background: rgba(52, 152, 219, 0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.2); margin-bottom: 15px;}
+        .price-box { background: #fffbf0; border: 2px dashed var(--warning); padding: 15px; border-radius: 8px; text-align: center; font-size: 26px; font-weight: 900; color: var(--danger); margin-bottom: 15px;}
+        .btn-submit { width: 100%; background: linear-gradient(45deg, #00b894, #00cec9); color: #fff; padding: 15px; border-radius: 8px; border: none; font-size: 16px; font-weight: 900; cursor: pointer; text-transform: uppercase;}
+        
+        /* BẢNG VÀNG SHOW HÀNG */
+        .live-orders { background: #fff; padding: 30px; border-radius: 15px; margin-top: 40px; box-shadow: var(--shadow-md); border-top: 5px solid var(--warning);}
+        .lo-item { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee; display: flex; flex-direction: column; gap: 10px;}
+        .lo-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #ddd; padding-bottom: 10px;}
+        
+        .status-pending { color: #888; font-weight: bold; background: #eee; padding: 5px 12px; border-radius: 20px; font-size: 12px;}
+        .status-running { color: var(--warning); font-weight: bold; background: rgba(241, 196, 15, 0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px;}
+        .status-completed { color: var(--success); font-weight: bold; background: rgba(0, 184, 148, 0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px;}
+        
+        .proof-gallery { display: flex; gap: 10px; overflow-x: auto; padding-top: 10px; }
+        .proof-img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid var(--primary); cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+        .proof-img:hover { transform: scale(1.1); }
+
+        /* Zoom ảnh */
+        #imgModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; cursor: zoom-out;}
+        #imgModal img { max-width: 90%; max-height: 90vh; border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid var(--warning);}
+
+        /* RESPONSIVE CHO MOBILE (Gọn gàng) */
+        @media (max-width: 768px) {
+            .ct-title { font-size: 24px; }
+            .ct-header { padding: 40px 15px; }
+            
+            /* Chuyển Grid thành Vuốt ngang (Scroll) trên Mobile */
+            .rank-grid { 
+                display: flex; 
+                overflow-x: auto; 
+                scroll-snap-type: x mandatory; 
+                padding-bottom: 15px; 
+                -webkit-overflow-scrolling: touch; 
+            }
+            .rank-card { 
+                flex: 0 0 160px; /* Chiều rộng cố định cho mỗi thẻ trên mobile */
+                scroll-snap-align: start; 
+            }
+            /* Ẩn thanh cuộn xấu xí */
+            .rank-grid::-webkit-scrollbar { display: none; }
+            
+            .book-form { padding: 20px 15px; }
+            .form-row-mobile { flex-direction: column; gap: 0; }
+            .rank-select-group { flex-direction: column; gap: 10px; padding: 10px;}
+            .live-orders { padding: 20px 15px; }
+            .lo-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <%- include('../../includes/ui-common') %>
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container">
+        <div class="ct-header">
+            <h1 class="ct-title">CÀY THUÊ RANK - MÙA <%= season %></h1>
+            <p style="font-weight: 600; opacity: 0.9;">100% Cày Tay Bằng Kỹ Năng Thực Sự. Bảo Mật An Toàn Tuyệt Đối.</p>
+        </div>
+
+        <div class="rank-grid">
+            <% settings.forEach(s => { %>
+                <div class="rank-card <%= s.css_class %>">
+                    <img src="<%= s.image_url %>" class="rank-img" loading="lazy">
+                    <h3 class="rank-title-txt"><%= s.tier_name %></h3>
+                    <div class="rank-price"><%= new Intl.NumberFormat('vi-VN').format(s.price_per_star) %>đ <span style="font-size:11px;color:#aaa;">/ Sao</span></div>
+                </div>
+            <% }) %>
+        </div>
+
+        <div class="warning-box">
+            <h3 class="warning-title"><i class="fa-solid fa-triangle-exclamation"></i> LƯU Ý QUAN TRỌNG TRƯỚC KHI GIAO ACC</h3>
+            <ul class="warning-list">
+                <li>Vui lòng <b>cập nhật đầy đủ thông tin bảo mật (SĐT, Email)</b> vào tài khoản trước khi giao cho Shop.</li>
+                <li>Shop cam kết 100% đội ngũ Cao Thủ cày tay đi đơn, <b>KHÔNG SỬ DỤNG hack map, buff bẩn</b>.</li>
+                <li>Trong quá trình Shop đang cày, tuyệt đối <b>KHÔNG</b> đăng nhập vào game để tránh làm văng acc.</li>
+            </ul>
+        </div>
+
+        <div class="book-form">
+            <h2 style="margin-top:0; color:var(--dark);"><i class="fa-solid fa-file-signature"></i> ĐIỀN THÔNG TIN ĐẶT ĐƠN</h2>
+            <form id="boostForm">
+                <div style="display: flex; gap: 15px;" class="form-row-mobile">
+                    <div style="flex: 1;">
+                        <label class="form-label">Loại Đăng Nhập</label>
+                        <select name="login_type" class="form-control">
+                            <option value="Garena">Tài khoản Garena</option>
+                            <option value="Facebook">Tài khoản Facebook</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="form-label">Lưu ý (Giờ cày, Tướng tủ...)</label>
+                        <input type="text" name="note" class="form-control" placeholder="VD: Khung giờ cày, Tướng tủ...">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px;" class="form-row-mobile">
+                    <div style="flex: 1;">
+                        <label class="form-label">Tài Khoản (Tên đăng nhập / SĐT)</label>
+                        <input type="text" name="account_user" class="form-control" placeholder="Nhập tài khoản..." required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="form-label">Mật Khẩu</label>
+                        <input type="text" name="account_pass" class="form-control" placeholder="Nhập mật khẩu..." required>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 15px; color: var(--primary); margin-top: 10px;">1. Rank Hiện Tại Của Bạn</h3>
+                <div class="rank-select-group">
+                    <select name="current_group" id="current_group" class="form-control" style="margin:0;" onchange="toggleTier('current'); calcPrice();">
+                        <option value="kimcuong">Kim Cương</option>
+                        <option value="tinhanh">Tinh Anh</option>
+                        <option value="caothu">Cao Thủ</option>
+                    </select>
+                    <select name="current_tier" id="current_tier" class="form-control" style="margin:0;" onchange="calcPrice()">
+                        <option value="5">Bậc V</option><option value="4">Bậc IV</option><option value="3">Bậc III</option><option value="2">Bậc II</option><option value="1">Bậc I</option>
+                    </select>
+                    <input type="number" name="current_stars" id="current_stars" class="form-control" style="margin:0;" placeholder="Nhập số sao (VD: 2)" required min="0" oninput="calcPrice()">
+                </div>
+
+                <h3 style="font-size: 15px; color: var(--danger);">2. Rank Mong Muốn Đạt Đến</h3>
+                <div class="rank-select-group" style="background: rgba(231, 76, 60, 0.05); border-color: rgba(231, 76, 60, 0.2);">
+                    <select name="target_group" id="target_group" class="form-control" style="margin:0;" onchange="toggleTier('target'); calcPrice();">
+                        <option value="kimcuong">Kim Cương</option>
+                        <option value="tinhanh" selected>Tinh Anh</option>
+                        <option value="caothu">Cao Thủ / Chiến Tướng</option>
+                    </select>
+                    <select name="target_tier" id="target_tier" class="form-control" style="margin:0;" onchange="calcPrice()">
+                        <option value="5">Bậc V</option><option value="4">Bậc IV</option><option value="3">Bậc III</option><option value="2">Bậc II</option><option value="1" selected>Bậc I</option>
+                    </select>
+                    <input type="number" name="target_stars" id="target_stars" class="form-control" style="margin:0;" placeholder="Nhập số sao (VD: 10)" required min="0" oninput="calcPrice()">
+                </div>
+
+                <input type="hidden" name="total_price" id="hidden_price" value="0">
+                <div class="price-box" id="display_price">Hóa đơn: 0đ</div>
+
+                <% if(user) { %>
+                    <button type="submit" class="btn-submit" id="btnBook">ĐỒNG Ý LƯU Ý & XÁC NHẬN ĐẶT ĐƠN</button>
+                <% } else { %>
+                    <a href="/auth/login" class="btn-submit" style="display:block; text-align:center; text-decoration:none; background:#333;">ĐĂNG NHẬP ĐỂ ĐẶT ĐƠN</a>
+                <% } %>
+            </form>
+        </div>
+
+        <div class="live-orders">
+            <h2 style="color:var(--dark); margin-top:0; font-size: 20px; text-transform: uppercase; text-align: center;"><i class="fa-solid fa-trophy" style="color: var(--warning);"></i> BẢNG VÀNG ĐƠN MÙA <%= season %></h2>
+            <p style="text-align: center; color: #888; font-size: 13px;">Hệ thống cập nhật liên tục tiến độ các đơn hàng đang được cày tay.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 25px;">
+                <% liveOrders.forEach(o => { %>
+                    <div class="lo-item">
+                        <div class="lo-header">
+                            <div>
+                                <div style="font-weight:900; color:var(--dark); font-size:15px;">
+                                    <i class="fa-solid fa-khanda" style="color: var(--primary);"></i> Hành trình: <%= o.current_rank %> <i class="fa-solid fa-arrow-right" style="color: var(--danger);"></i> <%= o.target_rank %>
+                                </div>
+                                <div style="font-size:12px; color:#666; margin-top: 5px;">Tướng xử lý: <b style="color:var(--primary)"><%= o.hero_used %></b></div>
+                            </div>
+                            <div class="<%= o.status === 'completed' ? 'status-completed' : (o.status === 'running' ? 'status-running' : 'status-pending') %>">
+                                <% if(o.status === 'completed') { %> <i class="fa-solid fa-check-circle"></i> Đã Xong 
+                                <% } else if(o.status === 'running') { %> <i class="fa-solid fa-fire"></i> Đang Cày 
+                                <% } else { %> <i class="fa-solid fa-clock"></i> Đang Chờ <% } %>
+                            </div>
+                        </div>
+
+                        <% if (o.proof_images && o.proof_images.trim() !== '') { %>
+                            <div style="font-size: 11px; font-weight: bold; color: var(--success); margin-top: 5px;"><i class="fa-solid fa-image"></i> Bằng chứng kết quả:</div>
+                            <div class="proof-gallery">
+                                <% 
+                                    let imgs = o.proof_images.split(','); 
+                                    imgs.forEach(img => { 
+                                %>
+                                    <img src="<%= img.trim() %>" class="proof-img" onclick="zoomImg(this.src)" onerror="this.style.display='none'">
+                                <% }) %>
+                            </div>
+                        <% } %>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </main>
+
+    <div id="imgModal" onclick="this.style.display='none'">
+        <img id="modalContent" src="">
+    </div>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/scripts') %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function zoomImg(src) {
+            document.getElementById('modalContent').src = src;
+            document.getElementById('imgModal').style.display = 'flex';
+        }
+
+        const priceMap = {};
+        <% settings.forEach(s => { %> priceMap['<%= s.tier_key %>'] = <%= s.price_per_star %>; <% }) %>
+
+        function toggleTier(type) {
+            const group = document.getElementById(type + '_group').value;
+            const tierSelect = document.getElementById(type + '_tier');
+            if (group === 'caothu') { tierSelect.style.display = 'none'; tierSelect.value = '1'; } 
+            else { tierSelect.style.display = 'block'; }
+        }
+
+        function getAbsoluteStars(group, tier, stars) {
+            let base = 0; tier = parseInt(tier) || 5; stars = parseInt(stars) || 0;
+            if (group === 'kimcuong') base = (5 - tier) * 5;
+            else if (group === 'tinhanh') base = 25 + (5 - tier) * 5;
+            else if (group === 'caothu') base = 50;
+            return base + stars;
+        }
+
+        function calcPrice() {
+            const cGroup = document.getElementById('current_group').value;
+            const cTier = document.getElementById('current_tier').value;
+            const cStars = document.getElementById('current_stars').value;
+            const tGroup = document.getElementById('target_group').value;
+            const tTier = document.getElementById('target_tier').value;
+            const tStars = document.getElementById('target_stars').value;
+
+            if(cStars === '' || tStars === '') return;
+
+            const start = getAbsoluteStars(cGroup, cTier, cStars);
+            const end = getAbsoluteStars(tGroup, tTier, tStars);
+
+            if (start >= end) {
+                document.getElementById('display_price').innerText = 'Lỗi: Rank đích phải cao hơn hiện tại!';
+                document.getElementById('hidden_price').value = 0;
+                return;
+            }
+
+            let total = 0;
+            for (let i = start; i < end; i++) {
+                if (i < 25) total += priceMap['kim_cuong'];
+                else if (i < 50) total += priceMap['tinh_anh'];
+                else if (i < 70) total += priceMap['cao_thu_1_20'];
+                else if (i < 90) total += priceMap['cao_thu_20_40'];
+                else total += priceMap['cao_thu_40_50'];
+            }
+            
+            document.getElementById('hidden_price').value = total;
+            document.getElementById('display_price').innerText = 'Hóa đơn: ' + new Intl.NumberFormat('vi-VN').format(total) + 'đ';
+        }
+
+        document.getElementById('boostForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const total = document.getElementById('hidden_price').value;
+            if(total <= 0) return Swal.fire('Lỗi', 'Vui lòng kiểm tra lại mức rank bạn nhập!', 'warning');
+
+            const btn = document.getElementById('btnBook');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG KIỂM TRA SỐ DƯ...'; 
+            btn.disabled = true;
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const res = await fetch('/cay-thue/book', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'CSRF-Token': '<%= csrfToken %>' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if(result.success) Swal.fire('Thành công', result.message, 'success').then(() => window.location.reload());
+                else Swal.fire('Thất bại', result.message, 'error');
+            } catch(err) { Swal.fire('Lỗi', 'Mất mạng!', 'error'); }
+            btn.innerText = 'ĐỒNG Ý LƯU Ý & XÁC NHẬN ĐẶT ĐƠN'; btn.disabled = false;
+        });
+
+        // Kích hoạt tính tiền lần đầu khi tải trang
+        toggleTier('current'); toggleTier('target');
+    </script>
+</body>
+</html>

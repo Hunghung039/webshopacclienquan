@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Xưởng Đúc Minigame (Gacha)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'minigames' }) %>
+
+    <div class="main-content">
+        <% if (typeof msg !== 'undefined' && msg) { %>
+            <div style="background: <%= typeof type !== 'undefined' && type === 'error' ? 'rgba(253,93,147,0.2)' : 'rgba(0,242,195,0.2)' %>; 
+                        color: <%= typeof type !== 'undefined' && type === 'error' ? '#fd5d93' : '#00f2c3' %>; 
+                        padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; border-left: 4px solid currentColor;">
+                <i class="fa-solid <%= typeof type !== 'undefined' && type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-check' %>"></i> <%= msg %>
+            </div>
+        <% } %>
+
+        <h1 style="margin: 0 0 30px 0; font-weight: 300; border-left: 4px solid var(--accent); padding-left: 15px;">Trạm Kiểm Soát <b style="color: var(--accent);">Gacha</b></h1>
+
+        <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 30px;">
+            
+            <div>
+                <div class="card" style="border-top-color: #3498db;">
+                    <h3 style="margin-top: 0; color: #3498db;"><i class="fa-solid fa-gamepad"></i> 1. Clone Game Mới</h3>
+                    
+                    <form action="/admin/minigames/game/add?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                        <label>Chọn Engine Cốt Lõi</label>
+                        <select name="type_id" required>
+                            <% if(typeof gameTypes !== 'undefined') { gameTypes.forEach(t => { %> 
+                                <option value="<%= t.id %>"><%= t.name %> (<%= t.code %>)</option> 
+                            <% }) } %>
+                        </select>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label>Tên Sự Kiện Game</label>
+                                <input type="text" name="name" placeholder="VD: Vòng Quay Tết..." required>
+                            </div>
+                            <div>
+                                <label>Đường dẫn SEO (Slug)</label>
+                                <input type="text" name="slug" placeholder="VD: vong-quay-tet" required>
+                            </div>
+                            <div>
+                                <label title="Điền 0 nếu muốn cho khách quay miễn phí">Giá 1 lượt quay (VNĐ)</label>
+                                <input type="number" name="price" value="10000" min="0" required>
+                            </div>
+                            <div>
+                                <label title="Mỗi lần quay mất tiền sẽ được cộng điểm này (Pity System)">Điểm Tích Lũy (+)</label>
+                                <input type="number" name="luck_points_reward" value="2" min="0" required>
+                            </div>
+                        </div>
+
+                        <label>Ảnh Bìa/Banner (Ảnh đại diện ngoài trang chủ)</label>
+                        <input type="file" name="image" accept="image/*" required style="border: 1px dashed #3498db; background: rgba(52, 152, 219, 0.05);">
+
+                        <button type="submit" class="btn-submit" style="background: linear-gradient(45deg, #3498db, #2980b9);">TẠO GAME NGAY</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top: 0; margin-bottom: 15px;"><i class="fa-solid fa-server"></i> Các Game Đang Mở</h3>
+                    <div class="table-container" style="max-height: 250px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tên Game</th>
+                                    <th>Giá / Lượt</th>
+                                    <th style="text-align: center;">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(typeof minigames !== 'undefined' && minigames.length > 0) { %>
+                                    <% minigames.forEach(m => { %>
+                                        <tr>
+                                            <td>
+                                                <b style="color: #3498db;"><%= m.name %></b><br>
+                                                <span style="font-size: 10px; color: #888;">Code: <%= m.type_name %></span>
+                                            </td>
+                                            <td>
+                                                <span style="color: var(--warning); font-weight: bold;"><%= new Intl.NumberFormat('vi-VN').format(m.price) %>đ</span>
+                                            </td>
+                                            <td style="text-align: center;">
+                                                <form action="/admin/minigames/game/delete/<%= m.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('CẢNH BÁO: Xóa Game này sẽ XÓA SẠCH toàn bộ Giải Thưởng nằm trong nó. Bạn chắc chắn chứ?')">
+                                                    <button type="submit" class="btn-del" title="Xóa Game"><i class="fa-solid fa-trash-can"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr><td colspan="3" style="text-align: center; color: #666;">Chưa có Minigame nào.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="border-top-color: var(--success);">
+                    <h3 style="margin-top: 0; color: var(--success);"><i class="fa-solid fa-box-open"></i> 2. Nạp Cấu Hình Giải Thưởng</h3>
+                    
+                    <div class="guide-box">
+                        <h4 style="margin: 0 0 10px 0; color: var(--warning);"><i class="fa-solid fa-book-open"></i> Hướng Dẫn Nhập Ô "Giá Trị"</h4>
+                        <ul>
+                            <li><b>Tài Khoản Game (ACC):</b> Điền 1 chuỗi ngẫu nhiên (VD: <code>#ACC_VIP_01</code>). Hệ thống sẽ tự động ghép Acc từ kho chính vào.</li>
+                            <li><b>Tiền Mặt (MONEY):</b> Điền <b>SỐ TIỀN</b> muốn cộng vào ví khách (VD: <code>50000</code>).</li>
+                            <li><b>Rác (NOTHING):</b> Điền số <code>0</code> (hoặc bỏ trống). Khách quay trúng sẽ chỉ nhận được câu chúc may mắn.</li>
+                        </ul>
+                    </div>
+
+                    <form action="/admin/minigames/prize/add?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                        <label>Nạp giải này vào Game nào?</label>
+                        <select name="minigame_id" required style="border-color: var(--success);">
+                            <% if(typeof minigames !== 'undefined' && minigames.length > 0) { %>
+                                <% minigames.forEach(m => { %> 
+                                    <option value="<%= m.id %>"><%= m.name %></option> 
+                                <% }) %>
+                            <% } else { %>
+                                <option value="">-- Vui lòng tạo Game trước --</option>
+                            <% } %>
+                        </select>
+
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                            <div>
+                                <label>Tên Giải (Hiện lên màn hình quay)</label>
+                                <input type="text" name="name" placeholder="VD: Trúng 100K VND" required>
+                            </div>
+                            <div>
+                                <label>Tỉ Lệ Trúng (%)</label>
+                                <input type="number" step="0.01" name="drop_rate" value="10" required>
+                            </div>
+                            
+                            <div>
+                                <label>Phân Loại Quà</label>
+                                <select name="type" id="prizeTypeSelect" onchange="changePrizePlaceholder()">
+                                    <option value="MONEY">Tiền Mặt (Cộng thẳng vào web)</option>
+                                    <option value="ACC">Tài Khoản Game (Trả nick)</option>
+                                    <option value="NOTHING">Ô Rác (Chúc may mắn lần sau)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Giá Trị Thực Tế</label>
+                                <input type="text" name="value" id="prizeValueInput" placeholder="VD: 50000" required>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label title="Điền -1 nếu muốn giải này trúng vô hạn lần">Số lượng tồn kho (Để -1 là Vô hạn)</label>
+                                <input type="number" name="quantity" value="-1" style="margin: 0;" required>
+                            </div>
+                            <div style="flex: 1; display: flex; align-items: center; gap: 10px; background: rgba(241, 196, 15, 0.1); padding: 12px; border-radius: 8px; border: 1px solid #f1c40f;">
+                                <input type="checkbox" name="is_special" id="special_cb" style="width: auto; margin:0; cursor: pointer;">
+                                <label for="special_cb" style="margin:0; color: #f1c40f; cursor: pointer;" title="Đánh dấu giải này sẽ có hiệu ứng nổ hũ vỡ òa trên màn hình">BẬT HIỆU ỨNG NỔ HŨ (VIP)</label>
+                            </div>
+                        </div>
+
+                        <label>Ảnh Hiển Thị Của Giải Này (Bắt buộc phải có)</label>
+                        <input type="file" name="image" accept="image/*" required style="border: 1px dashed var(--success); background: rgba(0, 242, 195, 0.05);">
+
+                        <button type="submit" class="btn-submit" style="background: linear-gradient(45deg, #00f2c3, #00b894); color: #000;">BƠM GIẢI VÀO GAME</button>
+                    </form>
+                </div>
+            </div>
+
+        </div> <div class="card">
+            <h3 style="margin: 0; margin-bottom: 15px;"><i class="fa-solid fa-gem"></i> Kho Giải Thưởng Đang Lưu Hành</h3>
+            <div class="table-container" style="max-height: 500px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hình Ảnh</th>
+                            <th>Tên Giải Thưởng</th>
+                            <th>Thuộc Minigame</th>
+                            <th>Định Dạng</th>
+                            <th>Tỉ lệ Rớt</th>
+                            <th>Tồn Kho</th>
+                            <th style="text-align: center;">Tác vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if(typeof prizes !== 'undefined' && prizes.length > 0) { %>
+                            <% prizes.forEach(p => { %>
+                                <tr>
+                                    <td><img src="<%= p.image_url %>" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid #555;"></td>
+                                    <td>
+                                        <b style="color: #fff;"><%= p.name %></b>
+                                        <% if(p.is_special) { %> <span class="badge-special" style="margin-left: 5px;">NỔ HŨ</span> <% } %>
+                                        <br>
+                                        <span style="font-size: 11px; color: #888;">Giá trị nạp: <%= p.value %></span>
+                                    </td>
+                                    <td style="color: #3498db; font-weight: bold;"><%= p.game_name %></td>
+                                    <td>
+                                        <% if(p.type === 'MONEY') { %><span style="color: var(--success);">Tiền Web</span><% } %>
+                                        <% if(p.type === 'ACC') { %><span style="color: var(--accent);">Acc Game</span><% } %>
+                                        <% if(p.type === 'NOTHING') { %><span style="color: #888;">Ô Rác</span><% } %>
+                                    </td>
+                                    <td><b style="color: var(--warning);"><%= p.drop_rate %>%</b></td>
+                                    <td>
+                                        <% if(p.quantity === -1) { %>
+                                            <span style="color: #00f2c3;">Vô hạn (∞)</span>
+                                        <% } else if(p.quantity === 0) { %>
+                                            <span style="color: var(--danger);">HẾT HÀNG</span>
+                                        <% } else { %>
+                                            <span><%= p.quantity %></span>
+                                        <% } %>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <form action="/admin/minigames/prize/delete/<%= p.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Sếp chắc chắn muốn xóa giải thưởng này khỏi vòng quay chứ?')">
+                                            <button type="submit" class="btn-del"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="7" style="text-align: center; color: #888; padding: 30px;">Chưa có giải thưởng nào trong kho. Hãy nạp ngay!</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Script giúp tự động thay đổi Placeholder nhắc nhở nhập liệu
+        function changePrizePlaceholder() {
+            const type = document.getElementById("prizeTypeSelect").value;
+            const input = document.getElementById("prizeValueInput");
+            
+            if (type === 'MONEY') {
+                input.placeholder = "Nhập SỐ TIỀN (VD: 50000)";
+                input.value = "";
+                input.type = "number";
+            } else if (type === 'ACC') {
+                input.placeholder = "Nhập mã gợi nhớ (VD: #ACC_01)";
+                input.value = "";
+                input.type = "text";
+            } else {
+                input.placeholder = "Ô Rác thì nhập số 0";
+                input.value = "0";
+                input.type = "number";
+            }
+        }
+        
+        // Chạy hàm này 1 lần khi load trang để hiển thị đúng placeholder mặc định
+        changePrizePlaceholder();
+    </script>
+</body>
+</html>

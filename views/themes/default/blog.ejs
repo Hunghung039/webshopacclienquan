@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', { title: title, description: description }) %>
+    <style>
+        .blog-header { text-align: center; margin: 40px 0; }
+        .blog-header h1 { font-size: 32px; font-weight: 900; color: var(--primary); text-transform: uppercase; margin-bottom: 10px; }
+        .blog-header p { color: #636e72; font-size: 15px; }
+        
+        .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; margin-bottom: 40px; }
+        .blog-card { background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; display: flex; flex-direction: column; }
+        .blog-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .blog-img { width: 100%; height: 200px; object-fit: cover; }
+        .blog-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+        .blog-title { font-size: 18px; font-weight: 800; color: #2d3436; margin: 0 0 10px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .blog-title a { color: inherit; text-decoration: none; transition: 0.3s; }
+        .blog-title a:hover { color: var(--primary); }
+        .blog-summary { font-size: 14px; color: #636e72; margin-bottom: 15px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .blog-meta { margin-top: auto; display: flex; justify-content: space-between; font-size: 12px; color: #aaa; border-top: 1px dashed #eee; padding-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <%- include('../../includes/ui-common') %>
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container" style="min-height: 70vh;">
+        <div class="blog-header">
+            <h1>Tin Tức & Hướng Dẫn</h1>
+            <p>Cập nhật mẹo chơi game, review tướng và nhận giftcode Liên Quân mới nhất</p>
+        </div>
+
+        <div class="blog-grid">
+            <% if (articles && articles.length > 0) { %>
+                <% articles.forEach(a => { %>
+                    <div class="blog-card">
+                        <a href="/tin-tuc/<%= a.slug %>">
+                           <img src="<%= a.thumbnail %>" alt="<%= a.title %>" title="<%= a.title %>" class="blog-img" loading="lazy">
+                        </a>
+                        <div class="blog-body">
+                            <h2 class="blog-title"><a href="/tin-tuc/<%= a.slug %>"><%= a.title %></a></h2>
+                            <p class="blog-summary"><%= a.summary %></p>
+                            <div class="blog-meta">
+                                <span><i class="fa-solid fa-calendar-days"></i> <%= new Date(a.created_at).toLocaleDateString('vi-VN') %></span>
+                                <span><i class="fa-solid fa-eye"></i> <%= a.views %> lượt xem</span>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #999;">Đang cập nhật bài viết...</div>
+            <% } %>
+        </div>
+
+        <% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
+            <div class="pagination" style="display:flex; justify-content:center; gap:10px; margin-bottom:40px;">
+                <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                    <a href="/tin-tuc?page=<%= i %>" class="btn <%= pagination.page == i ? 'btn-primary' : 'btn-secondary' %>" style="width:40px; padding:8px 0;"><%= i %></a>
+                <% } %>
+            </div>
+        <% } %>
+    </main>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/scripts') %>
+
+</body>
+</html>

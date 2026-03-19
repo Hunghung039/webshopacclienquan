@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Giám Sát Trạm Ghép Đội</title>
+    <%- include('../partials/admin_css') %>
+</head>
+<body>
+    <%- include('../partials/sidebar', { page: 'matchmaking' }) %>
+
+    <div class="main-content">
+        <h1 class="page-title"><i class="fa-solid fa-satellite-dish"></i> Trạm Giám Sát LFG & Thợ Kéo</h1>
+
+        <div class="grid-2">
+            <div class="card" style="border-top: 4px solid var(--accent);">
+                <h3 style="margin-top: 0; color: var(--accent);"><i class="fa-solid fa-users-viewfinder"></i> Các Phòng Đang Hoạt Động</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Chủ Phòng</th>
+                                <th>Loại / Game</th>
+                                <th>Số Người</th>
+                                <th>Trạng Thái</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (rooms.length === 0) { %>
+                                <tr><td colspan="5" style="text-align: center; color: #888;">Hiện tại không có phòng nào đang mở.</td></tr>
+                            <% } %>
+                            <% rooms.forEach(r => { %>
+                            <tr>
+                                <td>
+                                    <b style="color: var(--primary);"><%= r.username %></b><br>
+                                    <span style="font-size: 11px; color:#888;">Mã: <%= r.room_code %></span>
+                                </td>
+                                <td>
+                                    <% if(r.type === 'vip') { %>
+                                        <span class="badge" style="background: var(--warning); color: #000;">VIP KÉO</span>
+                                    <% } else { %>
+                                        <span class="badge badge-web">MIỄN PHÍ</span>
+                                    <% } %><br>
+                                    <span style="font-size: 11px; color:#ccc;"><%= r.play_mode === 'nor' ? 'Đấu Thường' : 'Đấu Rank' %></span>
+                                </td>
+                                <td style="font-weight: bold; color: var(--accent);"><%= r.current_players %>/5</td>
+                                <td>
+                                    <% if(r.status === 'active') { %><span style="color:var(--success);">Đang chờ</span><% } %>
+                                    <% if(r.status === 'full') { %><span style="color:var(--danger);">Đã đầy</span><% } %>
+                                    <% if(r.status === 'expired') { %><span style="color:#666;">Hết hạn</span><% } %>
+                                    <% if(r.status === 'reported') { %><span style="color:var(--danger);">Bị Report</span><% } %>
+                                </td>
+                                <td>
+                                    <form action="/admin/matchmaking/room/delete/<%= r.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Sếp muốn xóa phòng này?')">
+                                        <button type="submit" class="btn-del" title="Xóa phòng"><i class="fa-solid fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="border-top: 4px solid var(--warning);">
+                <h3 style="margin-top: 0; color: var(--warning);"><i class="fa-solid fa-crown"></i> Quản Lý Idol & Top Vote</h3>
+                
+                <div style="background: #1a1a2e; padding: 15px; border-radius: 8px; border: 1px dashed var(--warning); margin-bottom: 15px;">
+                    <label style="color: #aaa; font-size: 12px; font-weight: bold; display: block; margin-bottom: 5px;">Tạc Tượng (Cấp Quyền VIP Nhanh)</label>
+                    <form action="/admin/matchmaking/booster/manual-grant?_csrf=<%= csrfToken %>" method="POST" style="display: flex; gap: 10px;">
+                        <input type="number" name="user_id" placeholder="Nhập ID User cần cấp quyền..." required style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; background: #000; color: #fff;">
+                        <button type="submit" style="background: var(--warning); color: #000; font-weight: 900; border: none; border-radius: 6px; padding: 0 15px; cursor: pointer; transition: 0.2s;">CẤP QUYỀN</button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tài Khoản</th>
+                                <th style="text-align: center;">Uy Tín (Vote)</th>
+                                <th>Quyền Hạn</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% boosters.forEach((b, index) => { %>
+                            <tr>
+                                <td>
+                                    <span style="color: #666; font-size: 10px; margin-right: 5px;">#<%= index + 1 %></span>
+                                    <b style="color: #fff;"><%= b.username %></b> <br>
+                                    <span style="font-size: 10px; color:#888;">ID: <%= b.id %></span>
+                                </td>
+                                <td style="text-align: center; font-weight: bold; color: var(--success);">
+                                    <i class="fa-solid fa-thumbs-up"></i> <%= b.reputation_score %>
+                                </td>
+                                <td>
+                                    <% if(b.is_booster == 1) { %>
+                                        <span class="badge" style="background: var(--warning); color: #000;">IDOL KÉO RANK</span>
+                                    <% } else { %>
+                                        <span class="badge badge-stock">Người chơi</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <form action="/admin/matchmaking/booster/toggle?_csrf=<%= csrfToken %>" method="POST" style="display:flex; gap:5px;">
+                                        <input type="hidden" name="target_id" value="<%= b.id %>">
+                                        <% if(b.is_booster == 1) { %>
+                                            <button type="submit" name="action" value="demote" class="btn-danger" title="Tước quyền Idol" style="padding: 5px 10px;"><i class="fa-solid fa-arrow-down"></i></button>
+                                        <% } else { %>
+                                            <button type="submit" name="action" value="promote" class="btn-action" style="background: var(--warning); color:#000; padding: 5px 10px; border-radius:4px;" title="Phong tước Idol"><i class="fa-solid fa-arrow-up"></i> Cấp Quyền</button>
+                                        <% } %>
+                                    </form>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--primary); margin-top: 20px;">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Trận & Giao Dịch Thuê Idol</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Phòng</th>
+                            <th>Host (Chủ Phòng)</th>
+                            <th>Người Thuê / Tham Gia</th>
+                            <th>Giá Trị</th>
+                            <th>Thời Gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (typeof history !== 'undefined' && history.length > 0) { %>
+                            <% history.forEach(h => { %>
+                            <tr>
+                                <td><b style="color: #fff;"><%= h.room_code || 'Phòng Ảo' %></b></td>
+                                <td style="color: var(--warning); font-weight: bold;"><%= h.host_name %></td>
+                                <td style="color: var(--accent);"><%= h.payer_name %></td>
+                                <td>
+                                    <% if (h.price_paid > 0) { %>
+                                        <b style="color: var(--success);">+<%= new Intl.NumberFormat('vi-VN').format(h.price_paid) %>đ</b>
+                                    <% } else { %>
+                                        <span style="color: #888; font-size: 12px;">Miễn phí</span>
+                                    <% } %>
+                                </td>
+                                <td style="font-size: 12px; color: #aaa;"><%= new Date(h.created_at).toLocaleString('vi-VN') %></td>
+                            </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="5" style="text-align: center; color: #666; padding: 20px;">Chưa có lịch sử giao dịch nào.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

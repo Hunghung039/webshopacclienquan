@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        .room-bg { background: radial-gradient(circle at center, #2c3e50, #000); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        
+        .order-tag { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 30px; color: #f1c40f; border: 1px solid #f1c40f; font-weight: bold; font-family: monospace; box-shadow: 0 5px 15px rgba(241,196,15,0.2);}
+
+        /* Khối chứa hình ảnh túi */
+        .bag-container { text-align: center; position: relative; z-index: 10; }
+        .bag-img { width: 300px; filter: drop-shadow(0 0 30px rgba(241, 196, 15, 0.3)); transition: 0.3s; }
+        
+        /* Hiệu ứng Rung lắc (Shaking) */
+        .shaking { animation: shake 0.3s infinite; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-3deg); }
+            20% { transform: translate(-3px, 0px) rotate(3deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(3deg); }
+            50% { transform: translate(-1px, 2px) rotate(-3deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-3deg); }
+            80% { transform: translate(-1px, -1px) rotate(3deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-3deg); }
+        }
+
+        /* Hiệu ứng chớp lóa khi mở */
+        .flash-bang { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+        .flash-bang.active { opacity: 1; }
+
+        /* Nút Xé Túi */
+        .btn-tear { margin-top: 40px; background: linear-gradient(45deg, #e74c3c, #c0392b); color: #fff; border: 2px solid #ff7979; padding: 15px 50px; font-size: 24px; font-weight: 900; border-radius: 50px; cursor: pointer; text-shadow: 0 2px 5px rgba(0,0,0,0.5); box-shadow: 0 10px 30px rgba(231, 76, 60, 0.5); transition: 0.3s; animation: pulse 1.5s infinite; }
+        .btn-tear:hover { transform: scale(1.1); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+
+        /* BẢNG KẾT QUẢ */
+        .result-modal { display: none; position: absolute; z-index: 100; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 800px; background: rgba(30, 39, 46, 0.95); padding: 40px; border-radius: 20px; border: 2px solid #f1c40f; box-shadow: 0 0 50px rgba(241, 196, 15, 0.5); text-align: center; backdrop-filter: blur(10px); animation: popUp 0.5s ease-out forwards;}
+        @keyframes popUp { 0% { transform: translate(-50%, -40%); opacity: 0; } 100% { transform: translate(-50%, -50%); opacity: 1; } }
+
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
+        @media(max-width: 768px) { .result-grid { grid-template-columns: 1fr; } }
+        
+        .loot-box { background: #2c3e50; padding: 25px; border-radius: 15px; border: 1px dashed #7f8c8d; position: relative; }
+        .loot-title { color: #00f2c3; font-weight: 900; font-size: 20px; margin-bottom: 15px; text-transform: uppercase; }
+        
+        .acc-info { background: #1e272e; padding: 15px; border-radius: 8px; margin-bottom: 10px; font-size: 16px; font-family: monospace; letter-spacing: 1px; color: #fff;}
+        .btn-copy { background: #34495e; color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; float: right; font-size: 12px; transition: 0.2s;}
+        .btn-copy:hover { background: #f1c40f; color: #000;}
+        
+        .vip-card-img { width: 150px; filter: drop-shadow(0 0 20px #f1c40f); animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+
+        .btn-back { background: #7f8c8d; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; display: inline-block; margin-top: 20px; transition: 0.3s; margin-left: 5px; margin-right: 5px;}
+        .btn-back:hover { background: #95a5a6; transform: translateY(-2px);}
+
+        /* CSS MỚI: KHU VỰC HỖ TRỢ BẢO HÀNH TÀI KHOẢN */
+        .support-box { margin-top: 25px; padding: 15px 20px; background: rgba(231, 76, 60, 0.1); border: 1px dashed #e74c3c; border-radius: 10px; font-size: 14px; color: #ffcccc; line-height: 1.5; text-align: center; }
+        .btn-zalo { background: #00a8ff; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 30px; font-weight: bold; display: inline-block; margin-top: 10px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0, 168, 255, 0.3); border: 1px solid #0097e6;}
+        .btn-zalo:hover { background: #0097e6; transform: translateY(-2px); color: #fff;}
+    </style>
+</head>
+<body class="room-bg">
+    <div class="flash-bang" id="flashBang"></div>
+
+    <div class="order-tag"><i class="fa-solid fa-hashtag"></i> MÃ TÚI: <%= order.order_code %></div>
+
+    <% if (order.is_opened) { %>
+        <h2 style="color: #e74c3c;"><i class="fa-solid fa-triangle-exclamation"></i> TÚI NÀY ĐÃ ĐƯỢC BÓC!</h2>
+        <p style="color: #aaa;">Sếp không thể bóc lại lần 2. Vui lòng vào Tủ Đồ để xem lại tài khoản.</p>
+        
+        <div>
+            <a href="/tui-mu" class="btn-back"><i class="fa-solid fa-store"></i> Mua Túi Mới</a>
+            <a href="https://shoplienquan.site/tu-do" class="btn-back" style="background: #0984e3;"><i class="fa-solid fa-backpack"></i> Tủ Đồ</a>
+        </div>
+
+        <div class="support-box" style="max-width: 500px; margin-top: 30px;">
+            <i class="fa-solid fa-circle-exclamation" style="color: #e74c3c; font-size: 18px;"></i>
+            <strong>Tài khoản bị lỗi đăng nhập hoặc bị khóa (ban)?</strong><br>
+            Sếp đừng lo lắng nhé! Hãy liên hệ ngay với Admin để được kiểm tra và hỗ trợ hoàn tiền nhanh chóng 100%.
+            <br>
+            <a href="https://zalo.me/0392232180" target="_blank" class="btn-zalo"><i class="fa-solid fa-headset"></i> Liên Hệ Admin Zalo</a>
+        </div>
+
+    <% } else { %>
+        <div class="bag-container" id="bagContainer">
+            <img src="/images/tui-mu-dong.png" id="bagImage" class="bag-img" alt="Túi Mù Đóng">
+        </div>
+
+        <button class="btn-tear" id="btnTear" onclick="startUnbox()">🔥 XÉ TÚI NGAY 🔥</button>
+
+        <div class="result-modal" id="resultModal">
+            <h2 style="color: #f1c40f; font-size: 32px; margin: 0; text-transform: uppercase;">🎉 CHÚC MỪNG BẠN ĐÃ MỞ TÚI 🎉</h2>
+            <p style="color: #ccc; margin-top: 5px; font-family: monospace;">Mã Đơn: <%= order.order_code %></p>
+            
+            <div class="result-grid">
+                <div class="loot-box">
+                    <div class="loot-title"><i class="fa-solid fa-gamepad"></i> Tài Khoản Game</div>
+                    <div style="color: #bdc3c7; font-size: 13px; margin-bottom: 10px;" id="r-info">...</div>
+                    
+                    <div style="text-align: left;">
+                        <div class="acc-info">
+                            TK: <span id="r-user"></span>
+                            <button class="btn-copy" onclick="copyText('r-user', this)"><i class="fa-solid fa-copy"></i> Copy</button>
+                        </div>
+                        <div class="acc-info">
+                            MK: <span id="r-pass"></span>
+                            <button class="btn-copy" onclick="copyText('r-pass', this)"><i class="fa-solid fa-copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loot-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="loot-title" style="color: #f1c40f;"><i class="fa-solid fa-gem"></i> Vật Phẩm Đi Kèm</div>
+                    <div id="r-vip-result">
+                        </div>
+                </div>
+            </div>
+
+            <div class="support-box">
+                <i class="fa-solid fa-shield-halved" style="color: #f1c40f;"></i> 
+                <strong>Bảo hành tài khoản trọn đời bóc:</strong> Nếu tài khoản gặp lỗi sai thông tin hoặc bị khóa (ban), sếp hãy inbox ngay để được hỗ trợ check và hoàn tiền nhé!
+                <br>
+                <a href="https://zalo.me/0392232180" target="_blank" class="btn-zalo"><i class="fa-solid fa-comment-dots"></i> Liên Hệ Hỗ Trợ Zalo</a>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <a href="/tui-mu" class="btn-back" style="background: #e74c3c;"><i class="fa-solid fa-rotate-left"></i> Mua Túi Khác</a>
+                <a href="https://shoplienquan.site/tu-do" class="btn-back" style="background: #0984e3;"><i class="fa-solid fa-backpack"></i> Mở Balo</a>
+            </div>
+        </div>
+    <% } %>
+
+    <script>
+        // Cấu hình Toast Alert thay thế cho hàm alert() mặc định
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            background: '#1e1e2f',
+            color: '#fff'
+        });
+
+        async function startUnbox() {
+            const btn = document.getElementById('btnTear');
+            const bagImg = document.getElementById('bagImage');
+            const flash = document.getElementById('flashBang');
+            const modal = document.getElementById('resultModal');
+
+            // 1. Ẩn nút Xé đi, bắt đầu Rung Lắc
+            btn.style.display = 'none';
+            bagImg.classList.add('shaking');
+
+            // 2. GỌI API NGẦM ĐỂ LẤY KẾT QUẢ
+            try {
+                const res = await fetch('/unbox/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ orderCode: '<%= order ? order.order_code : "" %>' })
+                });
+                
+                const data = await res.json();
+
+                if(!data.success) {
+                    Swal.fire({title: 'Lỗi', text: data.message, icon: 'error', background: '#1e1e2f', color: '#fff'})
+                    .then(() => window.location.reload());
+                    return;
+                }
+
+                // 3. TẠO SỰ HỒI HỘP - DELAY 2.5 GIÂY CHO TÚI RUNG
+                setTimeout(() => {
+                    // Ngừng rung
+                    bagImg.classList.remove('shaking');
+                    
+                    // Chớp lóa trắng màn hình
+                    flash.classList.add('active');
+                    
+                    // Đổi ảnh thành túi rách
+                    bagImg.src = '/images/tui-mu-mo.png';
+
+                    setTimeout(() => {
+                        // Tắt chớp lóa
+                        flash.classList.remove('active');
+                        
+                        // Ẩn ảnh túi, bung bảng kết quả lên
+                        document.getElementById('bagContainer').style.display = 'none';
+                        modal.style.display = 'block';
+
+                        // Đổ dữ liệu vào bảng kết quả
+                        document.getElementById('r-info').innerText = data.account.info;
+                        document.getElementById('r-user').innerText = data.account.username;
+                        document.getElementById('r-pass').innerText = data.account.password;
+
+                        const vipBox = document.getElementById('r-vip-result');
+                        if (data.isVipDrop) {
+                            vipBox.innerHTML = `
+                                <img src="/images/the-vip.png" class="vip-card-img" alt="Thẻ VIP">
+                                <h3 style="color: #f1c40f; margin-top: 10px; font-weight: 900;">TRÚNG 1 THẺ VIP!</h3>
+                            `;
+                            // Bắn pháo giấy nếu nổ Thẻ VIP
+                            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
+                        } else {
+                            vipBox.innerHTML = `
+                                <i class="fa-solid fa-face-frown" style="font-size: 60px; color: #7f8c8d; margin-bottom: 15px;"></i>
+                                <div style="color: #aaa; font-size: 16px;">Rất tiếc! Lần này nhân phẩm chưa độ rồi. Không ra Thẻ VIP.</div>
+                            `;
+                        }
+
+                    }, 300); // 0.3s chớp sáng
+
+                }, 2500); // 2.5s rung lắc
+
+            } catch(e) {
+                Swal.fire({title: 'Lỗi Mạng', text: "Kết nối bị gián đoạn, vui lòng khởi động lại!", icon: 'error', background: '#1e1e2f', color: '#fff'})
+                .then(() => window.location.reload());
+            }
+        }
+
+        // Script copy nhanh tài khoản thông minh (Thay đổi chữ và màu nút khi bấm)
+        function copyText(elementId, btnElement) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                Toast.fire({ icon: 'success', title: 'Đã copy thành công!' });
+                
+                // Đổi nút
+                const oldText = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> OK';
+                btnElement.style.background = "#2ecc71";
+                btnElement.style.color = "#fff";
+
+                // Nhả lại nút sau 2 giây
+                setTimeout(() => {
+                    btnElement.innerHTML = oldText;
+                    btnElement.style.background = "#34495e";
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

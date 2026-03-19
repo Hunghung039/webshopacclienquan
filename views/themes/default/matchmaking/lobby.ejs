@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../../includes/head') %>
+    <style>
+        /* ĐỒNG BỘ CSS THEO THEME GỐC CỦA WEB SẾP */
+        .lfg-header { 
+            background: var(--grad-primary); 
+            padding: 40px 15px; 
+            text-align: center; 
+            border-radius: var(--radius-lg);
+            margin-top: 20px;
+            box-shadow: var(--shadow-md);
+            color: #fff;
+            position: relative;
+            z-index: 2;
+        }
+        .lfg-header h1 { font-weight: 900; font-size: 32px; text-transform: uppercase; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .lfg-header p { font-size: 15px; max-width: 600px; margin: 0 auto; opacity: 0.9; }
+        
+        .lfg-layout { 
+            display: grid; 
+            grid-template-columns: 320px 1fr; 
+            gap: 30px; 
+            margin-top: 30px; 
+            align-items: start;
+            position: relative;
+            z-index: 2; 
+        }
+        
+        /* Bảng tạo phòng (Trái) */
+        .create-box { 
+            background: #fff; 
+            padding: 25px; 
+            border-radius: var(--radius-lg); 
+            position: sticky; 
+            top: 90px; 
+            border-top: 5px solid var(--warning); 
+            box-shadow: var(--shadow-float);
+            z-index: 10;
+        }
+        .create-box label { font-size: 13px; color: var(--dark); font-weight: 800; display: block; margin-bottom: 6px; }
+        .lfg-input { 
+            width: 100%; padding: 12px 15px; background: #f8f9fa; border: 2px solid #eee; 
+            color: var(--dark); border-radius: 8px; margin-bottom: 15px; font-weight: 600; transition: 0.3s;
+        }
+        .lfg-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(142,68,173,0.1); outline: none; }
+        
+        /* Lưới phòng (Phải) */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .room-card { 
+            background: #fff; border-radius: var(--radius-md); padding: 20px; 
+            border: 1px solid #eee; position: relative; transition: 0.3s; 
+            animation: fadeIn 0.5s; box-shadow: var(--shadow-sm); z-index: 5;
+        }
+        .room-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: var(--primary-light); }
+        .room-card.vip-room { 
+            border: 2px solid var(--warning); 
+            background: linear-gradient(135deg, #fff 60%, #fffbf0 100%);
+        }
+        
+        .room-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
+        .room-badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; }
+        
+        .r-tag { 
+            background: #f1f2f6; color: #2d3436; padding: 5px 10px; 
+            border-radius: 6px; font-size: 11px; border: 1px solid #dfe6e9; 
+            display: inline-flex; align-items: center; gap: 4px; margin: 3px 3px 3px 0; font-weight: 600;
+        }
+        
+        .btn-lfg-action { 
+            width: 100%; background: var(--grad-primary); color: #fff; border: none; 
+            padding: 14px; border-radius: 8px; font-weight: 800; cursor: pointer; 
+            display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.3s;
+            font-size: 14px; text-transform: uppercase;
+        }
+        .btn-lfg-action:hover { box-shadow: 0 5px 15px rgba(142,68,173,0.4); transform: translateY(-2px); }
+        
+        .btn-vip-action { background: var(--grad-vip); color: #8a6d3b; text-shadow: 0 1px 0 rgba(255,255,255,0.4); box-shadow: 0 4px 10px rgba(241, 196, 15, 0.3); }
+        .btn-vip-action:hover { box-shadow: 0 6px 15px rgba(241, 196, 15, 0.5); }
+        
+        .btn-vote { 
+            width: 100%; background: transparent; border: 1px solid #cbd5e1; color: #64748b; 
+            padding: 10px; border-radius: 8px; margin-top: 10px; cursor: pointer; 
+            transition: 0.3s; font-size: 12px; font-weight: 800; text-transform: uppercase;
+        }
+        .btn-vote:hover { border-color: var(--success); color: var(--success); background: #f0fdf4; }
+
+        /* CSS MỚI: BÊN TRONG PHÒNG VÀ SLOT 5 NGƯỜI */
+        .ingame-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 9999; justify-content: center; align-items: center; }
+        .ingame-box { background: #1a1a2e; width: 90%; max-width: 600px; border-radius: 20px; border: 2px solid var(--primary); padding: 30px; position: relative; animation: zoomIn 0.3s; color: #fff;}
+        .ig-title { text-align: center; color: #fff; font-size: 20px; font-weight: 900; margin-top: 0; margin-bottom: 20px;}
+        .ig-code-display { text-align: center; background: #000; color: var(--warning); font-size: 32px; font-weight: 900; padding: 15px; border-radius: 12px; letter-spacing: 5px; margin-bottom: 30px; border: 1px dashed var(--warning); cursor: pointer; transition: 0.3s;}
+        .ig-code-display:hover { background: #222; transform: scale(1.02); }
+        
+        .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px;}
+        .slot-item { background: rgba(255,255,255,0.05); border: 1px dashed #555; height: 90px; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #888; transition: 0.3s;}
+        .slot-item.filled { background: rgba(0, 242, 195, 0.1); border: 1px solid var(--accent); color: #fff; }
+        .slot-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 5px;}
+        .slot-name { font-size: 11px; font-weight: bold; width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;}
+
+        .ig-actions { display: flex; gap: 15px; }
+        .btn-leave { flex: 1; background: #333; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; transition: 0.3s;}
+        .btn-leave:hover { background: #555; }
+        .btn-report { flex: 1; background: var(--danger); color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; transition: 0.3s;}
+        .btn-report:hover { filter: brightness(1.2); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from {transform:scale(0.8); opacity:0} to {transform:scale(1); opacity:1} }
+        @media (max-width: 768px) { 
+            .lfg-layout { grid-template-columns: 1fr; } 
+            .create-box { position: static; }
+            .slot-grid { gap: 8px; }
+            .slot-item { height: 75px; }
+            .slot-avatar { width: 30px; height: 30px; font-size: 12px; }
+            .ig-code-display { font-size: 24px; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <%- include('../../../includes/ui-common') %>
+    <%- include('../../../includes/header') %>
+    <%- include('../../../includes/mobile-nav') %>
+
+    <main class="container" style="position: relative; z-index: 5;">
+        <div class="lfg-header">
+            <h1><i class="fa-solid fa-satellite-dish"></i> Trạm Ghép Đội & Kéo Rank</h1>
+            <p>Tìm team siêu tốc hoặc thuê Cao Thủ gánh tạ auto win. Sảnh cập nhật liên tục Real-time!</p>
+        </div>
+
+        <div class="lfg-layout">
+            
+            <div class="create-box">
+                <h3 style="margin-top: 0; color: var(--dark); font-size: 20px; font-weight: 900; margin-bottom: 20px;">
+                    <i class="fa-solid fa-tower-broadcast" style="color: var(--warning);"></i> GỌI ĐỒNG ĐỘI
+                </h3>
+                
+                <% if (!user) { %>
+                    <a href="/auth/login" class="btn-lfg-action" style="text-decoration: none;">ĐĂNG NHẬP ĐỂ TẠO PHÒNG</a>
+                <% } else { %>
+                    <form id="createRoomForm" onsubmit="return false;">
+                        <label>ID Phòng Game</label>
+                        <input type="number" name="room_code" class="lfg-input" placeholder="VD: 543210" required>
+
+                        <label>Loại Phòng</label>
+                        <select name="type" class="lfg-input" id="roomTypeSelect" onchange="togglePrice()">
+                            <option value="free">🟢 Phòng Miễn Phí (Giao lưu)</option>
+                            <% if (user.is_booster == 1) { %>
+                                <option value="vip">👑 Phòng VIP (Thu tiền kéo Rank)</option>
+                            <% } %>
+                        </select>
+                        
+                        <div id="priceDiv" style="display: none; background: #fffbf0; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed var(--warning);">
+                            <label style="color: #d35400;">Giá thuê 1 Slot (VNĐ)</label>
+                            <input type="number" name="price" class="lfg-input" placeholder="VD: 10000" style="margin-bottom: 0; border-color: var(--warning);">
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
+                                <label>Chế Độ</label>
+                                <select name="play_mode" class="lfg-input">
+                                    <option value="nor">⚔️ Đấu Thường</option>
+                                    <option value="rank">🏆 Đấu Rank</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label>Đã Có</label>
+                                <select name="current_players" class="lfg-input">
+                                    <option value="1">1/5 Người</option>
+                                    <option value="2">2/5 Người</option>
+                                    <option value="3">3/5 Người</option>
+                                    <option value="4">4/5 Người</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <label>Bậc Rank</label>
+                        <select name="rank_tier" class="lfg-input">
+                            <option value="Tự do">Tự do (Ai cũng được)</option>
+                            <option value="Kim Cương">Từ Kim Cương</option>
+                            <option value="Tinh Anh">Từ Tinh Anh</option>
+                            <option value="Cao Thủ">Cao Thủ trở lên</option>
+                        </select>
+                        
+                        <label>Yêu cầu (Thiếu Vị Trí / Luật)</label>
+                        <input type="text" name="missing_roles" class="lfg-input" placeholder="VD: Thiếu Rừng, Cần SP cứng...">
+                        <input type="text" name="tags" class="lfg-input" placeholder="VD: Tắt mic ping map, Vui vẻ...">
+
+                        <button type="submit" class="btn-lfg-action" id="btnSubmitCreate">
+                            <i class="fa-solid fa-paper-plane"></i> PHÁT TÍN HIỆU NGAY
+                        </button>
+                    </form>
+                <% } %>
+            </div>
+
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: var(--dark); font-size: 22px; font-weight: 900;">
+                        <i class="fa-solid fa-users-viewfinder" style="color: var(--primary);"></i> SẢNH CHỜ (LIVE)
+                    </h3>
+                    <span style="font-size: 12px; background: #eaf2f8; color: #2980b9; padding: 5px 10px; border-radius: 20px; font-weight: bold;">
+                        <i class="fa-solid fa-circle-dot" style="animation: blink 1s infinite; color: #e74c3c;"></i> Tự động cập nhật
+                    </span>
+                </div>
+
+                <div class="room-grid" id="roomGrid">
+                    <% if (rooms.length === 0) { %>
+                        <div style="grid-column: 1/-1; text-align: center; padding: 50px; background: #fff; border-radius: 12px; border: 1px dashed #ccc; box-shadow: var(--shadow-sm);">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486747.png" style="width: 80px; margin: 0 auto 15px; opacity: 0.5;">
+                            <p style="color: #888; font-size: 15px; font-weight: 600;">Sảnh đang vắng lặng. Hãy là người đầu tiên tạo phòng gọi anh em nào!</p>
+                        </div>
+                    <% } %>
+                    
+                    <% rooms.forEach(r => { %>
+                        <div class="room-card <%= r.type === 'vip' ? 'vip-room' : '' %>" id="room-card-<%= r.id %>" data-host="<%= r.user_id %>">
+                            
+                            <div class="room-header">
+                                <span class="room-badge" style="background: <%= r.type === 'vip' ? 'var(--warning)' : 'var(--primary)' %>; color: <%= r.type === 'vip' ? '#000' : '#fff' %>">
+                                    <%= r.type === 'vip' ? '👑 KÉO RANK' : '🟢 TÌM ĐỒNG ĐỘI' %>
+                                </span>
+                                <span class="player-count" style="font-weight: 900; font-size: 16px; color: <%= r.current_players >= 4 ? 'var(--danger)' : 'var(--primary)' %>">
+                                    <i class="fa-solid fa-user-group"></i> <span><%= r.current_players %></span>/5
+                                </span>
+                            </div>
+
+                            <div style="font-size: 15px; color: var(--dark); font-weight: 800; margin-bottom: 12px;">
+                                <%= r.play_mode === 'nor' ? '⚔️ Đấu Thường' : '🏆 Đấu Rank' %> 
+                                <% if(r.rank_tier){ %> - <span style="color: var(--primary);"><%= r.rank_tier %></span> <% } %>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <% if(r.missing_roles) { r.missing_roles.split(',').forEach(role => { %>
+                                    <span class="r-tag"><i class="fa-solid fa-crosshairs" style="color:var(--danger)"></i> <%= role.trim() %></span>
+                                <% })} %>
+                                <% if(r.tags) { r.tags.split(',').forEach(tag => { %>
+                                    <span class="r-tag" style="border-color: #ffeaa7; background: #fffbf0;"><i class="fa-solid fa-hashtag" style="color:var(--warning)"></i> <%= tag.trim() %></span>
+                                <% })} %>
+                            </div>
+
+                            <div style="font-size: 13px; color: #636e72; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f2f6; padding-top: 12px;">
+                                <span>Host: <b style="color: var(--dark);"><%= r.username %></b></span>
+                                <% if(r.type === 'vip'){ %><span style="color: #d35400; font-weight: 800;"><i class="fa-solid fa-circle-check"></i> Uy tín: <%= r.reputation_score %></span><% } %>
+                            </div>
+
+                            <div class="action-btn-container">
+                                <% if (r.type === 'vip') { %>
+                                    <button class="btn-lfg-action btn-vip-action" onclick="unlockVipRoom('<%= r.id %>', <%= r.price %>)">
+                                        <i class="fa-solid fa-lock"></i> THUÊ (<%= new Intl.NumberFormat('vi-VN').format(r.price) %>đ)
+                                    </button>
+                                <% } else { %>
+                                    <% if (user && r.user_id === user.id) { %>
+                                         <button class="btn-lfg-action" style="background: var(--dark);" onclick="copyLfgRoomID('<%= r.room_code %>')">
+                                            <i class="fa-regular fa-copy"></i> ID PHÒNG CỦA TÔI
+                                        </button>
+                                    <% } else { %>
+                                        <button class="btn-lfg-action" onclick="requestJoinRoom('<%= r.id %>')">
+                                            <i class="fa-solid fa-right-to-bracket"></i> THAM GIA NGAY
+                                        </button>
+                                    <% } %>
+                                <% } %>
+                                
+                                <% if (user && user.id !== r.user_id) { %>
+                                    <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="ingame-modal" id="inGameModal">
+        <div class="ingame-box">
+            <h3 class="ig-title"><i class="fa-solid fa-gamepad" style="color:var(--accent);"></i> PHÒNG ĐANG CHỜ</h3>
+            <p style="color:#aaa; text-align:center; font-size:13px; margin-bottom: 10px;">Vào game dán ngay mã này để gia nhập!</p>
+            
+            <div class="ig-code-display" id="ig-code" onclick="copyLfgRoomID(this.innerText)">------</div>
+            <p style="text-align: center; color: var(--success); font-size: 11px; margin-top: -20px; margin-bottom: 20px;">(Bấm vào mã để Copy)</p>
+            
+            <div class="slot-grid" id="ig-slots">
+                </div>
+
+            <div class="ig-actions">
+                <button class="btn-leave" onclick="leaveRoom()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Rời Phòng</button>
+                <button class="btn-report" onclick="reportRoom()"><i class="fa-solid fa-triangle-exclamation"></i> Báo Cáo Ảo</button>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../../../includes/footer') %>
+    <%- include('../../../includes/scripts') %>
+
+    <script>
+        // Sử dụng chung SweetAlert với giao diện sáng (Light Theme)
+        const Toast = Swal.mixin({
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        // Thiết lập biến socket an toàn
+        let lfgSocket = null;
+        if (typeof socket !== 'undefined') {
+            lfgSocket = socket;
+        } else if (typeof io !== 'undefined') {
+            lfgSocket = io();
+        }
+
+        let currentActiveRoomId = null;
+
+        function togglePrice() {
+            const type = document.getElementById('roomTypeSelect').value;
+            const pDiv = document.getElementById('priceDiv');
+            if(type === 'vip') {
+                pDiv.style.display = 'block';
+                pDiv.style.animation = 'fadeIn 0.3s';
+            } else {
+                pDiv.style.display = 'none';
+            }
+        }
+
+        // =====================================
+        // 1. TẠO PHÒNG BẰNG AJAX
+        // =====================================
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.getElementById('createRoomForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault(); 
+                    
+                    const btn = document.getElementById('btnSubmitCreate');
+                    const originalBtnText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG XỬ LÝ...';
+                    btn.disabled = true;
+
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+
+                    try {
+                        const res = await fetch('/ghep-doi/create', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'CSRF-Token': '<%= csrfToken %>' 
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        
+                        const result = await res.json();
+                        if(result.success) {
+                            Swal.fire({
+                                title: 'Thành công!', text: result.message, icon: 'success', 
+                                confirmButtonColor: '#00b894'
+                            }).then(() => { window.location.reload(); });
+                        } else {
+                            Swal.fire({title: 'Lỗi', text: result.message, icon: 'error'});
+                            btn.innerHTML = originalBtnText;
+                            btn.disabled = false;
+                        }
+                    } catch(err) {
+                        Swal.fire({title: 'Lỗi', text: 'Mất kết nối với máy chủ!', icon: 'error'});
+                        btn.innerHTML = originalBtnText;
+                        btn.disabled = false;
+                    }
+                });
+            }
+        });
+
+        // =====================================
+        // 2. MỞ KHÓA PHÒNG VIP (LOGIC CŨ VẪN GIỮ)
+        // =====================================
+        async function unlockVipRoom(roomId, price) {
+            <% if (!user) { %> return Swal.fire('Cảnh báo', 'Vui lòng đăng nhập để thuê Kéo Rank!', 'warning'); <% } %>
+            Swal.fire({
+                title: 'Thuê Cao Thủ?', text: `Trừ ${price.toLocaleString('vi-VN')}đ lấy Mã Phòng.`,
+                icon: 'question', showCancelButton: true, confirmButtonColor: '#f39c12', confirmButtonText: 'Đồng ý Thuê!'
+            }).then(async (result) => {
+                if(result.isConfirmed) {
+                    try {
+                        const res = await fetch('/ghep-doi/unlock', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json', 'CSRF-Token': '<%= csrfToken %>' },
+                            body: JSON.stringify({ room_id: roomId })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            // Sau khi mua thành công, gọi luôn hàm xử lý vào phòng 5 Slot
+                            processJoinRoom(roomId);
+                        } else Swal.fire('Lỗi', data.message, 'error');
+                    } catch(err) { Swal.fire('Lỗi', 'Lỗi mạng!', 'error'); }
+                }
+            });
+        }
+
+        // Hàm Copy ID đa năng
+        function copyLfgRoomID(id, showNotify = true) {
+            if (typeof copyText === 'function') {
+                copyText(id); 
+            } else {
+                navigator.clipboard.writeText(id);
+                if(showNotify) Toast.fire({ icon: 'success', title: 'Đã copy ID: ' + id });
+            }
+        }
+
+        // =====================================
+        // 3. LOGIC XỬ LÝ PHÒNG ẢO 5 SLOT (MỚI)
+        // =====================================
+        
+        // Bật cảnh báo xác nhận trước khi vào phòng
+        function requestJoinRoom(roomId) {
+            <% if (!user) { %> return Swal.fire('Lỗi', 'Sếp phải đăng nhập mới được vô phòng!', 'warning'); <% } %>
+            
+            Swal.fire({
+                title: 'Sếp đã mở sẵn Game chưa?',
+                text: "Anh em đang chờ! Vui lòng chỉ bấm Tham Gia nếu bạn đã mở Game Liên Quân và sẵn sàng dán ID vào phòng.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#00b894',
+                cancelButtonColor: '#ff7675',
+                confirmButtonText: 'Đã sẵn sàng! Vào thôi!'
+            }).then((result) => {
+                if(result.isConfirmed) {
+                    processJoinRoom(roomId);
+                }
+            });
+        }
+
+        // Gửi API xin phép vào phòng
+        async function processJoinRoom(roomId) {
+            try {
+                const res = await fetch('/ghep-doi/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'CSRF-Token': '<%= csrfToken %>' },
+                    body: JSON.stringify({ room_id: roomId })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    currentActiveRoomId = roomId;
+                    document.getElementById('ig-code').innerText = data.room_code;
+                    renderSlots(data.members);
+                    document.getElementById('inGameModal').style.display = 'flex';
+                    
+                    // Kích hoạt socket để nhận thông tin riêng của phòng này
+                    if(lfgSocket) lfgSocket.emit('join_lfg_room', roomId);
+                } else {
+                    Swal.fire('Thất bại', data.message, 'warning');
+                }
+            } catch(e) { Swal.fire('Lỗi mạng', '', 'error'); }
+        }
+
+        // Vẽ 5 ô đại diện User
+        function renderSlots(members) {
+            const slotContainer = document.getElementById('ig-slots');
+            let html = '';
+            for(let i = 0; i < 5; i++) {
+                if (members[i]) {
+                    const m = members[i];
+                    html += `
+                        <div class="slot-item filled">
+                            <div class="slot-avatar">${m.username.charAt(0).toUpperCase()}</div>
+                            <div class="slot-name">${m.username}</div>
+                            ${m.is_booster ? '<i class="fa-solid fa-crown" style="color:var(--warning); font-size:10px; margin-top:3px;"></i>' : ''}
+                        </div>
+                    `;
+                } else {
+                    html += `<div class="slot-item"><i class="fa-solid fa-plus"></i><div class="slot-name" style="margin-top:5px;">Trống</div></div>`;
+                }
+            }
+            slotContainer.innerHTML = html;
+        }
+
+        // Nút Rời khỏi phòng hiện tại
+        async function leaveRoom() {
+            if(!currentActiveRoomId) return;
+            await fetch('/ghep-doi/leave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'CSRF-Token': '<%= csrfToken %>' },
+                body: JSON.stringify({ room_id: currentActiveRoomId })
+            });
+            document.getElementById('inGameModal').style.display = 'none';
+            currentActiveRoomId = null;
+        }
+
+        // Nút Báo cáo phòng ảo/đã chạy
+        function reportRoom() {
+            Swal.fire({
+                title: 'Báo cáo phòng ảo?',
+                text: "Bạn vào game nhưng không tìm thấy ID phòng này? (Khóa phòng này khỏi hệ thống)",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff7675',
+                confirmButtonText: 'Khóa ngay!'
+            }).then(async (result) => {
+                if(result.isConfirmed && currentActiveRoomId) {
+                    await fetch('/ghep-doi/report', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'CSRF-Token': '<%= csrfToken %>' },
+                        body: JSON.stringify({ room_id: currentActiveRoomId })
+                    });
+                    document.getElementById('inGameModal').style.display = 'none';
+                    Swal.fire('Đã báo cáo', 'Cảm ơn bạn! Phòng này đã bị ẩn khỏi danh sách chờ.', 'success');
+                    currentActiveRoomId = null;
+                }
+            });
+        }
+
+        // Nút Đánh giá Uy Tín (Giữ nguyên)
+        function voteUser(targetId, roomId, username) {
+            Swal.fire({
+                title: `Đánh giá ${username}`, text: "Vui lòng đánh giá công tâm!", icon: 'info',
+                showCancelButton: true, showDenyButton: true, 
+                confirmButtonText: '<i class="fa-solid fa-thumbs-up"></i> Tín',
+                denyButtonText: '<i class="fa-solid fa-thumbs-down"></i> Tệ', 
+                cancelButtonText: 'Đóng',
+                confirmButtonColor: '#00b894', denyButtonColor: '#ff7675'
+            }).then(async (result) => {
+                let voteType = result.isConfirmed ? 'up' : (result.isDenied ? 'down' : null);
+                if (voteType) {
+                    try {
+                        const res = await fetch('/ghep-doi/vote', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json', 'CSRF-Token': '<%= csrfToken %>' },
+                            body: JSON.stringify({ target_id: targetId, room_id: roomId, vote_type: voteType })
+                        });
+                        const data = await res.json();
+                        if (data.success) Swal.fire('Thành công!', data.message, 'success');
+                        else Swal.fire('Lỗi', data.message, 'warning');
+                    } catch(err) { Swal.fire('Lỗi', 'Mất kết nối mạng!', 'error'); }
+                }
+            });
+        }
+
+        // =====================================
+        // 4. NHẬN TÍN HIỆU REALTIME
+        // =====================================
+        if (lfgSocket) {
+            // Khi có cập nhật User vào/ra trong phòng đang mở Modal
+            lfgSocket.on('lq_room_member_joined', function(data) {
+                if(document.getElementById('inGameModal').style.display === 'flex') {
+                    renderSlots(data.members);
+                }
+            });
+
+            // Khi Sảnh chính tạo phòng mới
+            lfgSocket.on('lq_new_room', function(r) {
+                const grid = document.getElementById('roomGrid');
+                if (grid.innerHTML.includes('fa-ghost')) grid.innerHTML = '';
+
+                let isVip = r.type === 'vip';
+                let btnHtml = '';
+                
+                let currentUserId = '<%= user ? user.id : "" %>';
+                let isMine = currentUserId == r.user_id;
+
+                if (!isVip) {
+                    if (isMine) {
+                        btnHtml += `<button class="btn-lfg-action" style="background: var(--dark);" onclick="copyLfgRoomID('${r.room_code}')"><i class="fa-regular fa-copy"></i> ID PHÒNG CỦA TÔI</button>`;
+                    } else {
+                        btnHtml += `<button class="btn-lfg-action" onclick="requestJoinRoom('${r.id}')"><i class="fa-solid fa-right-to-bracket"></i> THAM GIA NGAY</button>`;
+                    }
+                } else {
+                    btnHtml += `<button class="btn-lfg-action btn-vip-action" onclick="unlockVipRoom('${r.id}', ${r.price})"><i class="fa-solid fa-lock"></i> THUÊ (${r.price.toLocaleString('vi-VN')}đ)</button>`;
+                }
+
+                let tagsHtml = '';
+                if(r.missing_roles) {
+                    r.missing_roles.split(',').forEach(role => { tagsHtml += `<span class="r-tag"><i class="fa-solid fa-crosshairs" style="color:var(--danger)"></i> ${role.trim()}</span>`; });
+                }
+                if(r.tags) {
+                    r.tags.split(',').forEach(tag => { tagsHtml += `<span class="r-tag" style="border-color: #ffeaa7; background: #fffbf0;"><i class="fa-solid fa-hashtag" style="color:var(--warning)"></i> ${tag.trim()}</span>`; });
+                }
+
+                const cardHtml = `
+                    <div class="room-card ${isVip ? 'vip-room' : ''}" id="room-card-${r.id}" data-host="${r.user_id}">
+                        <div class="room-header">
+                            <span class="room-badge" style="background: ${isVip ? 'var(--warning)' : 'var(--primary)'}; color: ${isVip ? '#000' : '#fff'}">
+                                ${isVip ? '👑 KÉO RANK' : '🟢 TÌM ĐỒNG ĐỘI'}
+                            </span>
+                            <span class="player-count" style="font-weight: 900; font-size: 16px; color: ${r.current_players >= 4 ? 'var(--danger)' : 'var(--primary)'}">
+                                <i class="fa-solid fa-user-group"></i> <span>${r.current_players}</span>/5
+                            </span>
+                        </div>
+                        <div style="font-size: 15px; color: var(--dark); font-weight: 800; margin-bottom: 12px;">
+                            ${r.play_mode === 'nor' ? '⚔️ Đấu Thường' : '🏆 Đấu Rank'} - <span style="color: var(--primary);">${r.rank_tier}</span>
+                        </div>
+                        <div style="margin-bottom: 15px;">${tagsHtml}</div>
+                        <div style="font-size: 13px; color: #636e72; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f2f6; padding-top: 12px;">
+                            <span>Host: <b style="color: var(--dark);">${r.username}</b></span>
+                            ${isVip ? `<span style="color: #d35400; font-weight: 800;"><i class="fa-solid fa-circle-check"></i> Uy tín: ${r.reputation_score}</span>` : ''}
+                        </div>
+                        <div class="action-btn-container">${btnHtml}</div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('afterbegin', cardHtml);
+            });
+
+            // Khi một phòng thay đổi số lượng người, bị khóa hoặc báo cáo
+            lfgSocket.on('lq_update_room', function(data) {
+                const card = document.getElementById('room-card-' + data.id);
+                if (card) {
+                    if (data.status === 'full') {
+                        card.style.opacity = '0.5';
+                        card.innerHTML = '<div style="text-align:center; padding: 40px 10px; font-weight:900; color:var(--danger);"><i class="fa-solid fa-lock" style="font-size:40px; margin-bottom: 10px; display:block;"></i>PHÒNG ĐÃ ĐỦ NGƯỜI</div>';
+                    } 
+                    else if (data.status === 'reported' || data.status === 'expired') {
+                        card.remove(); 
+                    }
+                    else {
+                        const countSpan = card.querySelector('.player-count span');
+                        if(countSpan) countSpan.innerText = data.current_players;
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

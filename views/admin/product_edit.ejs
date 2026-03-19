@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Chỉnh Sửa Acc</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+
+    <%- include('partials/sidebar', { page: 'products' }) %>
+
+    <div class="main-content">
+        <a href="/admin/products" style="color:#aaa; text-decoration:none; display:inline-block; margin-bottom: 20px;"><i class="fa-solid fa-arrow-left"></i> Quay lại kho Acc</a>
+        <h1 class="page-title">Sửa Acc: #<%= product.id %></h1>
+
+        <div class="card">
+            <form action="/admin/products/update/<%= product.id %>?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="form-grid">
+                    <div>
+                        <label>Tiêu đề Acc</label>
+                        <input type="text" name="title" required value="<%= product.title %>">
+                    </div>
+                    <div>
+                        <label>Loại Acc</label>
+                        <input type="text" name="category" list="category-options" required value="<%= product.category %>">
+                        <datalist id="category-options">
+                            <option value="Liên Quân Mobile"></option>
+                            <option value="Free Fire"></option>
+                            <option value="PUBG Mobile"></option>
+                            <option value="Tốc Chiến"></option>
+                        </datalist>
+                    </div>
+                    <div><label>Giá Gốc (đ)</label><input type="number" name="price_old" value="<%= product.price_old %>"></div>
+                    <div><label>Giá Bán (đ)</label><input type="number" name="price_new" required value="<%= product.price_new %>"></div>
+                    
+                    <div>
+                        <label>Tài khoản Login (Game)</label>
+                        <input type="text" name="acc_username" required value="<%= product.acc_username %>">
+                    </div>
+                    <div>
+                        <label>Mật khẩu Login (Game)</label>
+                        <input type="text" name="acc_password" required value="<%= product.acc_password %>">
+                    </div>
+                    
+                    <div style="grid-column: 1 / -1;">
+                        <label style="color:#e14eca; font-weight:bold;">Thông tin chi tiết (Giữ nguyên định dạng cũ)</label>
+                        <textarea name="description_text" rows="8"><%= product.description_text %></textarea>
+                    </div>
+
+                    <div style="grid-column: 1 / -1;">
+                        <label>Ảnh Mô Tả Hiện Tại</label>
+                        <img src="<%= product.image_url %>" style="max-width: 200px; border-radius: 8px; border: 2px solid #555; margin-bottom: 10px; display: block;">
+                        
+                        <label style="color:#00b894;">Úp ảnh mới (Bỏ trống nếu muốn giữ ảnh cũ)</label>
+                        <input type="file" name="image" accept="image/*">
+                    </div>
+                </div>
+                <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> LƯU THAY ĐỔI</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

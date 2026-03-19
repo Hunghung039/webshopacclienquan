@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        /* CSS Giao diện chung */
+        .price-filters { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; -ms-overflow-style: none; }
+        .price-filters::-webkit-scrollbar { display: none; }
+        .price-chip { padding: 8px 16px; background: #fff; border: 1px solid #ddd; border-radius: 20px; white-space: nowrap; text-decoration: none; color: #555; font-size: 13px; font-weight: bold; transition: 0.3s; }
+        .price-chip.active { background: #e74c3c; color: #fff; border-color: #e74c3c; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
+        
+        /* Hệ thống Grid: Mobile 2 cột - Desktop 4 cột */
+        .product-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
+            margin-top: 15px; 
+        }
+
+        @media (min-width: 992px) {
+            .product-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 20px; 
+            }
+        }
+
+        /* Label Hot & Feedback */
+        .hot-label { position: absolute; top: 0; right: 0; background: #f1c40f; color: #000; padding: 2px 10px; font-size: 10px; font-weight: 800; border-bottom-left-radius: 10px; z-index: 5; }
+        .feedback-scroll { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
+        .feedback-img { width: 220px; height: 130px; border-radius: 10px; object-fit: cover; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .sale-notif { background: #fff; border-left: 4px solid #2ecc71; padding: 12px; margin-bottom: 8px; border-radius: 8px; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+
+        /* ==========================================
+           PAGINATION CHUẨN UX (THÔNG MINH)
+           ========================================== */
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 40px; margin-bottom: 40px; flex-wrap: wrap; }
+        .page-link { padding: 8px 14px; background: #fff; color: #2c3e50; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #ddd; transition: 0.3s; font-size: 14px; }
+        .page-link.active { background: #e74c3c; color: #fff; border-color: #e74c3c; box-shadow: 0 2px 8px rgba(231,76,60,0.3); }
+        .page-link:hover:not(.active) { background: #f1f2f6; }
+        .page-dots { color: #7f8c8d; font-weight: bold; padding: 0 4px; }
+        
+        /* Mobile Pagination */
+        @media (max-width: 576px) {
+            .page-link { padding: 6px 12px; font-size: 13px; }
+        }
+
+        /* Banner Uy Tín */
+        .trust-banner {
+            background: linear-gradient(45deg, #00f2c3, #00b894);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0, 242, 195, 0.3);
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+        .trust-banner:hover {
+            transform: translateY(-3px);
+        }
+        .trust-banner-content h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 800; }
+        .trust-banner-content p { margin: 0; font-size: 13px; opacity: 0.9; }
+        .trust-banner-icon { font-size: 40px; }
+
+        @media (max-width: 768px) {
+            .trust-banner { flex-direction: column; text-align: center; gap: 15px; }
+        }
+    </style>
+</head>
+<body style="background: #f4f7f6;">
+    <%- include('../../includes/header') %>
+    
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container" style="margin-top: 20px; padding: 0 15px;">
+        
+        <div class="price-filters">
+            <a href="/tai-khoan?price=all" class="price-chip <%= typeof currentPrice !== 'undefined' && currentPrice === 'all' ? 'active' : '' %>">Tất cả</a>
+            <a href="/tai-khoan?price=100-300" class="price-chip <%= typeof currentPrice !== 'undefined' && currentPrice === '100-300' ? 'active' : '' %>">100k - 300k</a>
+            <a href="/tai-khoan?price=300-600" class="price-chip <%= typeof currentPrice !== 'undefined' && currentPrice === '300-600' ? 'active' : '' %>">300k - 600k</a>
+            <a href="/tai-khoan?price=600-1m5" class="price-chip <%= typeof currentPrice !== 'undefined' && currentPrice === '600-1m5' ? 'active' : '' %>">600k - 1tr5</a>
+            <a href="/tai-khoan?price=above-1m5" class="price-chip <%= typeof currentPrice !== 'undefined' && currentPrice === 'above-1m5' ? 'active' : '' %>">> 1tr5</a>
+        </div>
+
+        <% if (typeof hotProducts !== 'undefined' && hotProducts.length > 0) { %>
+        <section style="margin-top: 25px;">
+            <h3 style="font-size: 18px; color: #d35400; font-weight: 800; margin-bottom: 15px;">
+                <i class="fa-solid fa-fire-flame-curved"></i> SIÊU PHẨM HOT TRONG THÁNG
+            </h3>
+            <div class="product-grid">
+                <% hotProducts.forEach(p => { %>
+                    <div class="product-card" style="position: relative; border: 2px solid #f1c40f; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+                        <div class="hot-label">HOT SALE</div>
+                        <a href="/chi-tiet/<%= p.slug %>">
+                            <img src="<%= p.image_url %>" alt="<%= p.title %>" style="width:100%; aspect-ratio: 4/3; object-fit:cover;">
+                        </a>
+                        <div style="padding:12px;">
+                            <h4 style="font-size:13px; height:36px; overflow:hidden; margin: 0 0 8px 0;"><%= p.title %></h4>
+                            <div style="color:#e74c3c; font-weight:900; font-size: 16px;"><%= new Intl.NumberFormat('vi-VN').format(p.price_new) %>đ</div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </section>
+        <% } %>
+
+        <section style="margin-top: 40px;">
+           <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 15px;">
+                <i class="fa-solid fa-bolt" style="color: #3498db;"></i> 
+                <%= typeof customH1 !== 'undefined' ? customH1 : 'KHO TÀI KHOẢN LIÊN QUÂN' %>
+            </h3>
+            <div class="product-grid">
+                <% if (typeof products !== 'undefined' && products.length > 0) { %>
+                    <% products.forEach(p => { %>
+                        <%- include('../../includes/partials/product-item', {p: p}) %>
+                    <% }) %>
+                <% } else { %>
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: #999;">
+                        <p>Hiện chưa có Acc ở mức giá này. Bạn xem mức giá khác nhé!</p>
+                    </div>
+                <% } %>
+            </div>
+
+            <% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
+                <div class="pagination-container">
+                    <% 
+                        let priceParam = (typeof currentPrice !== 'undefined' && currentPrice !== 'all') ? '&price=' + currentPrice : ''; 
+                        let currentPage = pagination.page;
+                        let totalPages = pagination.totalPages;
+                        
+                        // Tính toán hiển thị (Chỉ hiện xung quanh trang hiện tại)
+                        let startPage = Math.max(1, currentPage - 1);
+                        let endPage = Math.min(totalPages, currentPage + 1);
+
+                        // Xử lý góc hẹp
+                        if (currentPage === 1) endPage = Math.min(totalPages, 3);
+                        if (currentPage === totalPages) startPage = Math.max(1, totalPages - 2);
+                    %>
+                    
+                    <% if (currentPage > 1) { %>
+                        <a href="/tai-khoan?page=<%= currentPage - 1 %><%= priceParam %>" class="page-link">«</a>
+                    <% } %>
+
+                    <% if (startPage > 1) { %>
+                        <a href="/tai-khoan?page=1<%= priceParam %>" class="page-link">1</a>
+                        <% if (startPage > 2) { %> <span class="page-dots">...</span> <% } %>
+                    <% } %>
+
+                    <% for(let i = startPage; i <= endPage; i++) { %>
+                        <a href="/tai-khoan?page=<%= i %><%= priceParam %>" class="page-link <%= currentPage === i ? 'active' : '' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+
+                    <% if (endPage < totalPages) { %>
+                        <% if (endPage < totalPages - 1) { %> <span class="page-dots">...</span> <% } %>
+                        <a href="/tai-khoan?page=<%= totalPages %><%= priceParam %>" class="page-link"><%= totalPages %></a>
+                    <% } %>
+
+                    <% if (currentPage < totalPages) { %>
+                        <a href="/tai-khoan?page=<%= currentPage + 1 %><%= priceParam %>" class="page-link">»</a>
+                    <% } %>
+                </div>
+            <% } %>
+        </section>
+
+        <a href="/check-uy-tin" class="trust-banner">
+            <div class="trust-banner-content">
+                <h3>XEM GIAO DỊCH THÀNH CÔNG</h3>
+                <p>Hàng ngàn khách hàng đã tin tưởng và ủng hộ Shop Liên Quân Uy Tín. Bấm để kiểm chứng ngay!</p>
+            </div>
+            <i class="fa-solid fa-shield-halved trust-banner-icon"></i>
+        </a>
+
+        <section style="margin-top: 30px; margin-bottom: 60px;">
+            <h3 style="font-size: 16px; margin-bottom: 15px;"><i class="fa-solid fa-clock-rotate-left"></i> LỊCH SỬ GIAO DỊCH</h3>
+            <div class="sale-notif-list">
+                <% if (typeof recentSales !== 'undefined') { %>
+                    <% recentSales.forEach(s => { %>
+                        <div class="sale-notif">
+                            <b><%= s.username.substring(0,3) %>***</b> vừa mua thành công <b><%= s.title %></b>
+                            <div style="font-size:10px; color:#aaa;"><%= new Date(s.created_at).toLocaleString('vi-VN') %></div>
+                        </div>
+                    <% }) %>
+                <% } %>
+            </div>
+        </section>
+        
+        <section style="margin-top: 40px;">
+            <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 20px;">
+                <i class="fa-solid fa-book-open" style="color: #e67e22;"></i> CẨM NANG LIÊN QUAN
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                <% if (typeof relatedArticles !== 'undefined' && relatedArticles.length > 0) { %>
+                    <% relatedArticles.forEach(art => { %>
+                        <a href="/tin-tuc/<%= art.slug %>" style="display: flex; gap: 10px; text-decoration: none; background: #fff; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <img src="<%= art.thumbnail %>" style="width: 70px; height: 50px; border-radius: 5px; object-fit: cover;">
+                            <div style="flex: 1; overflow: hidden;">
+                                <h4 style="font-size: 12px; color: #333; margin: 0; line-height: 1.3; height: 32px;"><%= art.title %></h4>
+                                <span style="font-size: 10px; color: #999;"><i class="fa-solid fa-eye"></i> <%= art.views %></span>
+                            </div>
+                        </a>
+                    <% }) %>
+                <% } else { %>
+                    <p style="grid-column: 1/-1; font-size: 13px; color: #999; text-align: center; padding: 20px; border: 1px dashed #ccc; border-radius: 10px;">Chưa có cẩm nang cho chuyên mục này. Quay lại <a href="/tin-tuc" style="color:var(--primary); font-weight:bold;">Trang Tin Tức</a> để xem bài viết mới nhất!</p>
+                <% } %>
+            </div>
+        </section>
+
+        <section class="seo-content" style="margin-top: 50px; padding: 20px; background: #fff; border-radius: 15px;">
+            <div style="font-size: 14px; line-height: 1.6; color: #555;">
+                <%- typeof seoContent !== 'undefined' ? seoContent : '' %>
+                <h3 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">Từ khóa tìm kiếm phổ biến</h3>
+                <p style="font-size: 12px; color: #777;">
+                    mua acc liên quân, bán acc liên quân vip, shop acc liên quân giá rẻ, tài khoản liên quân trắng thông tin, shop nick liên quân uy tín, mua nick liên quân 50k, acc liên quân có flo tinh hệ, shop liên quân random, thử vận may liên quân 9k, túi mù liên quân.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <%- include('../../includes/footer') %>
+</body>
+</html>

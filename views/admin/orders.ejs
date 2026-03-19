@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Đơn Hàng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <style>
+        /* CSS Admin */
+        :root { --bg: #1e1e2f; --card: #27293d; --text: #fff; --accent: #e14eca; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; margin: 0; min-height: 100vh; }
+        .main-content { flex: 1; padding: 30px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; }
+
+        /* Tabs */
+        .tab-header { display: flex; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid #444; }
+        .tab-btn { background: none; border: none; color: #888; padding: 10px 20px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; font-size: 14px; }
+        th { color: #aaa; text-transform: uppercase; font-size: 12px; }
+        
+        /* Badges */
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .bg-pending { background: #34495e; color: #ecf0f1; border: 1px solid #bdc3c7; } /* Xám */
+        .bg-processing { background: #2980b9; color: #fff; border: 1px solid #3498db; } /* Xanh dương - Đang chạy */
+        .bg-completed { background: #27ae60; color: #fff; border: 1px solid #2ecc71; } /* Xanh lá */
+        .bg-cancelled { background: #c0392b; color: #fff; border: 1px solid #e74c3c; } /* Đỏ */
+
+        /* Buttons */
+        .btn-act { padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; margin-right: 5px; color: #fff; transition: 0.2s; }
+        .btn-act:hover { opacity: 0.8; }
+        
+        .btn-run { background: #2980b9; } /* Nút Chạy đơn */
+        .btn-done { background: #27ae60; } /* Nút Hoàn thành */
+        .btn-fail { background: #c0392b; } /* Nút Báo lỗi */
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <%- include('partials/sidebar', { page: 'orders' }) %>
+
+    <div class="main-content">
+        <h1 style="margin-bottom: 20px;">Quản Lý Đơn Hàng</h1>
+
+        <div class="card">
+            <div class="tab-header">
+                <button class="tab-btn active" onclick="switchTab('event')">Sự Kiện Chung Sức (<%= eventOrders.length %>)</button>
+                <button class="tab-btn" onclick="switchTab('acc')">Đơn Mua Acc (<%= accOrders.length %>)</button>
+            </div>
+
+            <div id="tab-event" class="tab-content active">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Thông tin đơn</th>
+                            <th>Giá</th>
+                            <th>Trạng thái</th>
+                            <th style="min-width: 180px;">Xử lý</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% eventOrders.forEach(order => { %>
+                            <tr>
+                                <td>#<%= order.id %></td>
+                                <td><%= order.username %></td>
+                                <td>
+                                    <div style="font-weight:bold; color:#fff"><%= order.ingame_name %></div>
+                                    <div style="color:#aaa; font-size:12px;">Code: <span style="color:var(--accent)"><%= order.event_code %></span></div>
+                                    <div style="font-size:11px; margin-top:2px;">
+                                        <%= order.package_type == 'full_1000' ? 'Gói Full (40k)' : 'Gói Lẻ (20k)' %>
+                                    </div>
+                                </td>
+                                <td style="color:#2ecc71; font-weight:bold;"><%= new Intl.NumberFormat('vi-VN').format(order.price) %>đ</td>
+                                
+                                <td>
+                                    <% if(order.status == 'pending') { %>
+                                        <span class="badge bg-pending">Đã gửi đơn</span>
+                                    <% } else if(order.status == 'processing') { %>
+                                        <span class="badge bg-processing"><i class="fa-solid fa-spinner fa-spin"></i> Đang chạy</span>
+                                    <% } else if(order.status == 'completed') { %>
+                                        <span class="badge bg-completed">Hoàn thành</span>
+                                    <% } else { %>
+                                        <span class="badge bg-cancelled">Đã hủy</span>
+                                    <% } %>
+
+                                    <% if(order.status == 'cancelled' && order.admin_note) { %>
+                                        <div style="font-size:11px; color:#e74c3c; margin-top:5px; max-width: 150px;">
+                                            <i class="fa-solid fa-circle-info"></i> <%= order.admin_note %>
+                                        </div>
+                                    <% } %>
+                                </td>
+
+                                <td>
+                                    <% if(order.status == 'pending') { %>
+                                        <button class="btn-act btn-run" onclick="updateStatus('<%= order.id %>', 'processing')">
+                                            <i class="fa-solid fa-play"></i> Chạy đơn
+                                        </button>
+                                        <button class="btn-act btn-fail" onclick="cancelOrder('<%= order.id %>')">
+                                            <i class="fa-solid fa-ban"></i> Hủy
+                                        </button>
+                                    <% } 
+                                    
+                                    // 2. NẾU ĐANG CHẠY -> HIỆN NÚT "XONG" HOẶC "BÁO LỖI"
+                                    else if(order.status == 'processing') { %>
+                                        <button class="btn-act btn-done" onclick="updateStatus('<%= order.id %>', 'completed')">
+                                            <i class="fa-solid fa-check"></i> Xong
+                                        </button>
+                                        <button class="btn-act btn-fail" onclick="cancelOrder('<%= order.id %>')">
+                                            <i class="fa-solid fa-triangle-exclamation"></i> Báo lỗi
+                                        </button>
+                                    <% } 
+                                    
+                                    // 3. ĐÃ XONG HOẶC HỦY -> KHÔNG LÀM GÌ NỮA
+                                    else { %>
+                                        <span style="color:#666; font-size:12px;">-- Đã chốt --</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tab-acc" class="tab-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ngày mua</th>
+                            <th>Khách</th>
+                            <th>Acc</th>
+                            <th>Giá</th>
+                            <th>Info Login</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% accOrders.forEach(acc => { %>
+                            <tr>
+                                <td style="color:#888; font-size:12px;"><%= new Date(acc.created_at).toLocaleString('vi-VN') %></td>
+                                <td><%= acc.username %></td>
+                                <td style="color:var(--accent)"><%= acc.title %></td>
+                                <td><%= new Intl.NumberFormat('vi-VN').format(acc.price_new) %>đ</td>
+                                <td>
+                                    <div style="font-size:12px;">TK: <%= acc.acc_username %></div>
+                                    <div style="font-size:12px;">MK: <%= acc.acc_password %></div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        function switchTab(t) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-'+t).classList.add('active');
+        }
+
+        // HÀM 1: CẬP NHẬT TRẠNG THÁI BÌNH THƯỜNG (CHẠY / XONG)
+        async function updateStatus(id, status) {
+            if(!confirm("Xác nhận đổi trạng thái?")) return;
+
+            try {
+                const res = await fetch('/admin/orders/event/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    'CSRF-Token': csrfToken,
+                    body: JSON.stringify({ orderId: id, status: status, note: '' })
+                });
+                if(res.ok) window.location.reload();
+                else alert('Lỗi');
+            } catch(e) { alert('Lỗi Server'); }
+        }
+
+        // HÀM 2: HỦY ĐƠN & BÁO LỖI (CÓ NHẬP NOTE)
+        async function cancelOrder(id) {
+            // Hiển thị hộp thoại nhập lý do
+            const reason = prompt("NHẬP LÝ DO HỦY ĐƠN (Sẽ gửi thông báo này cho khách):", "Sai mã sự kiện, vui lòng kiểm tra lại!");
+            
+            if (reason === null) return; // Nếu bấm Cancel thì thoát
+            if (reason.trim() === "") return alert("Phải nhập lý do để khách biết tại sao bị hủy!");
+
+            try {
+                const res = await fetch('/admin/orders/event/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    'CSRF-Token': csrfToken,
+                    body: JSON.stringify({ orderId: id, status: 'cancelled', note: reason })
+                });
+                
+                const data = await res.json();
+                if(res.ok) {
+                    alert(data.message); // "Đã hủy và hoàn tiền"
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch(e) { alert('Lỗi Server'); }
+        }
+    </script>
+</body>
+</html>

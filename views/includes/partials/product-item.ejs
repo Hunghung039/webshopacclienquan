@@ -1,0 +1,30 @@
+<div class="product-card" style="background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #f1f2f6; position: relative;">
+    <% if (p.is_hot == 1) { %>
+        <div style="position: absolute; top: 5px; right: 5px; background: #f1c40f; color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; z-index: 2;">HOT</div>
+    <% } %>
+    
+    <div class="p-thumb">
+        <a href="/chi-tiet/<%= p.slug %>">
+            <img src="<%= p.image_url %>" alt="<%= p.title %>" loading="lazy" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
+        </a>
+    </div>
+
+    <div class="p-body" style="padding: 10px;">
+        <h3 style="font-size: 13px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.4; height: 36px; overflow: hidden;">
+            <a href="/chi-tiet/<%= p.slug %>" style="color: #2c3e50; text-decoration: none;"><%= p.title %></a>
+        </h3>
+        
+        <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 8px;">MS: <b>#<%= p.id %></b></div>
+
+        <div class="p-price-row" style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px;">
+            <% if (p.price_old > p.price_new) { %>
+                <span style="font-size: 11px; color: #95a5a6; text-decoration: line-through;"><%= new Intl.NumberFormat('vi-VN').format(p.price_old) %>đ</span>
+            <% } %>
+            <span style="font-size: 16px; font-weight: 900; color: #e74c3c;"><%= new Intl.NumberFormat('vi-VN').format(p.price_new) %>đ</span>
+        </div>
+        
+        <a href="/chi-tiet/<%= p.slug %>" class="btn" style="display: block; width: 100%; text-align: center; background: #3498db; color: #fff; font-size: 11px; font-weight: bold; padding: 7px 0; border-radius: 6px; text-decoration: none;">
+            MUA NGAY
+        </a>
+    </div>
+</div>

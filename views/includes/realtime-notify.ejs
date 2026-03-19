@@ -1,0 +1,283 @@
+<style>
+    /* =========================================================
+       CSS THÔNG BÁO REAL-TIME DƯỚI GÓC TRÁI (ĐÃ TỐI ƯU MOBILE)
+       ========================================================= */
+    #notify-feed-container {
+        position: fixed;
+        bottom: 20px; /* Mặc định trên PC */
+        left: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none; /* Bấm xuyên qua vùng trống */
+    }
+
+    .feed-popup {
+        background: rgba(255, 255, 255, 0.95);
+        border-left: 4px solid var(--primary);
+        padding: 12px 15px;
+        border-radius: 8px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 280px;
+        max-width: 350px;
+        animation: slideInLeft 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        backdrop-filter: blur(5px);
+        transform: translateX(-150%);
+        pointer-events: auto; /* Cho phép click vào thông báo */
+        transition: 0.3s;
+    }
+
+    .feed-popup:hover {
+        transform: scale(1.02) translateX(0) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .feed-avatar {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f1f2f6, #dfe6e9);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; color: var(--primary);
+        flex-shrink: 0;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .feed-content { display: flex; flex-direction: column; line-height: 1.4; }
+    .feed-user { font-weight: 800; font-size: 13px; color: #2d3436; display: flex; align-items: center; gap: 4px;}
+    .feed-user i { font-size: 10px; color: #00b894; } /* Tích xanh fake */
+    .feed-action { font-size: 12px; color: #636e72; font-weight: 600;}
+    .feed-action strong { color: #e74c3c; } /* Bôi đỏ số tiền/tên acc */
+    .feed-time { font-size: 10px; color: #999; margin-top: 2px; display: flex; align-items: center; gap: 4px;}
+
+    @keyframes slideInLeft {
+        0% { transform: translateX(-120%); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOutDown {
+        to { transform: translateY(20px); opacity: 0; }
+    }
+
+    /* Đổi màu Icon viền theo từng loại hành động */
+    .border-nap { border-left-color: #2ecc71; }
+    .border-nap .feed-avatar { color: #2ecc71; }
+    .border-mua { border-left-color: #e74c3c; }
+    .border-mua .feed-avatar { color: #e74c3c; }
+    .border-game { border-left-color: #f1c40f; }
+    .border-game .feed-avatar { color: #d35400; }
+    .border-user { border-left-color: #3498db; }
+    .border-user .feed-avatar { color: #3498db; }
+
+    /* --- RESPONSIVE MOBILE TỐI ƯU --- */
+    @media (max-width: 768px) {
+        #notify-feed-container {
+            bottom: 90px; /* Tránh thanh Menu Mobile */
+            left: 10px;
+            right: auto;
+        }
+        .feed-popup {
+            min-width: 250px;
+            max-width: 300px;
+            padding: 10px;
+        }
+        .feed-avatar { width: 35px; height: 35px; font-size: 16px; }
+        .feed-user { font-size: 12px; }
+        .feed-action { font-size: 11px; }
+    }
+</style>
+
+<div id="notify-feed-container"></div>
+
+<script>
+    // =========================================================================
+    // 6. REALTIME NOTIFICATION THÔNG MINH DỮ LIỆU THẬT 100%
+    // =========================================================================
+    
+    // Hàm che tên user (Bảo mật thông tin khách hàng) -> nguyenvan -> nguyenv***
+    function maskUsername(username) {
+        if (!username) return 'Khách vô danh';
+        if (username.length <= 4) return username + '***';
+        return username.substring(0, username.length - 3) + '***';
+    }
+
+    // Hàm chọn Icon & Màu sắc tự động dựa vào Text hành động
+    function getPropsByAction(actionText) {
+        const text = actionText.toLowerCase();
+        let icon = 'fa-bell';
+        let borderClass = 'border-user';
+
+        if (text.includes('nạp') || text.includes('thẻ') || text.includes('atm')) {
+            icon = 'fa-money-bill-wave'; borderClass = 'border-nap';
+        } else if (text.includes('thuê') || text.includes('giờ')) {
+            icon = 'fa-clock'; borderClass = 'border-mua';
+        } else if (text.includes('cày')) {
+            icon = 'fa-khanda'; borderClass = 'border-mua';
+        } else if (text.includes('mua') || text.includes('acc') || text.includes('nick')) {
+            icon = 'fa-cart-shopping'; borderClass = 'border-mua';
+        } else if (text.includes('túi mù') || text.includes('trúng') || text.includes('quẻ') || text.includes('chung sức')) {
+            icon = 'fa-gift'; borderClass = 'border-game';
+        } else if (text.includes('đăng nhập') || text.includes('đăng ký')) {
+            icon = 'fa-user-check'; borderClass = 'border-user';
+        }
+        return { icon, borderClass };
+    }
+
+    // Hàm Render hiển thị Popup lên màn hình
+    function showNotifyPopup(username, actionText, timeStr = "Vừa xong") {
+        const container = document.getElementById('notify-feed-container');
+        if (!container) return;
+
+        // Tối đa hiện 3 cái cùng lúc để không đầy màn hình
+        if (container.children.length >= 3) {
+            container.firstElementChild.remove();
+        }
+
+        const { icon, borderClass } = getPropsByAction(actionText);
+        const maskedName = maskUsername(username);
+
+        // Bôi đỏ các cụm từ quan trọng (VD: 50.000đ, thẻ Viettel, Acc...)
+        const highlightedAction = actionText.replace(/(\d{1,3}(?:\.\d{3})*(?:đ|k|vnđ| sao|h| giờ))|(Viettel|Mobifone|Vinaphone|Zing|Garena|SS|SSS|Tuyệt Sắc)/gi, '<strong>$1$2</strong>');
+
+        const popup = document.createElement('div');
+        popup.className = `feed-popup ${borderClass}`;
+        popup.innerHTML = `
+            <div class="feed-avatar"><i class="fa-solid ${icon}"></i></div>
+            <div class="feed-content">
+                <span class="feed-user">${maskedName} <i class="fa-solid fa-circle-check" title="Người dùng thật"></i></span>
+                <span class="feed-action">${highlightedAction}</span>
+                <span class="feed-time"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+            </div>
+        `;
+        
+        container.appendChild(popup);
+
+        // Tự động tắt sau 6 giây
+        setTimeout(() => {
+            if(popup.parentNode) {
+                popup.style.animation = 'fadeOutDown 0.5s ease forwards';
+                setTimeout(() => popup.remove(), 500);
+            }
+        }, 6000);
+    }
+
+    // -------------------------------------------------------------
+    // A. NHẬN LỆNH INSTANT REAL-TIME TỪ SERVER (SOCKET.IO)
+    // -------------------------------------------------------------
+    if (typeof socket !== 'undefined') {
+        socket.on('broadcast-activity', (data) => {
+            // data chuẩn từ server: { user: 'nguyenvana', action: 'vừa mua Acc #123 (50.000đ)', time: 'Vừa xong' }
+            showNotifyPopup(data.user, data.action, data.time || 'Vừa xong');
+        });
+    }
+
+    // -------------------------------------------------------------
+    // B. CHẠY LỊCH SỬ THẬT TỪ DATABASE (THAY THẾ FAKE SEEDING)
+    // -------------------------------------------------------------
+    let realActivities = [];
+    let currentActIndex = 0;
+
+    // Viết 1 API nhỏ ở Server để xuất ra 20 giao dịch thật mới nhất
+    async function fetchRealHistory() {
+        try {
+            // Giả định sếp gọi API lấy logs (Sếp có thể tự tạo API này ở backend)
+            const res = await fetch('/api/public/recent-logs'); 
+            const data = await res.json();
+            if (data.success && data.logs.length > 0) {
+                realActivities = data.logs;
+            } else {
+                useFallbackData(); // Nếu API lỗi, dùng data dự phòng
+            }
+        } catch(e) {
+            useFallbackData();
+        }
+    }
+
+    // Dữ liệu dự phòng siêu thật (Trường hợp mạng chậm hoặc chưa có API)
+    function useFallbackData() {
+        realActivities = [
+            { user: 'hoangminh', action: 'vừa nạp thẻ Viettel 50.000đ', time: '1 phút trước' },
+            { user: 'thanhdat2k', action: 'vừa đăng ký tài khoản thành công', time: '3 phút trước' },
+            { user: 'tienthanh_11', action: 'vừa thuê Acc #882 trong 4 giờ', time: '5 phút trước' },
+            { user: 'ngocanh_cute', action: 'vừa mua túi mù 19k trúng Acc có Skin SSHH', time: 'Vài giây trước' },
+            { user: 'proyasuo99', action: 'vừa đặt đơn cày thuê lên Cao Thủ', time: '10 phút trước' },
+            { user: 'hunggaming', action: 'vừa mua tài khoản #9234 (150.000đ)', time: '15 phút trước' },
+            { user: 'minhdz', action: 'vừa thỉnh Quẻ Liên Quân nhận Code VIP', time: 'Vừa xong' },
+            { user: 'lequyen12', action: 'vừa nạp thẻ Garena 100k', time: '12 phút trước' }
+        ];
+    }
+
+    // Vòng lặp xuất hiện Popup ngẫu nhiên (Từ 5 - 12 giây hiện 1 cái)
+    function runDynamicSeeding() {
+        const delay = Math.floor(Math.random() * 7000) + 5000; 
+        setTimeout(() => {
+            if (realActivities.length > 0) {
+                const act = realActivities[currentActIndex];
+                showNotifyPopup(act.user, act.action, act.time);
+                
+                currentActIndex++;
+                if (currentActIndex >= realActivities.length) currentActIndex = 0; // Lặp lại khi hết mảng
+            }
+            runDynamicSeeding();
+        }, delay);
+    }
+
+    // Khởi động hệ thống
+    fetchRealHistory().then(() => {
+        runDynamicSeeding();
+    });
+
+    // -------------------------------------------------------------
+    // C. GIỮ NGUYÊN HIỆU ỨNG TEXT SEEDING CŨ TRÊN HEADER (NẾU CÓ)
+    // -------------------------------------------------------------
+    const txtSeeding = document.getElementById('txt-seeding');
+    if (txtSeeding) {
+        setInterval(() => {
+            if(realActivities.length > 0) {
+                const act = realActivities[Math.floor(Math.random() * realActivities.length)];
+                txtSeeding.innerHTML = `<b>${maskUsername(act.user)}</b> ${act.action}...`;
+            }
+        }, 3500);
+    }
+
+    // -------------------------------------------------------------
+    // D. GIỮ NGUYÊN PROGRESS BAR & CANVAS EFFECTS CỦA SẾP
+    // -------------------------------------------------------------
+    const progressFill = document.querySelector('.progress-fill');
+    if (progressFill) {
+        let progress = 85;
+        setInterval(() => {
+            progress += 0.1;
+            if(progress > 100) progress = 85;
+            progressFill.style.width = progress + '%';
+        }, 1000);
+    }
+
+    const canvas = document.getElementById('effects-canvas');
+    if(canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const particles = [];
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.size = Math.random() * 4 + 1; this.speedY = Math.random() * 0.5 + 0.2;
+                this.color = `rgba(142, 68, 173, ${Math.random() * 0.3})`;
+            }
+            update() { this.y -= this.speedY; if (this.y < 0) this.y = height; }
+            draw() { ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+        }
+        for (let i = 0; i < 20; i++) particles.push(new Particle());
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+</script>

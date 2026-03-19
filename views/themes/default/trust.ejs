@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .trust-bg { background: #0f111a; min-height: 100vh; color: #fff; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif;}
+        
+        .trust-header { text-align: center; padding: 50px 15px 30px; position: relative; overflow: hidden; background: linear-gradient(to bottom, #1a202c, #0f111a); }
+        .trust-header h1 { font-size: 32px; font-weight: 900; color: #00f2c3; text-transform: uppercase; margin-bottom: 15px; text-shadow: 0 0 20px rgba(0, 242, 195, 0.4); }
+        .trust-header p { color: #a0aec0; font-size: 15px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+
+        .masonry-grid { column-count: 4; column-gap: 20px; max-width: 1200px; margin: 0 auto; padding: 20px 15px; }
+
+        .trust-card {
+            break-inside: avoid; margin-bottom: 20px; background: #1e2235;
+            border-radius: 12px; overflow: hidden; border: 1px solid #2d3450;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.3s; cursor: pointer;
+            position: relative;
+        }
+        .trust-card:hover { transform: translateY(-5px); border-color: #00f2c3; box-shadow: 0 10px 25px rgba(0, 242, 195, 0.2); }
+        
+        .trust-img { width: 100%; display: block; object-fit: cover; }
+        
+        /* Nhãn hiển thị có nhiều ảnh */
+        .multi-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; backdrop-filter: blur(5px); border: 1px solid #555;}
+
+        .trust-info { padding: 15px; }
+        .t-name { font-weight: 800; color: #fff; font-size: 15px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;}
+        .t-name i { color: #00f2c3; font-size: 13px; }
+        .t-desc { font-size: 13px; color: #a0aec0; line-height: 1.4; }
+
+        /* MODAL ĐỌC NHIỀU ẢNH (SCROLL VERTICAL) */
+        .lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 99999;
+            display: none; flex-direction: column; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease;
+            overflow-y: auto; padding: 50px 0; /* Cho phép cuộn dọc */
+        }
+        .lightbox.show { display: flex; opacity: 1; }
+        .lightbox-close { position: fixed; top: 15px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; background: rgba(0,0,0,0.5); width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; z-index: 10;}
+        .lightbox-close:hover { background: #e74c3c; }
+        
+        .lightbox-content {
+            display: flex; flex-direction: column; gap: 10px; max-width: 600px; width: 100%; padding: 0 15px; margin: auto;
+        }
+        .lightbox-content img { width: 100%; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+
+        @media (max-width: 992px) { .masonry-grid { column-count: 3; } }
+        @media (max-width: 768px) { .masonry-grid { column-count: 2; column-gap: 10px; } .trust-card { margin-bottom: 10px; } }
+    </style>
+</head>
+<body class="trust-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <div class="trust-header">
+        <h1><i class="fa-solid fa-shield-halved"></i> Check Uy Tín Shop</h1>
+        <p>100% Giao dịch thật - Người thật việc thật. Cảm ơn hàng ngàn anh em game thủ đã luôn tin tưởng và ủng hộ Shop Liên Quân!</p>
+    </div>
+
+    <div class="masonry-grid">
+        <% if (typeof reviews !== 'undefined' && reviews.length > 0) { %>
+            <% reviews.forEach(r => { %>
+                <div class="trust-card" onclick="openLightbox(this)" data-images='<%= JSON.stringify(r.images) %>'>
+                    <img src="<%= r.images[0] %>" alt="Giao dịch uy tín" class="trust-img" loading="lazy">
+                    
+                    <% if(r.images.length > 1) { %>
+                        <div class="multi-badge"><i class="fa-solid fa-images"></i> +<%= r.images.length - 1 %></div>
+                    <% } %>
+
+                    <div class="trust-info">
+                        <div class="t-name"><i class="fa-solid fa-circle-check"></i> Khách: <%= r.customer_name %></div>
+                        <% if(r.description) { %> <div class="t-desc">"<%= r.description %>"</div> <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+    </div>
+
+    <div id="imageLightbox" class="lightbox" onclick="closeLightbox(event)">
+        <button class="lightbox-close" onclick="closeLightbox(event)">&times;</button>
+        <div class="lightbox-content" id="lightboxContent">
+            </div>
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        function openLightbox(element) {
+            // Lấy chuỗi JSON mảng ảnh từ thuộc tính data-images
+            const imagesArray = JSON.parse(element.getAttribute('data-images'));
+            const lightbox = document.getElementById('imageLightbox');
+            const contentBox = document.getElementById('lightboxContent');
+            
+            // Xóa ảnh cũ
+            contentBox.innerHTML = ''; 
+
+            // Tạo các thẻ img mới đổ vào khung dọc
+            imagesArray.forEach(imgUrl => {
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                contentBox.appendChild(img);
+            });
+
+            lightbox.classList.add('show');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeLightbox(event) {
+            if (event.target.id === 'imageLightbox' || event.target.className === 'lightbox-close' || event.target.innerHTML === '×') {
+                document.getElementById('imageLightbox').classList.remove('show');
+                document.body.style.overflow = 'auto'; 
+            }
+        }
+    </script>
+</body>
+</html>

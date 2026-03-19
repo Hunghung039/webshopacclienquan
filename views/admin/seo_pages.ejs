@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Trang SEO Clone</title>
+    <%- include('partials/head') %>
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'seo_pages' }) %>
+
+    <div class="main-content">
+        <h1 class="page-title">Cấu Hình Trang Clone SEO</h1>
+
+        <div class="card">
+            <h3>Tạo Trang Đích Mới</h3>
+            <form action="/admin/seo-pages/add" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="form-grid">
+                    <div>
+                        <label>Đường dẫn (Slug) - VD: acc-mcuong</label>
+                        <input type="text" name="slug" required placeholder="acc-mcuong">
+                    </div>
+                    <div>
+                        <label>Tiêu đề SEO (Meta Title)</label>
+                        <input type="text" name="title" required>
+                    </div>
+                    <div>
+                        <label>Từ khóa (Keywords)</label>
+                        <input type="text" name="keywords">
+                    </div>
+                    <div>
+                        <label>Tiêu đề H1 (Hiển thị trên trang)</label>
+                        <input type="text" name="h1_title" required>
+                    </div>
+                    <div>
+                        <label>Danh mục Acc cần hiển thị</label>
+                        <select name="target_category">
+                            <option value="lienquan">Liên Quân</option>
+                            <option value="freefire">Free Fire</option>
+                            <option value="tui_mu">Túi Mù</option>
+                            <option value="pet_linh_bao">Pet Linh Bảo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Danh mục Bài viết liên quan</label>
+                        <input type="text" name="article_category" placeholder="VD: cam-nang">
+                    </div>
+                </div>
+
+                <label>Mô tả SEO (Meta Description)</label>
+                <textarea name="description" rows="2"></textarea>
+
+                <label>Nội dung văn bản SEO (Hiển thị cuối trang - Hỗ trợ HTML)</label>
+                <textarea name="seo_content" rows="5" placeholder="Viết nội dung dài ở đây để lấy Top Google..."></textarea>
+
+                <button type="submit" class="btn-add">XUẤT BẢN TRANG CLONE</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Danh sách trang vệ tinh hiện có</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Slug</th>
+                        <th>Tiêu đề H1</th>
+                        <th>Lọc Sản Phẩm</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% pages.forEach(p => { %>
+                        <tr>
+                            <td><a href="/shop/<%= p.slug %>" target="_blank" style="color: #e14eca;">/shop/<%= p.slug %></a></td>
+                            <td><%= p.h1_title %></td>
+                            <td><span class="badge"><%= p.target_category %></span></td>
+                            <td>
+                                <form action="/admin/seo-pages/delete/<%= p.id %>" method="POST" onsubmit="return confirm('Xóa trang này?')">
+                                   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" style="background:none; border:none; color:#ff8d72; cursor:pointer;">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

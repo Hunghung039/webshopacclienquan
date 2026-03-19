@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Đăng Acc Hàng Loạt | Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <%- include('partials/admin_css') %>
+    
+    <style>
+        /* =========================================================================
+           CSS DARK MODE ĐỘC QUYỀN CHO ĐĂNG ACC HÀNG LOẠT (KHÔNG LỖI ADMIN_CSS)
+           ========================================================================= */
+        
+        /* 1. Khu vực Kéo thả / Chọn ảnh (Dark) */
+        .upload-zone {
+            border: 2px dashed #3498db;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .upload-zone:hover {
+            background: rgba(52, 152, 219, 0.2);
+            border-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        .upload-zone i {
+            font-size: 50px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        .upload-zone h3 {
+            margin: 0;
+            color: #ffffff; /* Chữ trắng trên nền đen */
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .upload-zone p {
+            color: #a1a1aa;
+        }
+
+        /* 2. Thanh công cụ điền nhanh (Dark) */
+        .quick-tools {
+            display: none; 
+            background: #1e1e2f; /* Nền card đen/xám tối */
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 25px;
+            border-left: 4px solid #f39c12;
+        }
+        .quick-tools-inner {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn-quick {
+            background: #27293d; /* Nút màu xám đen */
+            border: 1px solid #444;
+            color: #ffffff;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-quick:hover {
+            background: #f39c12;
+            color: #ffffff;
+            border-color: #f39c12;
+        }
+
+        /* 3. Khung chứa từng Acc (Dark Card) */
+        .acc-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+            background: #1e1e2f; /* Nền card tối */
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            position: relative;
+            border: 1px solid #333;
+            transition: 0.3s;
+            align-items: start;
+        }
+        .acc-row:hover {
+            border-color: #3498db;
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Nút Xóa Góc Phải */
+        .btn-remove-row {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
+            transition: 0.2s;
+            z-index: 10;
+        }
+        .btn-remove-row:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        /* Khung hiển thị ảnh preview */
+        .acc-row img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #444;
+            margin-bottom: 10px;
+        }
+
+        /* 4. Form nhập liệu (Dark Inputs) */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #a1a1aa; /* Chữ label xám sáng */
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #444; /* Viền ô nhập liệu tối */
+            border-radius: 6px;
+            font-size: 14px;
+            transition: 0.3s;
+            background: #27293d; /* Nền ô nhập liệu tối */
+            color: #ffffff; /* Chữ nhập vào màu trắng */
+            box-sizing: border-box; 
+        }
+        .input-group input::placeholder {
+            color: #6c757d;
+        }
+        .input-group input:focus {
+            border-color: #3498db;
+            background: #1e1e2f;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Độ rộng các cột Form */
+        .col-span-6 { grid-column: span 6; }
+        .col-span-3 { grid-column: span 3; }
+        .col-span-2 { grid-column: span 2; }
+
+        /* 5. Nút Toggle HOT/VIP (Dark Mode) */
+        .hot-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px dashed rgba(231, 76, 60, 0.5);
+        }
+        .hot-toggle input {
+            display: none;
+        }
+        .toggle-box {
+            width: 40px;
+            height: 20px;
+            background: #444; /* Nền tắt (xám đen) */
+            border-radius: 20px;
+            position: relative;
+            transition: 0.3s;
+        }
+        .toggle-box::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .hot-toggle input:checked + .toggle-box {
+            background: #e74c3c;
+        }
+        .hot-toggle input:checked + .toggle-box::after {
+            transform: translateX(20px);
+        }
+
+        /* 6. Nút Xuất bản khổng lồ */
+        .btn-submit {
+            display: none; 
+            width: 100%;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: #fff;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(46, 204, 113, 0.2);
+            transition: 0.3s;
+            margin-top: 30px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(46, 204, 113, 0.4);
+        }
+        .btn-submit:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* =========================================================================
+           RESPONSIVE (TỐI ƯU CHO ĐIỆN THOẠI/TABLET)
+           ========================================================================= */
+        @media (max-width: 992px) {
+            .acc-row {
+                grid-template-columns: 1fr; /* Rớt ảnh xuống nằm trên Form */
+                gap: 15px;
+            }
+            .acc-row img {
+                height: 180px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr; /* Tất cả ô nhập liệu xuống dòng */
+            }
+            .col-span-6, .col-span-3, .col-span-2 {
+                grid-column: span 1;
+            }
+            .mobile-half {
+                display: inline-block;
+                width: 48%; /* Cho phép 2 ô giá và % sale nằm ngang nhau trên Mobile */
+            }
+            .quick-tools-inner {
+                justify-content: center;
+            }
+            .btn-quick {
+                width: 48%; /* Nút điền nhanh chia 2 cột */
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'bulk_add' }) %>
+
+    <div class="main-content">
+        <h1 style="margin: 0 0 20px 0; font-weight: 700; color: #fff; border-left: 4px solid #3498db; padding-left: 15px; font-size: 24px;">Đăng Nick Hàng Loạt</h1>
+        
+        <div class="card" id="step1" style="background: transparent; box-shadow: none; padding: 0;">
+            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-layer-group"></i>
+                <h3>BẤM VÀO ĐÂY ĐỂ CHỌN ẢNH TỪ ĐIỆN THOẠI / MÁY TÍNH</h3>
+                <p>(Chọn tối đa 50 ảnh/lần. Hệ thống sẽ tự động nén siêu nhẹ sang định dạng WebP)</p>
+            </div>
+        </div>
+
+        <div class="quick-tools" id="quickTools">
+            <h4 style="margin: 0 0 10px 0; color: #f39c12; font-size: 15px;"><i class="fa-solid fa-bolt"></i> CÔNG CỤ ĐIỀN NHANH TỰ ĐỘNG</h4>
+            <div class="quick-tools-inner">
+                <button class="btn-quick" onclick="fillAllAccounts()"><i class="fa-solid fa-user-secret"></i> Giấu TK/MK</button>
+                <button class="btn-quick" onclick="fillAllInfo()"><i class="fa-solid fa-wand-magic-sparkles"></i> Mẫu Info VIP</button>
+                <button class="btn-quick" onclick="fillAllDiscounts(50)"><i class="fa-solid fa-tag"></i> Set Sale 50%</button>
+                <button class="btn-quick" onclick="fillAllDiscounts(70)"><i class="fa-solid fa-tag"></i> Set Sale 70%</button>
+            </div>
+        </div>
+
+        <div id="formsContainer"></div>
+
+        <button class="btn-submit" id="btnSubmit" onclick="submitAll()"><i class="fa-solid fa-rocket"></i> XUẤT BẢN TOÀN BỘ LÊN SHOP</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const formsContainer = document.getElementById('formsContainer');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const quickTools = document.getElementById('quickTools');
+        let selectedFiles = []; 
+
+        fileInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if(files.length === 0) return;
+            if(files.length > 50) return Swal.fire({background: '#1e1e2f', color: '#fff', title: 'Cảnh báo', text: 'Vui lòng chọn tối đa 50 ảnh 1 lần để tránh sập máy chủ!', icon: 'warning'});
+
+            selectedFiles = files; 
+            formsContainer.innerHTML = ''; 
+            btnSubmit.style.display = 'block';
+            quickTools.style.display = 'block';
+
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const rowHTML = `
+                        <div class="acc-row" id="row-${index}">
+                            <button class="btn-remove-row" onclick="removeRow(${index})" title="Xóa nick này"><i class="fa-solid fa-xmark"></i></button>
+                            
+                            <div>
+                                <img src="${event.target.result}">
+                                <label class="hot-toggle">
+                                    <input type="checkbox" id="hot-${index}">
+                                    <div class="toggle-box"></div>
+                                    <span style="font-size:13px; font-weight:bold; color:#e74c3c;">🔥 Gắn Tag VIP/HOT</span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="input-group col-span-6">
+                                    <label>Tên / Tiêu đề Acc</label>
+                                    <input type="text" id="title-${index}" placeholder="VD: Nick Nakroth Thứ Nguyên Vệ Thần..." required>
+                                </div>
+                                
+                                <div class="input-group col-span-2 mobile-half">
+                                    <label style="color: #f39c12;">Giá cũ (VNĐ)</label>
+                                    <input type="number" id="priceOld-${index}" placeholder="VD: 1000000" oninput="calcPrice(${index})">
+                                </div>
+                                
+                                <div class="input-group col-span-2 mobile-half">
+                                    <label style="color: #e74c3c;">% Sale</label>
+                                    <input type="number" id="discount-${index}" placeholder="VD: 50" oninput="calcPrice(${index})">
+                                </div>
+                                
+                                <div class="input-group col-span-2">
+                                    <label style="color: #3498db;">GIÁ BÁN THỰC (Tự tính)</label>
+                                    <input type="number" id="priceNew-${index}" placeholder="0" style="background:#111; color:#00f2c3; font-weight:bold; border-color:#00f2c3;">
+                                </div>
+
+                                <div class="input-group col-span-3">
+                                    <label>Tài khoản Game</label>
+                                    <input type="text" id="user-${index}" placeholder="Nhập tài khoản (Sẽ được mã hóa bảo mật)" required>
+                                </div>
+                                
+                                <div class="input-group col-span-3">
+                                    <label>Mật khẩu Game</label>
+                                    <input type="text" id="pass-${index}" placeholder="Nhập mật khẩu" required>
+                                </div>
+
+                                <div class="input-group col-span-6">
+                                    <label>Thông tin nổi bật (Hiển thị ra ngoài)</label>
+                                    <input type="text" id="info-${index}" placeholder="VD: Trắng thông tin, Liên kết chuẩn, Full Tướng..." required>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    formsContainer.insertAdjacentHTML('beforeend', rowHTML);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // HÀM TỰ ĐỘNG TÍNH GIÁ TIỀN CHO TỪNG Ô
+        function calcPrice(index) {
+            const oldPrice = parseFloat(document.getElementById(`priceOld-${index}`).value) || 0;
+            const discount = parseFloat(document.getElementById(`discount-${index}`).value) || 0;
+            
+            if (oldPrice > 0 && discount >= 0 && discount <= 100) {
+                const newPrice = oldPrice - (oldPrice * discount / 100);
+                document.getElementById(`priceNew-${index}`).value = Math.round(newPrice);
+            } else {
+                document.getElementById(`priceNew-${index}`).value = oldPrice; 
+            }
+        }
+
+        // =====================================
+        // CÁC HÀM "LƯỜI BIẾNG" (QUICK FILL)
+        // =====================================
+        function fillAllAccounts() {
+            for (let i = 0; i < selectedFiles.length; i++) {
+                if (selectedFiles[i] !== null) {
+                    document.getElementById(`user-${i}`).value = "LH admin nhận tk mk";
+                    document.getElementById(`pass-${i}`).value = "LH admin nhận tk mk";
+                }
+            }
+        }
+
+        function fillAllInfo() {
+            for (let i = 0; i < selectedFiles.length; i++) {
+                if (selectedFiles[i] !== null) {
+                    document.getElementById(`info-${i}`).value = "Trắng thông tin, Đổi mật khẩu ngay";
+                }
+            }
+        }
+
+        function fillAllDiscounts(pct) {
+            let errorCount = 0;
+            for (let i = 0; i < selectedFiles.length; i++) {
+                if (selectedFiles[i] !== null) {
+                    const oldPriceInput = document.getElementById(`priceOld-${i}`);
+                    if(oldPriceInput.value && oldPriceInput.value > 0) {
+                        document.getElementById(`discount-${i}`).value = pct;
+                        calcPrice(i);
+                    } else {
+                        errorCount++;
+                    }
+                }
+            }
+            if(errorCount > 0) {
+                Swal.fire({background: '#1e1e2f', color: '#fff', toast: true, position: 'top-end', icon: 'info', title: `Đã bỏ qua ${errorCount} nick do chưa điền Giá Cũ!`, showConfirmButton: false, timer: 3000});
+            }
+        }
+
+        // Xóa dòng lỗi
+        function removeRow(index) {
+            document.getElementById(`row-${index}`).remove();
+            selectedFiles[index] = null; 
+            if(selectedFiles.every(f => f === null)) {
+                btnSubmit.style.display = 'none';
+                quickTools.style.display = 'none';
+            }
+        }
+
+        // =====================================
+        // GỬI DỮ LIỆU LÊN SERVER QUA FETCH API
+        // =====================================
+        async function submitAll() {
+            const formData = new FormData();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            let hasData = false;
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                if (selectedFiles[i] === null) continue;
+
+                const title = document.getElementById(`title-${i}`).value.trim();
+                const priceOld = document.getElementById(`priceOld-${i}`).value.trim();
+                const priceNew = document.getElementById(`priceNew-${i}`).value.trim();
+                const user = document.getElementById(`user-${i}`).value.trim();
+                const pass = document.getElementById(`pass-${i}`).value.trim();
+                const info = document.getElementById(`info-${i}`).value.trim();
+                const isHot = document.getElementById(`hot-${i}`).checked ? 1 : 0;
+
+                // VALIDATE DỮ LIỆU
+                if(!title || !priceOld || !priceNew || !user || !pass) {
+                    return Swal.fire({background: '#1e1e2f', color: '#fff', title: 'Cảnh báo', text: `Bạn nhập thiếu thông tin ở ảnh thứ ${i + 1}! Vui lòng kiểm tra lại.`, icon: 'error'});
+                }
+
+                // Append Data
+                formData.append('images', selectedFiles[i]);
+                formData.append('titles', title);
+                formData.append('price_olds', priceOld); 
+                formData.append('price_news', priceNew); 
+                formData.append('usernames', user);
+                formData.append('passwords', pass);
+                formData.append('infos', info);
+                formData.append('is_hots', isHot);
+                hasData = true;
+            }
+
+            if (!hasData) return;
+
+            try {
+                btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> HỆ THỐNG ĐANG TẢI VÀ NÉN ẢNH WEBP...';
+                btnSubmit.disabled = true;
+
+                const response = await fetch('/admin/bulk-add', {
+                    method: 'POST',
+                    headers: { 'CSRF-Token': csrfToken },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if(result.success) {
+                    Swal.fire({
+                        background: '#1e1e2f', color: '#fff',
+                        title: 'XUẤT BẢN THÀNH CÔNG!',
+                        text: result.message,
+                        icon: 'success',
+                        confirmButtonText: 'Đến trang Quản lý Kho',
+                        confirmButtonColor: '#2ecc71',
+                        allowOutsideClick: false
+                    }).then(() => {
+                        window.location.href = '/admin/products'; 
+                    });
+                } else {
+                    Swal.fire({background: '#1e1e2f', color: '#fff', title: 'Lỗi từ Server', text: result.message, icon: 'error'});
+                    resetSubmitButton();
+                }
+            } catch (error) {
+                Swal.fire({background: '#1e1e2f', color: '#fff', title: 'Lỗi Mạng', text: 'Không thể kết nối tới máy chủ! Vui lòng thử lại.', icon: 'error'});
+                resetSubmitButton();
+            }
+        }
+
+        function resetSubmitButton() {
+            btnSubmit.innerHTML = '<i class="fa-solid fa-rocket"></i> XUẤT BẢN TOÀN BỘ LÊN SHOP';
+            btnSubmit.disabled = false;
+        }
+    </script>
+</body>
+</html>

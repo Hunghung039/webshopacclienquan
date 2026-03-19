@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Thành Viên</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'users' }) %>
+
+    <div class="main-content">
+        <h1 style="margin: 0 0 25px 0; font-weight: 300; border-left: 4px solid var(--accent); padding-left: 15px;">Quản Lý Thành Viên</h1>
+
+        <div class="card">
+            <div class="header-actions">
+                <h3 style="margin: 0; color: #ccc;">Danh sách thành viên</h3>
+                
+                <form action="/admin/users" method="GET" class="search-form">
+                    <input type="text" name="q" placeholder="Nhập ID User hoặc Tên tài khoản..." value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>">
+                    <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm</button>
+                    <% if(typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
+                        <a href="/admin/users" style="padding: 10px; color: #e74c3c; text-decoration: none;"><i class="fa-solid fa-xmark"></i> Hủy</a>
+                    <% } %>
+                </form>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Thông tin</th>
+                        <th>Số dư</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày Đăng Ký</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (users.length > 0) { %>
+                        <% users.forEach(u => { %>
+                            <tr>
+                                <td style="font-weight: bold; color: #aaa;">#<%= u.id %></td>
+                                <td>
+                                    <b style="color: #fff; font-size: 15px;"><%= u.username %></b><br>
+                                    <span style="font-size:11px; color:#aaa"><%= u.email || 'Chưa cập nhật email' %></span>
+                                </td>
+                                <td style="color:#2ecc71; font-weight:bold; font-size: 15px;"><%= new Intl.NumberFormat('vi-VN').format(u.money) %>đ</td>
+                                <td>
+                                    <% if(u.role === 'admin') { %>
+                                        <span style="color: #f1c40f; font-weight: bold;"><i class="fa-solid fa-crown"></i> Admin</span>
+                                    <% } else { %>
+                                        User
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if(u.is_banned) { %>
+                                        <span class="badge bg-ban"><i class="fa-solid fa-lock"></i> Bị khóa</span>
+                                    <% } else { %>
+                                        <span class="badge bg-ok"><i class="fa-solid fa-check"></i> Hoạt động</span>
+                                    <% } %>
+                                </td>
+                                <td style="font-size: 12px; color: #888;"><%= new Date(u.created_at).toLocaleDateString('vi-VN') %></td>
+                                <td>
+                                    <a href="/admin/users/<%= u.id %>" class="btn-view"><i class="fa-solid fa-eye"></i> Kiểm tra</a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">Không tìm thấy thành viên nào!</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+
+            <% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
+                <div class="pagination">
+                    <% let qParam = searchQuery ? '&q=' + searchQuery : ''; %>
+                    
+                    <% if (pagination.page > 1) { %>
+                        <a href="/admin/users?page=<%= pagination.page - 1 %><%= qParam %>" class="page-link">« Trang trước</a>
+                    <% } %>
+                    
+                    <span class="page-link active">Trang <%= pagination.page %> / <%= pagination.totalPages %></span>
+                    
+                    <% if (pagination.page < pagination.totalPages) { %>
+                        <a href="/admin/users?page=<%= pagination.page + 1 %><%= qParam %>" class="page-link">Trang sau »</a>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>

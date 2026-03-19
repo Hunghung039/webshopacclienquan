@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Chỉnh Sửa Vũ Trụ Gacha</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+   <%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'chungsuc' }) %>
+
+    <div class="main-content">
+        <a href="/admin/chung-suc" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Quay Lại Sảnh</a>
+        
+        <div class="card">
+            <h2 style="margin-top: 0; color: var(--primary);"><i class="fa-solid fa-pen-to-square"></i> Cấu Hình: <%= event.name %></h2>
+            
+            <form action="/admin/chung-suc/event/edit/<%= event.id %>?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data" id="editForm">
+                
+                <div class="switch-box">
+                    <input type="checkbox" name="is_active" id="active" style="width: auto; margin:0;" <%= event.is_active ? 'checked' : '' %>>
+                    <label for="active" style="margin:0; font-size: 15px; cursor: pointer; color: #fff;">Sự Kiện Đang Bật (Hiển thị ra Web)</label>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>Tên Sự Kiện</label>
+                        <input type="text" name="name" value="<%= event.name %>" required>
+                    </div>
+                    <div>
+                        <label>Đường dẫn Web (Slug)</label>
+                        <input type="text" name="slug" value="<%= event.slug %>" required>
+                    </div>
+                    <div>
+                        <label title="Đạt mốc này sẽ chắc chắn ra Thẻ Hiếm VIP">Mốc Tiền Kích Hoạt Bảo Hiểm (VNĐ)</label>
+                        <input type="number" name="pity_threshold" value="<%= event.pity_threshold %>" required>
+                    </div>
+                    <div>
+                        <label>Bảng Giá Lũy Tiến (Cách nhau dấu phẩy)</label>
+                        <input type="text" name="prices" value="<%= event.prices %>" required style="color: var(--warning); font-family: monospace;">
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label style="color: #e14eca;"><i class="fa-solid fa-crown"></i> MÃ VIP CỐ ĐỊNH (Khi khách nổ hũ sẽ ăn mã này)</label>
+                        <input type="text" name="vip_code" value="<%= event.vip_code %>" required style="border-color: #e14eca; font-weight: bold; font-family: monospace; font-size: 16px;">
+                    </div>
+                </div>
+
+                <hr style="border-color: #333; margin: 25px 0;">
+
+                <label>Ảnh Bìa Sảnh (Banner)</label>
+                <div class="input-group">
+                    <img src="<%= event.banner_image.startsWith('http') ? event.banner_image : '/images/' + event.banner_image %>" class="img-preview" onerror="this.src='/images/default.jpg'">
+                    <input type="hidden" name="old_banner_image" value="<%= event.banner_image %>">
+                    <input type="file" name="banner_file" accept="image/*" title="Chọn file mới nếu muốn đổi ảnh">
+                </div>
+
+                <label>Ảnh Lưng Bài (Mặt úp chung)</label>
+                <div class="input-group">
+                    <img src="<%= event.card_back_image.startsWith('http') ? event.card_back_image : '/images/' + event.card_back_image %>" class="img-preview" onerror="this.src='/images/default.jpg'">
+                    <input type="hidden" name="old_card_back_image" value="<%= event.card_back_image %>">
+                    <input type="file" name="back_file" accept="image/*" title="Chọn file mới nếu muốn đổi ảnh">
+                </div>
+
+                <label>Ảnh Thẻ Hiếm VIP (Mặt ngửa nổ bảo hiểm)</label>
+                <div class="input-group">
+                    <img src="<%= event.rare_image.startsWith('http') ? event.rare_image : '/images/' + event.rare_image %>" class="img-preview" onerror="this.src='/images/default.jpg'">
+                    <input type="hidden" name="old_rare_image" value="<%= event.rare_image %>">
+                    <input type="file" name="rare_file" accept="image/*" title="Chọn file mới nếu muốn đổi ảnh">
+                </div>
+                
+                <hr style="border-color: #333; margin: 25px 0;">
+
+                <label style="color: var(--warning);"><i class="fa-solid fa-trash-can"></i> Quản Lý Các Ảnh Rác Bẫy Khách</label>
+                
+                <p style="font-size: 12px; color: #888; margin-top: 0;">Các ảnh rác đang hoạt động (Bấm <b style="color:var(--danger)">X</b> để xóa bớt):</p>
+                
+                <div class="old-trash-grid" id="oldTrashGrid">
+                    <% 
+                        let trashArr = event.trash_images ? event.trash_images.split(',') : [];
+                        trashArr.forEach((img, idx) => { 
+                            if(img.trim() !== '') {
+                                let displayImg = img.trim().startsWith('http') ? img.trim() : '/images/' + img.trim();
+                    %>
+                        <div class="trash-item" data-img="<%= img.trim() %>">
+                            <img src="<%= displayImg %>" onerror="this.src='/images/default.jpg'">
+                            <button type="button" class="btn-del" onclick="removeOldTrash(this)" title="Xóa ảnh này"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    <% } }) %>
+                </div>
+                <input type="hidden" name="old_trash_images" id="oldTrashInput" value="<%= event.trash_images %>">
+
+                <div style="background: rgba(0, 242, 195, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed #00f2c3;">
+                    <label style="color: #00f2c3; margin-bottom: 10px;"><i class="fa-solid fa-upload"></i> Bơm thêm Ảnh Rác MỚI (Bôi đen file trên máy tính)</label>
+                    <input type="file" name="trash_files" multiple accept="image/*" style="border-color: #00f2c3; color: #00f2c3; margin: 0;">
+                </div>
+                
+                <button type="submit" class="btn-submit"><i class="fa-solid fa-floppy-disk"></i> LƯU MỌI THAY ĐỔI</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function removeOldTrash(btn) {
+            // Xóa phần tử giao diện
+            const item = btn.parentElement;
+            item.remove();
+            
+            // Cập nhật lại danh sách gửi lên Server (Xóa bỏ tên file trong thẻ input hidden)
+            const remainingItems = document.querySelectorAll('#oldTrashGrid .trash-item');
+            let arr = [];
+            remainingItems.forEach(el => arr.push(el.getAttribute('data-img')));
+            document.getElementById('oldTrashInput').value = arr.join(',');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Sản Phẩm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+
+    <%- include('partials/sidebar', { page: 'products' }) %>
+
+    <div class="main-content">
+        <h1 class="page-title">Kho Acc Liên Quân</h1>
+
+        <div class="card">
+            <h3 style="margin-bottom: 20px;">Đăng Bán Acc Mới</h3>
+            
+            <form action="/admin/products/add?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="form-grid">
+                    <div>
+                        <label>Tiêu đề Acc</label>
+                        <input type="text" name="title" required placeholder="VD: Acc Liên Quân Full Tướng...">
+                    </div>
+                    <div>
+                        <label>Loại Acc (Chọn hoặc Tự gõ loại mới)</label>
+                        <input type="text" name="category" list="category-options" required placeholder="Gõ loại acc mới vào đây...">
+                        <datalist id="category-options">
+                            <option value="Liên Quân Mobile"></option>
+                            <option value="Free Fire"></option>
+                            <option value="PUBG Mobile"></option>
+                            <option value="Tốc Chiến"></option>
+                            <option value="Roblox"></option>
+                            <option value="Túi Mù 9k"></option>
+                        </datalist>
+                    </div>
+                    <div><label>Giá Gốc (đ)</label><input type="number" name="price_old" value="0"></div>
+                    <div><label>Giá Bán (đ)</label><input type="number" name="price_new" required></div>
+                    <div><label>Tài khoản Login</label><input type="text" name="acc_username" required></div>
+                    <div><label>Mật khẩu Login</label><input type="text" name="acc_password" required></div>
+                    
+                    <div style="grid-column: 1 / -1;">
+                        <label style="color:#e14eca; font-weight:bold;">Thông tin chi tiết (Mỗi dòng 1 thuộc tính, ngăn cách bởi dấu hai chấm ":")</label>
+                        <textarea name="description_text" rows="6" placeholder="Rank: Cao Thủ&#10;Tướng: 105&#10;Trang phục: 200"></textarea>
+                    </div>
+
+                    <div style="grid-column: 1 / -1;">
+                        <label>Ảnh Mô Tả</label>
+                        <input type="file" name="image" accept="image/*" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> ĐĂNG ACC NGAY</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 20px;">Danh sách Acc đang bán</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; color: #fff; min-width: 700px;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th style="padding: 10px;">ID</th>
+                            <th>Ảnh</th>
+                            <th>Tiêu đề</th>
+                            <th>Danh mục</th>
+                            <th>Giá bán</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% products.forEach(p => { %>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding: 15px 10px;">#<%= p.id %></td>
+                                <td><img src="<%= p.image_url %>" class="prod-img" alt="<%= p.title %>"></td>
+                                <td style="color:#e14eca;"><%= p.title %></td>
+                                <td><span style="background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 4px; font-size: 11px;"><%= p.category %></span></td>
+                                <td style="color: #00f2c3; font-weight: bold;"><%= new Intl.NumberFormat('vi-VN').format(p.price_new) %>đ</td>
+                                <td>
+                                    <% if(p.status == 'available') { %>
+                                        <span style="color: #00f2c3; border: 1px solid #00f2c3; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Đang bán</span>
+                                    <% } else { %>
+                                        <span style="color: #ff8d72; border: 1px solid #ff8d72; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Đã bán</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <a href="/admin/products/edit/<%= p.id %>" class="btn-action" style="color: #00b894;"><i class="fa-solid fa-pen-to-square"></i> Sửa</a>
+                                    
+                                    <form action="/admin/products/delete/<%= p.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Bạn chắc chắn muốn xóa acc này?')">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <button type="submit" class="btn-action" style="color: #ff8d72;"><i class="fa-solid fa-trash"></i> Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
+                <div style="display: flex; justify-content: center; gap: 10px; margin-top: 25px; padding-bottom: 20px;">
+                    <% if (pagination.page > 1) { %>
+                        <a href="/admin/products?page=<%= pagination.page - 1 %>" style="padding: 8px 20px; background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; border-radius: 8px;"><i class="fa-solid fa-chevron-left"></i> Trang trước</a>
+                    <% } %>
+                    <span style="padding: 8px 20px; background: var(--accent); color: #fff; border-radius: 8px; font-weight: bold;">Trang <%= pagination.page %> / <%= pagination.totalPages %></span>
+                    <% if (pagination.page < pagination.totalPages) { %>
+                        <a href="/admin/products?page=<%= pagination.page + 1 %>" style="padding: 8px 20px; background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; border-radius: 8px;">Trang sau <i class="fa-solid fa-chevron-right"></i></a>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>

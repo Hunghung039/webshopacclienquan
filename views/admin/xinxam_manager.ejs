@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Gieo Quẻ Xin Xăm</title>
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'xinxam' }) %>
+
+    <div class="main-content">
+        <% if (typeof msg !== 'undefined' && msg) { %>
+            <div style="background: <%= typeof type !== 'undefined' && type === 'error' ? 'rgba(253,93,147,0.2)' : 'rgba(0,242,195,0.2)' %>; color: <%= typeof type !== 'undefined' && type === 'error' ? 'var(--danger)' : 'var(--accent)' %>; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; border-left: 4px solid <%= typeof type !== 'undefined' && type === 'error' ? 'var(--danger)' : 'var(--accent)' %>;">
+                <i class="fa-solid <%= typeof type !== 'undefined' && type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-check' %>"></i> <%= msg %>
+            </div>
+        <% } %>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <h1 class="page-title" style="margin: 0; border-color: var(--warning);">Sự Kiện <b style="color: var(--warning);">Gieo Quẻ Đầu Năm</b></h1>
+            
+            <form action="/admin/xinxam/cards/delete-all?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('CẢNH BÁO ĐỎ: Sếp chắc chắn muốn xóa TẤT CẢ các thẻ và lịch sử mua hàng chứ?')">
+                <button type="submit" class="btn-danger"><i class="fa-solid fa-bomb"></i> Dọn Sạch Kho Quẻ</button>
+            </form>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fa-solid fa-gear"></i> Cài Đặt Sự Kiện</h3>
+            <form action="/admin/xinxam/config?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                <div class="form-grid">
+                    <div>
+                        <label>Tên Sự Kiện</label>
+                        <input type="text" name="name" value="<%= config.name || '' %>" required>
+                    </div>
+                    
+                    <div class="switch-box">
+                        <label class="hot-toggle" style="background: none; border: none; padding: 0; margin: 0;">
+                            <input type="checkbox" name="is_active" <%= config.is_active ? 'checked' : '' %>>
+                            <div class="toggle-box" style="background: var(--accent);"></div>
+                            <span style="font-size: 14px; color: var(--accent); font-weight: bold; margin-left: 5px;">BẬT HIỂN THỊ SỰ KIỆN NÀY</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label>Giá 1 Quẻ Mặc Định (VNĐ)</label>
+                        <input type="number" name="default_price" value="<%= config.default_price || 5000 %>" required>
+                    </div>
+                    <div>
+                        <label>Giá Mua Đứt "Full Gói" (VNĐ)</label>
+                        <input type="number" name="full_package_price" value="<%= config.full_package_price || 200000 %>" required>
+                    </div>
+                    
+                    <div>
+                        <label>Ảnh Bìa Sảnh (Banner)</label>
+                        <div style="display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px dashed #555;">
+                            <% let bannerImg = (config.banner_image && config.banner_image.startsWith('http')) ? config.banner_image : '/images/' + (config.banner_image || 'placeholder.jpg'); %>
+                            <img src="<%= bannerImg %>" class="img-preview" style="margin: 0; flex-shrink: 0;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2985/2985642.png'">
+                            <div style="flex: 1;">
+                                <input type="hidden" name="old_banner_image" value="<%= config.banner_image || '' %>">
+                                <input type="file" name="banner_file" accept="image/*" style="margin-bottom: 0;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label>Ảnh Lưng Bài (Mặt Úp)</label>
+                        <div style="display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px dashed #555;">
+                            <% let backImg = (config.card_back_image && config.card_back_image.startsWith('http')) ? config.card_back_image : '/images/' + (config.card_back_image || 'placeholder.jpg'); %>
+                            <img src="<%= backImg %>" class="img-preview" style="margin: 0; flex-shrink: 0;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2985/2985642.png'">
+                            <div style="flex: 1;">
+                                <input type="hidden" name="old_card_back_image" value="<%= config.card_back_image || '' %>">
+                                <input type="file" name="back_file" accept="image/*" style="margin-bottom: 0;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: right; margin-top: 15px;">
+                    <button type="submit" class="btn-submit btn-blue" style="width: auto;"><i class="fa-solid fa-save"></i> LƯU CẤU HÌNH</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="grid-2">
+            <div class="card" style="border-top: 4px solid var(--purple);">
+                <h3 style="margin-top: 0; color: var(--purple);"><i class="fa-solid fa-wand-magic-sparkles"></i> Nạp Mã AI (Tự động chia bài)</h3>
+                <form action="/admin/xinxam/codes/import-raw?_csrf=<%= csrfToken %>" method="POST">
+                    <textarea name="raw_text" rows="8" placeholder="Copy list mã và dán vào đây...
+Ví dụ:
+Thẻ 37: [DICHUA_9V9TBZ56LWK]
+Thẻ 64: [DICHUA_9V9TNANDHFH]" required style="width: 100%; font-size: 13px; background: #111; color: var(--accent); border: 1px dashed var(--purple); font-family: monospace;"></textarea>
+                    <button type="submit" class="btn-submit btn-purple"><i class="fa-solid fa-bolt"></i> TỰ ĐỘNG PHÂN LOẠI & NẠP VÀO TỪNG THẺ</button>
+                </form>
+            </div>
+
+            <div class="card" style="border-top: 4px solid var(--success);">
+                <h3 style="margin-top: 0; color: var(--success);"><i class="fa-solid fa-upload"></i> Nạp Quẻ Mới (Tải 100 thẻ cùng lúc)</h3>
+                <form action="/admin/xinxam/cards/add?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                    <div class="upload-zone" onclick="document.getElementById('cardFilesInput').click()" style="margin-bottom: 15px;">
+                        <i class="fa-solid fa-images" style="font-size: 40px; color: var(--success); margin-bottom: 15px;"></i>
+                        <h3 style="color: #fff; font-size: 16px;">BẤM VÀO ĐÂY ĐỂ CHỌN NHIỀU ẢNH THẺ</h3>
+                        <p style="color: #888; font-size: 12px; margin-top: 5px;">Hệ thống sẽ tự động tạo tên "Quẻ số 1", "Quẻ số 2"...</p>
+                    </div>
+                    <input type="file" id="cardFilesInput" name="card_files" multiple accept="image/*" required style="display: none;">
+                    
+                    <button type="submit" class="btn-submit btn-green"><i class="fa-solid fa-cloud-arrow-up"></i> TẢI LÊN KHO CHÙA</button>
+                </form>
+            </div>
+        </div>
+
+        <div style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+            <h2 style="color: var(--warning); margin: 0;"><i class="fa-solid fa-layer-group"></i> Kho Quẻ Đang Bán (<%= cards ? cards.length : 0 %> Quẻ)</h2>
+        </div>
+        
+        <div class="card-grid">
+            <% if(typeof cards !== 'undefined' && cards.length > 0) { %>
+                <% cards.forEach(card => { %>
+                    <div class="card-item">
+                        <form action="/admin/xinxam/cards/delete/<%= card.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Bạn có chắc muốn vứt bỏ quẻ này không?')" style="display:inline;">
+                            <button type="submit" class="btn-del-card" title="Xóa quẻ này"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+
+                        <% let cardImg = (card.image_url && card.image_url.startsWith('http')) ? card.image_url : '/images/' + card.image_url; %>
+                        <img src="<%= cardImg %>" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2985/2985642.png'">
+                        
+                        <form action="/admin/xinxam/cards/price/<%= card.id %>?_csrf=<%= csrfToken %>" method="POST" style="padding: 10px 10px 0;">
+                            <input type="text" name="name" value="<%= card.name %>" required style="width: 100%; font-size: 13px; padding: 8px; text-align: center; margin-bottom: 8px; font-weight: bold; color: var(--warning); background: rgba(0,0,0,0.3); border: 1px dashed #555;">
+                            <input type="number" name="price" value="<%= card.price %>" placeholder="Giá riêng (VD: 5000)" style="width: 100%; font-size: 12px; padding: 8px; text-align: center; margin-bottom: 8px; background: rgba(0,0,0,0.3); border: 1px solid #444;">
+                            <button type="submit" style="width: 100%; background: #444; color: #fff; font-size: 11px; font-weight: bold; cursor: pointer; border: none; padding: 8px; border-radius: 4px; transition: 0.2s;">Cập Nhật Info</button>
+                        </form>
+
+                        <div style="background: rgba(0,0,0,0.4); padding: 10px; margin-top: 10px; border-top: 1px solid #333;">
+                            <div style="font-size: 12px; color: var(--accent); margin-bottom: 8px; font-weight: bold; text-align: left;">
+                                <i class="fa-solid fa-box-open"></i> Kho: <%= card.stock %> Mã
+                            </div>
+                            <form action="/admin/xinxam/codes/add?_csrf=<%= csrfToken %>" method="POST">
+                                <input type="hidden" name="card_id" value="<%= card.id %>">
+                                <textarea name="codes_list" rows="2" placeholder="Dán mã bổ sung..." required style="width: 100%; font-size: 11px; padding: 8px; margin-bottom: 8px; background: #111; color: #fff; border: 1px solid #555;"></textarea>
+                                <button type="submit" style="width: 100%; background: var(--warning); color: #000; font-weight: bold; font-size: 11px; cursor: pointer; border: none; padding: 8px; border-radius: 4px; transition: 0.2s;"><i class="fa-solid fa-plus"></i> Bơm Mã</button>
+                            </form>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div style="grid-column: 1/-1; text-align: center; padding: 50px; background: rgba(0,0,0,0.2); border-radius: 12px; color: #666; font-size: 16px; border: 1px dashed #444;">
+                    <i class="fa-solid fa-box-open" style="font-size: 40px; margin-bottom: 15px; display: block;"></i>
+                    Kho trống! Sếp chưa tải lên thẻ quẻ nào.
+                </div>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>

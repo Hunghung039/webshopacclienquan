@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Sửa Bài Viết</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tiny.cloud/1/uv2tulmssrn4v76l6z3jbkdhc1l8pl902vvb82wgop6laprb/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <script>
+      tinymce.init({
+        selector: '#content',
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+        height: 600,
+        skin: "oxide-dark",
+        content_css: "dark",
+        entity_encoding: "raw", 
+        
+        // 1. CHO PHÉP COPY/DÁN VÀ KÉO THẢ ẢNH
+        paste_data_images: true, 
+        automatic_uploads: true,
+        
+        // 2. THUẬT TOÁN UPLOAD VƯỢT TƯỜNG LỬA CSRF VÀ ĐỒNG BỘ VỚI ROUTER
+        images_upload_handler: function (blobInfo, progress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.withCredentials = true; // Cho phép gửi kèm session/cookie
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                // Gọi thẳng vào cổng Upload Hình Ảnh Media
+                xhr.open('POST', `/admin/images/upload?_csrf=${csrfToken}`);
+                
+                // Gắn Khiên CSRF vào Header để chắc chắn 100% không bị văng lỗi 403
+                xhr.setRequestHeader('CSRF-Token', csrfToken);
+                xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+
+                xhr.upload.onprogress = (e) => {
+                    progress(e.loaded / e.total * 100);
+                };
+
+                xhr.onload = function () {
+                    if (xhr.status === 403) { reject('Bị chặn bởi bảo mật CSRF (Lỗi 403).'); return; }
+                    if (xhr.status === 413) { reject('Ảnh quá nặng! Server không tải nổi (Lỗi 413).'); return; }
+                    if (xhr.status < 200 || xhr.status >= 300) { reject('Lỗi HTTP: ' + xhr.status + ' - ' + xhr.responseText); return; }
+
+                    try {
+                        const json = JSON.parse(xhr.responseText);
+                        
+                        // Lấy link ảnh linh hoạt
+                        const finalUrl = json.location || json.url || json.image_url || json.path;
+                        
+                        if (!finalUrl) {
+                            reject('Lỗi: Server không trả về đường link của ảnh!');
+                            return;
+                        }
+                        
+                        resolve(finalUrl); // Bơm link ảnh vào bài viết
+                    } catch (e) { 
+                        reject('Máy chủ trả về dữ liệu không hợp lệ: ' + xhr.responseText); 
+                    }
+                };
+
+                xhr.onerror = function () { reject('Lỗi kết nối mạng khi tải ảnh lên.'); };
+
+                const formData = new FormData();
+                // [QUAN TRỌNG NHẤT]: Tên trường gửi đi bắt buộc phải là 'image_file' để khớp với lệnh upload.single('image_file') ở file adminRoutes.js
+                formData.append('image_file', blobInfo.blob(), blobInfo.filename());
+                formData.append('_csrf', csrfToken);
+
+                xhr.send(formData);
+            });
+        }
+      });
+    </script>
+<%- include('partials/admin_css') %>
+</head>
+<body>
+
+    <%- include('partials/sidebar', { page: 'blogs' }) %>
+
+    <div class="main-content">
+        
+        <% if(typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+            <div style="background: rgba(253, 93, 147, 0.2); border-left: 4px solid var(--danger); color: var(--text); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Lỗi: <%= error_msg %>
+            </div>
+        <% } %>
+
+        <h1 style="margin: 0 0 30px 0; font-weight: 300; border-left: 4px solid var(--warning); padding-left: 15px;">Sửa Bài Viết</h1>
+
+        <div class="card">
+            <form action="/admin/blogs/update/<%= blog.id %>?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data" id="blogEditForm">
+                
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                    <div>
+                        <label>Tiêu đề bài viết (H1)</label>
+                        <input type="text" name="title" value="<%= blog.title %>" required>
+
+                        <label>Đoạn tóm tắt (Meta Description)</label>
+                        <textarea name="summary" rows="3" required><%= blog.summary %></textarea>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label>Tags</label>
+                                <input type="text" name="tags" value="<%= blog.tags %>">
+                            </div>
+                            <div>
+                                <label>Chuyên mục</label>
+                                <input type="text" name="category" value="<%= blog.category %>" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label>Ảnh đại diện (Để trống nếu không đổi)</label>
+                        <div class="upload-box">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 30px; color: #aaa; margin-bottom: 10px; display: block;"></i>
+                            <span style="font-size: 13px; color: #888;">Click để đổi ảnh khác (Dưới 2MB)</span>
+                            <input type="file" name="thumbnail" accept="image/jpeg, image/png, image/webp" style="opacity: 0; position: absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" onchange="previewImage(event)">
+                            
+                            <img id="thumb-preview" class="preview-img" src="<%= blog.thumbnail %>" alt="Ảnh hiện tại" onerror="this.src='https://placehold.co/200x150/27293d/cccccc?text=Blog'">
+                        </div>
+                        <p id="error-msg" style="color: var(--danger); font-size: 12px; margin-top: 5px; display: none;"></p>
+                    </div>
+                </div>
+
+                <label style="margin-top: 10px;">Nội dung bài viết</label>
+                <textarea id="content" name="content"><%- blog.content %></textarea>
+
+                <div style="text-align: right; margin-top: 25px;">
+                    <a href="/admin/blogs" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
+                    <button type="submit" class="btn-update" id="btnSubmit"><i class="fa-solid fa-floppy-disk"></i> LƯU THAY ĐỔI</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const btnSubmit = document.getElementById('btnSubmit');
+            const errorMsg = document.getElementById('error-msg');
+
+            if (file) {
+                if (file.size > 2097152) {
+                    errorMsg.innerText = 'Ảnh tải lên quá nặng! Vui lòng chọn ảnh dung lượng dưới 2MB để máy chủ hoạt động tốt.';
+                    errorMsg.style.display = 'block';
+                    btnSubmit.disabled = true;
+                    
+                    event.target.value = ''; 
+                    document.getElementById('thumb-preview').src = "<%= blog.thumbnail %>";
+                    return;
+                } else {
+                    errorMsg.style.display = 'none';
+                    btnSubmit.disabled = false;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(){
+                    const output = document.getElementById('thumb-preview');
+                    output.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+</body>
+</html>

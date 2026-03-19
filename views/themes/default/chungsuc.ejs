@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    
+    <meta name="description" content="Chơi <%= event.name %> nhận mã code VIP giới hạn. Sự kiện lật bài nhân phẩm trúng thưởng lớn nhất hôm nay!">
+    <meta name="keywords" content="<%= event.name %>, mã chung sức, code liên quân vip, vòng quay thẻ">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <% let backImgUrl = event.card_back_image.startsWith('http') ? event.card_back_image : '/images/' + event.card_back_image; %>
+
+    <style>
+        .chungsuc-bg { background: radial-gradient(circle at top, #0a0a1a, #000); min-height: 100vh; color: #fff; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif; overflow-x: hidden;}
+        .glass-box { background: rgba(20, 25, 45, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(0, 242, 195, 0.3); border-radius: 20px; padding: 40px 20px; max-width: 900px; margin: 40px auto 0; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.8); position: relative;}
+        
+        .game-title { font-size: 36px; font-weight: 900; color: #00f2c3; text-transform: uppercase; margin-bottom: 10px; text-shadow: 0 0 20px rgba(0, 242, 195, 0.6);}
+        .game-desc { color: #a0aec0; font-size: 15px; margin-bottom: 30px; }
+
+        /* ======================================= */
+        /* VÒNG XOAY 3D (LÕI CỐT LÕI - KHÔNG SỬA)  */
+        /* ======================================= */
+        .scene { width: 200px; height: 300px; margin: 40px auto; perspective: 1000px; position: relative; }
+        .carousel { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; transition: transform 1s ease-out; }
+        .card-3d { position: absolute; width: 100%; height: 100%; left: 0; top: 0; transition: opacity 0.8s, transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1); transform-style: preserve-3d; }
+
+        .carousel.horizontal .card-3d:nth-child(1) { transform: translateX(-260px) rotateY(0deg) scale(0.9); z-index: 1;}
+        .carousel.horizontal .card-3d:nth-child(2) { transform: translateX(-130px) rotateY(0deg) scale(0.95); z-index: 2;}
+        .carousel.horizontal .card-3d:nth-child(3) { transform: translateX(0px) rotateY(0deg) scale(1); z-index: 3;}
+        .carousel.horizontal .card-3d:nth-child(4) { transform: translateX(130px) rotateY(0deg) scale(0.95); z-index: 2;}
+        .carousel.horizontal .card-3d:nth-child(5) { transform: translateX(260px) rotateY(0deg) scale(0.9); z-index: 1;}
+
+        .carousel.cylinder .card-3d:nth-child(1) { transform: rotateY(0deg) translateZ(180px); }
+        .carousel.cylinder .card-3d:nth-child(2) { transform: rotateY(72deg) translateZ(180px); }
+        .carousel.cylinder .card-3d:nth-child(3) { transform: rotateY(144deg) translateZ(180px); }
+        .carousel.cylinder .card-3d:nth-child(4) { transform: rotateY(216deg) translateZ(180px); }
+        .carousel.cylinder .card-3d:nth-child(5) { transform: rotateY(288deg) translateZ(180px); }
+
+        .carousel.spinning { animation: spinCarousel 2s linear infinite; }
+        @keyframes spinCarousel { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+
+        .carousel.stopped .card-3d:not(:nth-child(1)) { opacity: 0; pointer-events: none; }
+        .carousel.stopped .card-3d:nth-child(1) { transform: rotateY(0deg) translateZ(0px) scale(1.2) !important; z-index: 10; }
+        .carousel.stopped .card-3d:nth-child(1).flipped { transform: rotateY(180deg) translateZ(0px) scale(1.2) !important; }
+
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.8); border: 2px solid #333; overflow: hidden; }
+        
+        .card-face-front { background: url('<%- backImgUrl %>') center/cover no-repeat; }
+        .fake-back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('<%- backImgUrl %>') center/cover no-repeat; z-index: 2; transition: opacity 0.5s; }
+        
+        .card-face-back { background: #1a1a2e; transform: rotateY(180deg); position: relative; border-color: #f1c40f; box-shadow: 0 0 30px rgba(241,196,15,0.5); }
+        .result-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; opacity: 0; transition: opacity 0.5s ease-in; z-index: 1; }
+        .card-3d.flipped .result-content { opacity: 1; }
+        .card-3d.flipped .fake-back { opacity: 0; pointer-events: none; }
+
+        .result-content img { width: 100%; height: 60%; object-fit: cover; border-bottom: 2px solid #f1c40f; border-radius: 8px;}
+        .code-box { background: #000; color: #00f2c3; padding: 10px; border-radius: 8px; font-weight: 900; font-size: 14px; margin: 15px 0 10px; border: 1px dashed #00f2c3; letter-spacing: 1px;}
+        .btn-copy { background: #f1c40f; color: #000; border: none; padding: 5px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s;}
+        .btn-copy:hover { background: #fff; transform: scale(1.05);}
+
+        .countdown-timer { font-size: 50px; font-weight: 900; color: #00f2c3; text-shadow: 0 0 20px rgba(0,242,195,0.8); display: none; text-align: center; margin: -20px auto 20px;}
+        .countdown-timer.active { display: block; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        .action-group { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 20px; }
+        .btn-spin { background: linear-gradient(45deg, #00f2c3, #00b894); color: #000; font-size: 20px; font-weight: 900; padding: 15px 50px; border-radius: 30px; border: none; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,242,195,0.4); text-transform: uppercase; z-index: 20; width: 100%; max-width: 350px;}
+        .btn-spin:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0,242,195,0.6); }
+        .btn-spin:disabled { background: #555; color: #888; cursor: not-allowed; box-shadow: none; transform: scale(1); }
+        .price-badge { background: #1e1e2f; color: #f1c40f; padding: 8px 30px; border-radius: 30px; font-size: 16px; font-weight: 900; border: 2px solid #333; width: 100%; max-width: 250px;}
+
+        /* HƯỚNG DẪN & LỊCH SỬ */
+        .guide-box { margin-top: 40px; background: rgba(0,0,0,0.4); border: 1px dashed #00f2c3; border-radius: 15px; padding: 20px; text-align: left; max-width: 700px; margin-left: auto; margin-right: auto;}
+        .guide-box h2 { color: #00f2c3; font-size: 18px; margin-top: 0; text-align: center; text-transform: uppercase;}
+        .guide-box ul { padding-left: 20px; color: #ccc; font-size: 14px; line-height: 1.6;}
+        .guide-box li { margin-bottom: 8px; }
+        .seo-keywords { font-size: 11px; color: #555; text-align: center; margin-top: 15px; display: block; }
+
+        .history-box { max-width: 900px; margin: 40px auto 0; background: rgba(20, 25, 45, 0.6); border: 1px solid #333; border-radius: 20px; padding: 25px; backdrop-filter: blur(10px); }
+        .history-box h3 { color: #f1c40f; margin-top: 0; font-size: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;}
+        .history-list { max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        .history-list::-webkit-scrollbar { width: 5px; }
+        .history-list::-webkit-scrollbar-thumb { background: #555; border-radius: 5px; }
+        
+        .h-item { display: flex; align-items: center; justify-content: space-between; background: #1a1a2e; margin-bottom: 10px; padding: 10px 15px; border-radius: 12px; border-left: 4px solid #00f2c3; transition: 0.2s;}
+        .h-item:hover { transform: translateX(5px); background: #27293d;}
+        .h-left { display: flex; align-items: center; gap: 15px; }
+        .h-left img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid #444; }
+        .h-time { font-size: 12px; color: #888; margin-top: 3px; }
+        .h-code { font-family: monospace; font-size: 16px; color: #fff; font-weight: bold; letter-spacing: 1px; background: #000; padding: 5px 10px; border-radius: 6px;}
+
+        @media (max-width: 768px) { 
+            .scene { width: 140px; height: 210px; margin: 20px auto 30px; } 
+            .game-title { font-size: 24px; } 
+            .countdown-timer { font-size: 40px; margin: 0 auto 15px;} 
+            .carousel.horizontal .card-3d:nth-child(1) { transform: translateX(-100px) scale(0.8); }
+            .carousel.horizontal .card-3d:nth-child(2) { transform: translateX(-50px) scale(0.9); }
+            .carousel.horizontal .card-3d:nth-child(3) { transform: translateX(0px) scale(1); }
+            .carousel.horizontal .card-3d:nth-child(4) { transform: translateX(50px) scale(0.9); }
+            .carousel.horizontal .card-3d:nth-child(5) { transform: translateX(100px) scale(0.8); }
+            .carousel.cylinder .card-3d:nth-child(1) { transform: rotateY(0deg) translateZ(130px); }
+            .carousel.cylinder .card-3d:nth-child(2) { transform: rotateY(72deg) translateZ(130px); }
+            .carousel.cylinder .card-3d:nth-child(3) { transform: rotateY(144deg) translateZ(130px); }
+            .carousel.cylinder .card-3d:nth-child(4) { transform: rotateY(216deg) translateZ(130px); }
+            .carousel.cylinder .card-3d:nth-child(5) { transform: rotateY(288deg) translateZ(130px); }
+            .h-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .h-code { width: 100%; text-align: center; box-sizing: border-box;}
+        }
+    </style>
+</head>
+<body class="chungsuc-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+    <%- include('../../includes/modals') %>
+
+    <div class="glass-box">
+        <h1 class="game-title"><i class="fa-solid fa-people-arrows"></i> <%= event.name %></h1>
+        <p class="game-desc">Cơ hội nhận <b>mã code VIP giới hạn</b>. Vòng xoay định mệnh sẽ khóa 20 giây để chọn ra phần quà may mắn nhất dành cho bạn!</p>
+
+        <div class="scene">
+            <div class="carousel horizontal" id="carousel">
+                <% for(let i = 1; i <= 5; i++) { %>
+                    <div class="card-3d" id="card-<%= i %>">
+                        <div class="card-face card-face-front"></div>
+                        <div class="card-face card-face-back">
+                            <div class="fake-back"></div>
+                            <div class="result-content">
+                                <img src="" class="result-img" alt="Phần Thưởng">
+                                <div class="code-box">ĐANG LẤY MÃ...</div>
+                                <button class="btn-copy" onclick="copyCode(this)" style="display:none;"><i class="fa-regular fa-copy"></i> COPY MÃ</button>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="countdown-timer" id="timerDisplay">20</div>
+
+        <div class="action-group">
+            <button class="btn-spin" id="btnSpin" onclick="startSpin()">
+                <i class="fa-solid fa-rotate"></i> 
+                RÚT MÃ LẦN <%= (drawCount || 0) + 1 %>
+            </button>
+            <div class="price-badge" id="priceBadge">
+                Giá: <span style="<%= currentPrice === 0 ? 'color: #00f2c3;' : 'color: #e74c3c;' %>">
+                    <%= currentPrice === 0 ? 'MIỄN PHÍ' : new Intl.NumberFormat('vi-VN').format(currentPrice) + 'đ' %>
+                </span>
+            </div>
+        </div>
+
+        <div class="guide-box">
+            <h2><i class="fa-solid fa-book-open"></i> Hướng Dẫn Tham Gia <%= event.name %></h2>
+            <ul>
+                <li><b>Bước 1:</b> Đăng nhập tài khoản. Nhấn nút <b>"RÚT MÃ"</b> để bắt đầu.</li>
+                <li><b>Bước 2:</b> Thẻ bài sẽ khóa và xoay trong đúng 20 giây để hệ thống lật ngẫu nhiên.</li>
+                <li><b>Bước 3:</b> Hết 20 giây, thẻ bài lật mở. Nhấn <b>COPY MÃ</b> để lưu lại và sử dụng ngay.</li>
+                <li><b>Lưu ý cực kỳ quan trọng:</b> Tuyệt đối <b style="color:#fd5d93;">KHÔNG</b> F5 (làm mới trang) hoặc đóng trình duyệt khi thẻ đang xoay. Nếu vi phạm thẻ sẽ bị mất.</li>
+                <li>Giá vé tham gia sẽ tăng dần theo từng lượt rút trong ngày. Lượt đầu tiên luôn là <b>MIỄN PHÍ (0đ)</b>.</li>
+            </ul>
+            <span class="seo-keywords">Từ khóa: <%= event.name %>, mã chung sức, code liên quân miễn phí, vòng quay may mắn</span>
+        </div>
+    </div>
+
+    <% if (typeof user !== 'undefined') { %>
+        <div class="history-box">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Húp Mã Từ <%= event.name %></h3>
+            <div class="history-list">
+                <% if (myHistory && myHistory.length > 0) { %>
+                    <% myHistory.forEach(h => { %>
+                        <div class="h-item">
+                            <div class="h-left">
+                                <% let histImgUrl = h.card_image.startsWith('http') ? h.card_image : '/images/' + h.card_image; %>
+                                <img src="<%= histImgUrl %>" alt="Thẻ">
+                                <div>
+                                    <div style="font-weight: bold; color: #ccc;">Mã VIP Trúng Thưởng</div>
+                                    <div class="h-time"><i class="fa-regular fa-calendar"></i> <%= new Date(h.claimed_at).toLocaleString('vi-VN') %></div>
+                                </div>
+                            </div>
+                            <div class="h-code"><%= h.code %></div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div style="text-align: center; color: #666; padding: 20px;">Bạn chưa húp được mã nào từ trò này. Tham gia ngay lượt Free!</div>
+                <% } %>
+            </div>
+        </div>
+    <% } %>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        // Cấu hình Alert Toasts Đẹp
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: '#1e1e2f',
+            color: '#fff'
+        });
+
+        const CURRENT_EVENT_ID = <%= event.id %>; 
+
+        const btnSpin = document.getElementById('btnSpin');
+        const carousel = document.getElementById('carousel');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const firstCard = document.getElementById('card-1'); 
+        
+        let spinInterval;
+        let isSpinning = false;
+
+        // Bắt trạng thái đang quay dở (Do F5 hoặc mất mạng)
+        const pendingData = <%- typeof pendingSpin !== 'undefined' && pendingSpin ? JSON.stringify(pendingSpin) : 'null' %>;
+        
+        if (pendingData) {
+            console.log("🔄 [SYS] Tiếp tục phiên quay chưa hoàn thành...");
+            carousel.classList.remove('horizontal');
+            carousel.classList.add('cylinder');
+            resumeSpin(pendingData.start_time, pendingData.card_image);
+        }
+
+        async function startSpin() {
+            if (isSpinning) return;
+            
+            const isLogged = <%= typeof user !== 'undefined' && user ? 'true' : 'false' %>;
+            if(!isLogged) {
+                Toast.fire({ icon: 'warning', title: 'Vui lòng đăng nhập để chơi!' });
+                setTimeout(() => window.location.href = '/auth/login', 1500);
+                return;
+            }
+
+            console.log(`🚀 [SPIN] Bắt đầu gọi API rút mã cho event_id: ${CURRENT_EVENT_ID}`);
+            isSpinning = true;
+            btnSpin.disabled = true;
+            btnSpin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG TÌM MÃ...';
+
+            try {
+                const res = await fetch('/api/chungsuc/spin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ event_id: CURRENT_EVENT_ID })
+                });
+
+                const data = await res.json();
+
+                if(!data.success) {
+                    console.error("❌ [SPIN ERROR]", data.message);
+                    Swal.fire({ title: 'Rất tiếc!', text: data.message, icon: 'error', confirmButtonColor: '#fd5d93', background: '#1e1e2f', color: '#fff'});
+                    resetUI();
+                    return;
+                }
+
+                console.log("✅ [SPIN SUCCESS] Đã trừ tiền, bắt đầu đếm ngược lật thẻ...");
+
+                // Cập nhật số tiền trên Navbar ngay lập tức
+                if(document.getElementById('user_money')) {
+                    document.getElementById('user_money').innerText = new Intl.NumberFormat('vi-VN').format(data.new_money) + 'đ';
+                }
+
+                Toast.fire({ icon: 'success', title: 'Đã bắt đầu rút! Vui lòng đợi 20 giây...' });
+
+                carousel.classList.remove('horizontal');
+                carousel.classList.add('cylinder');
+
+                setTimeout(() => {
+                    resumeSpin(data.start_time, data.card_image);
+                }, 800);
+
+            } catch (err) {
+                console.error("❌ [NETWORK ERROR]", err);
+                Toast.fire({ icon: 'error', title: 'Lỗi mạng! Vui lòng thử lại.' });
+                resetUI();
+            }
+        }
+
+        function resumeSpin(startTime, cardImageName) {
+            isSpinning = true;
+            btnSpin.disabled = true;
+            btnSpin.innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> ĐANG KHÓA THẺ...';
+            
+            // Xử lý thông minh đường dẫn ảnh
+            let finalImageUrl = cardImageName.startsWith('http') ? cardImageName : '/images/' + cardImageName;
+            firstCard.querySelector('.result-img').src = finalImageUrl;
+            
+            carousel.classList.add('spinning');
+            timerDisplay.classList.add('active');
+
+            spinInterval = setInterval(() => {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const remaining = 20000 - elapsed;
+
+                if (remaining <= 0) {
+                    clearInterval(spinInterval);
+                    timerDisplay.innerText = "0";
+                    console.log("⏰ [TIMER] Hết 20s, tiến hành mở thẻ...");
+                    onTimerEnd();
+                } else {
+                    timerDisplay.innerText = Math.ceil(remaining / 1000);
+                }
+            }, 100);
+        }
+
+        async function onTimerEnd() {
+            carousel.classList.remove('spinning');
+            carousel.classList.add('stopped');
+            timerDisplay.classList.remove('active');
+
+            setTimeout(async () => {
+                try {
+                    console.log("🔍 [REVEAL] Gọi API lật mặt thẻ lấy Code...");
+                    const res = await fetch('/api/chungsuc/reveal', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ event_id: CURRENT_EVENT_ID })
+                    });
+
+                    const data = await res.json();
+
+                    if(!data.success) {
+                        Swal.fire({ title: 'Lỗi!', text: data.message, icon: 'error', background: '#1e1e2f', color: '#fff'});
+                        resetUI();
+                        return;
+                    }
+
+                    console.log(`🎉 [REVEAL SUCCESS] Mã nhận được: ${data.code}`);
+
+                    // Lật thẻ và show code lên mặt thẻ
+                    firstCard.querySelector('.code-box').innerText = data.code;
+                    firstCard.querySelector('.btn-copy').style.display = 'inline-block';
+                    firstCard.classList.add('flipped');
+                    
+                    // NẾU LÀ MÃ VIP -> Nổ pháo bông + Hiện Bảng VIP
+                    if(data.is_vip) {
+                        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, zIndex: 9999 });
+                        Swal.fire({
+                            title: 'Hoàn Tất!',
+                            text: `Mã VIP của bạn là: ${data.code}`,
+                            icon: 'success',
+                            background: '#1e1e2f',
+                            color: '#00f2c3',
+                            confirmButtonText: 'Tuyệt Vời',
+                            confirmButtonColor: '#f1c40f'
+                        }).then(() => {
+                            btnSpin.disabled = false;
+                            btnSpin.innerHTML = '<i class="fa-solid fa-rotate-right"></i> RÚT TIẾP LƯỢT SAU';
+                            btnSpin.setAttribute('onclick', 'window.location.reload()'); 
+                        });
+                    } 
+                    // NẾU LÀ MÃ RÁC -> Hiện Bảng An ủi (Không nổ pháo bông)
+                    else {
+                        Swal.fire({
+                            title: 'Mã Khuyến Mãi!',
+                            text: `Cố lên! Bạn nhận được mã: ${data.code}`,
+                            icon: 'info',
+                            background: '#1e1e2f',
+                            color: '#fff',
+                            confirmButtonText: 'Quay Lượt Tiếp',
+                            confirmButtonColor: '#3498db'
+                        }).then(() => {
+                            btnSpin.disabled = false;
+                            btnSpin.innerHTML = '<i class="fa-solid fa-rotate-right"></i> RÚT TIẾP LƯỢT SAU';
+                            btnSpin.setAttribute('onclick', 'window.location.reload()'); 
+                        });
+                    }
+
+                } catch (err) {
+                    console.error("❌ [REVEAL ERROR]", err);
+                    Swal.fire({ title: 'Lỗi!', text: "Không thể lấy mã, vui lòng tải lại trang!", icon: 'error', background: '#1e1e2f', color: '#fff'});
+                    btnSpin.disabled = false;
+                    btnSpin.innerHTML = "TẢI LẠI TRANG";
+                    btnSpin.setAttribute('onclick', 'window.location.reload()');
+                }
+            }, 1000);
+        }
+        function resetUI() {
+            isSpinning = false;
+            btnSpin.disabled = false;
+            btnSpin.innerHTML = '<i class="fa-solid fa-rotate"></i> THỬ LẠI';
+            carousel.classList.remove('spinning', 'stopped', 'cylinder');
+            carousel.classList.add('horizontal');
+            timerDisplay.classList.remove('active');
+        }
+
+        // Chức năng Copy Mã thông minh
+        function copyCode(btnElement) {
+            const codeText = btnElement.parentElement.querySelector('.code-box').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                Toast.fire({ icon: 'success', title: 'Đã copy mã thành công!' });
+                btnElement.innerHTML = "<i class='fa-solid fa-check'></i> ĐÃ COPY";
+                btnElement.style.background = "#00f2c3";
+                
+                setTimeout(() => {
+                    btnElement.innerHTML = "<i class='fa-regular fa-copy'></i> COPY MÃ";
+                    btnElement.style.background = "#f1c40f";
+                }, 3000);
+            }).catch(err => {
+                Toast.fire({ icon: 'error', title: 'Lỗi copy! Hãy bôi đen thủ công.' });
+            });
+        }
+    </script>
+</body>
+</html>

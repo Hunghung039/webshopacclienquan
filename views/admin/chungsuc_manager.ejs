@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Đa Vũ Trụ Chung Sức</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'chungsuc' }) %>
+
+    <div class="main-content">
+        <% if (typeof msg !== 'undefined' && msg) { %>
+            <div style="background: <%= typeof type !== 'undefined' && type === 'error' ? 'rgba(253,93,147,0.2)' : 'rgba(0,242,195,0.2)' %>; 
+                        color: <%= typeof type !== 'undefined' && type === 'error' ? '#fd5d93' : '#00f2c3' %>; 
+                        padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; border-left: 4px solid currentColor;">
+                <i class="fa-solid <%= typeof type !== 'undefined' && type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-check' %>"></i> <%= msg %>
+            </div>
+        <% } %>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1 style="margin: 0; font-weight: 300;">Trạm Kiểm Soát <b style="color: var(--accent);">Đa Sự Kiện</b></h1>
+            
+            <form action="/admin/chung-suc/delete-all?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('CẢNH BÁO: Hành động này sẽ xóa toàn bộ Mã cũ của TẤT CẢ sự kiện. Sếp chắc chắn chứ?')">
+                <button type="submit" class="btn-danger"><i class="fa-solid fa-bomb"></i> Dọn Sạch Toàn Bộ Kho Mã</button>
+            </form>
+        </div>
+
+        <div class="card" style="border-color: var(--primary);">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fa-solid fa-folder-plus"></i> Xưởng Tạo Sự Kiện Mới</h3>
+            <form action="/admin/chung-suc/event/add?_csrf=<%= csrfToken %>" method="POST">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>Tên Sự Kiện (VD: Lật Thẻ Nakroth)</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div>
+                        <label>Đường dẫn Web (VD: lat-the-nakroth)</label>
+                        <input type="text" name="slug" required>
+                    </div>
+                    <div>
+                        <label title="Khi khách quay mất đủ số tiền này sẽ chắc chắn ra Thẻ Hiếm">Mốc Tiền Kích Hoạt Bảo Hiểm (VNĐ)</label>
+                        <input type="number" name="pity_threshold" value="15000" required>
+                    </div>
+                    <div>
+                        <label>Ảnh Bìa Sảnh (Banner)</label>
+                        <input type="text" name="banner_image" placeholder="Tên file ảnh (VD: banner1.webp)" required>
+                    </div>
+                    <div>
+                        <label>Ảnh Lưng Bài (Mặt úp chung)</label>
+                        <input type="text" name="card_back_image" placeholder="VD: chungsuc-back.webp" required>
+                    </div>
+                    <div>
+                        <label>Ảnh Giải Thưởng (Thẻ Hiếm VIP)</label>
+                        <input type="text" name="rare_image" placeholder="VD: nakroth-vip.webp" required>
+                    </div>
+                    <div style="grid-column: span 3;">
+        <label style="color: #e14eca;"><i class="fa-solid fa-crown"></i> MÃ VIP CỐ ĐỊNH (Khi khách nổ hũ sẽ ra mã này)</label>
+        <input type="text" name="vip_code" placeholder="VD: GACHA-VIP-9999" required style="border-color: #e14eca; font-weight: bold; font-family: monospace;">
+    </div>
+                    <div style="grid-column: span 3;">
+                        <label title="Giá lượt 1, lượt 2, lượt 3...">Bảng Giá Lũy Tiến (Cách nhau dấu phẩy)</label>
+                        <input type="text" name="prices" value="0,1000,2000,5000,10000" required style="font-family: monospace; color: var(--warning);">
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label>Các Ảnh Rác Bẫy Khách (Cách nhau dấu phẩy)</label>
+                        <input type="text" name="trash_images" placeholder="VD: rac-1.webp, rac-2.webp, rac-3.webp" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit" style="background: linear-gradient(45deg, #3498db, #2980b9); color: #fff; width: 100%; margin-top: 10px;"><i class="fa-solid fa-hammer"></i> ĐẺ RA SỰ KIỆN MỚI</button>
+            </form>
+        </div>
+
+        <div class="card" style="border-color: #f1c40f;">
+            <h3 style="margin-top: 0; color: #f1c40f;"><i class="fa-solid fa-layer-group"></i> Các Vũ Trụ Gacha Đang Tồn Tại</h3>
+            <div class="table-container" style="max-height: 250px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên Sự Kiện</th>
+                            <th>Đường Dẫn (Link)</th>
+                            <th>Bảo Hiểm</th>
+                            <th>Trạng Thái</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (typeof events !== 'undefined' && events.length > 0) { %>
+                            <% events.forEach(e => { %>
+                                <tr>
+                                    <td style="color: #888;">#<%= e.id %></td>
+                                    <td style="font-weight: bold; color: var(--accent);"><%= e.name %></td>
+                                    <td><a href="/chung-suc/<%= e.slug %>" target="_blank" style="color: #3498db; text-decoration: none;">/chung-suc/<%= e.slug %> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i></a></td>
+                                    <td style="color: #f1c40f; font-weight: bold;"><%= new Intl.NumberFormat('vi-VN').format(e.pity_threshold) %>đ</td>
+                                    <td>
+                                        <% if(e.is_active) { %> <span class="badge b-available">Đang Mở</span>
+                                        <% } else { %> <span class="badge" style="background:#555; color:#ccc;">Đã Tắt</span> <% } %>
+                                    </td>
+                                    <td style="display: flex; gap: 10px;">
+                                        <a href="/admin/chung-suc/event/edit/<%= e.id %>" style="color: #f1c40f; background: rgba(241,196,15,0.1); padding: 5px 10px; border-radius: 5px; text-decoration: none; font-size: 12px; border: 1px solid #f1c40f;"><i class="fa-solid fa-pen"></i> Sửa</a>
+                                        
+                                        <form action="/admin/chung-suc/event/delete/<%= e.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('CẢNH BÁO ĐỎ: Xóa sự kiện này sẽ XÓA SẠCH toàn bộ mã code và lịch sử của nó. Sếp có chắc chắn không?')">
+                                            <button type="submit" style="color: var(--danger); background: rgba(253,93,147,0.1); padding: 5px 10px; border-radius: 5px; border: 1px solid var(--danger); cursor: pointer; font-size: 12px;"><i class="fa-solid fa-trash"></i> Xóa</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="6" style="text-align: center; color: #888; padding: 15px;">Chưa có sự kiện nào. Hãy tạo 1 cái ở trên!</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
+            <div class="card" style="border-top-color: var(--accent);">
+                <h3 style="margin-top: 0; color: var(--accent);"><i class="fa-solid fa-plus"></i> Nạp Mã Thẻ Hiếm (Mã VIP)</h3>
+                <form action="/admin/chung-suc/add?_csrf=<%= csrfToken %>" method="POST">
+                    
+                    <label>Nạp mã này vào Sự Kiện nào?</label>
+                    <select name="event_id" required style="border-color: var(--accent);">
+                        <% if (typeof events !== 'undefined' && events.length > 0) { %>
+                            <% events.forEach(e => { %>
+                                <option value="<%= e.id %>"><%= e.name %> (Bảo hiểm: <%= e.pity_threshold/1000 %>k)</option>
+                            <% }) %>
+                        <% } else { %>
+                            <option value="">-- Chưa có sự kiện nào --</option>
+                        <% } %>
+                    </select>
+
+                    <label>Danh sách mã Code (Mỗi mã 1 dòng)</label>
+                    <div style="background: #111; padding: 10px; border-radius: 6px; font-size: 11px; color: #aaa; margin-bottom: 5px; font-family: monospace;">
+                        Lưu ý: Hệ thống sẽ tự động lọc bỏ các mã trùng lặp.
+                    </div>
+                    <textarea name="codes_list" rows="6" placeholder="CS-VIP111&#10;CS-VIP222&#10;CS-VIP333" required></textarea>
+
+                    <button type="submit" class="btn-submit" style="width: 100%;"><i class="fa-solid fa-bolt"></i> BƠM VÀO KHO GAME NÀY</button>
+                </form>
+            </div>
+
+            <div class="card" style="border-top-color: #f1c40f;">
+                <h3 style="margin-top: 0; color: #f1c40f;"><i class="fa-solid fa-box-open"></i> Kho Mã VIP Đang Chờ (Còn: <%= stats.available || 0 %> mã)</h3>
+                
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchCode" onkeyup="filterTable('searchCode', 'codeTable')" placeholder="Tìm nhanh theo Sự Kiện hoặc Mã Code...">
+                </div>
+
+                <div class="table-container">
+                    <table id="codeTable">
+                        <thead><tr><th>Thuộc Sự Kiện</th><th>Mã Code</th><th>Trạng Thái</th><th style="text-align: center;">Xóa</th></tr></thead>
+                        <tbody>
+                            <% if (typeof codes !== 'undefined' && codes.length > 0) { %>
+                                <% codes.forEach(c => { %>
+                                    <tr>
+                                        <td style="color: var(--primary); font-weight: bold; font-size: 12px;"><%= c.event_name %></td>
+                                        <td style="font-family: monospace; font-weight: bold; font-size: 14px; color: #fff;"><%= c.code %></td>
+                                        <td>
+                                            <% if (c.status === 0) { %> <span class="badge b-available">Sẵn Sàng</span>
+                                            <% } else if (c.status === 1) { %> <span class="badge b-pending">Đang Khóa 20s</span> <% } %>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <form action="/admin/chung-suc/delete/<%= c.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Xóa mã VIP này?')">
+                                                <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr><td colspan="4" style="text-align: center; color: #888; padding: 30px;">Kho rỗng. Sếp hãy nạp mã đi!</td></tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top-color: #e14eca;">
+            <h3 style="margin-top: 0; color: #e14eca;"><i class="fa-solid fa-users-viewfinder"></i> Lịch Sử Khách Hàng Trúng Thưởng</h3>
+            
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchHistory" onkeyup="filterTable('searchHistory', 'historyTable')" placeholder="Tìm nhanh theo Tên khách, Mã Code hoặc Sự kiện...">
+            </div>
+
+            <div class="table-container" style="max-height: 500px;">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Sự Kiện</th>
+                            <th>Người Trúng</th>
+                            <th>Mã Húp Được</th>
+                            <th>Ảnh Giải</th>
+                            <th>Thời Gian</th>
+                            <th style="text-align: center;">Xóa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (typeof histories !== 'undefined' && histories.length > 0) { %>
+                            <% histories.forEach(h => { %>
+                                <tr>
+                                    <td style="color: var(--primary); font-size: 12px; font-weight: bold;"><%= h.event_name %></td>
+                                    <td style="color: #e14eca; font-weight: bold;"><i class="fa-solid fa-user-check"></i> <%= h.winner_name %></td>
+                                    <td style="font-family: monospace; font-weight: bold; color: #00f2c3; font-size: 14px;"><%= h.code %></td>
+                                    <td>
+                                        <% let imgPath = h.card_image.startsWith('http') ? h.card_image : '/images/' + h.card_image; %>
+                                        <img src="<%= imgPath %>" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; border: 1px solid #555;" onerror="this.style.display='none'">
+                                    </td>
+                                    <td style="font-size: 12px; color: #aaa;"><%= new Date(h.claimed_at).toLocaleString('vi-VN') %></td>
+                                    <td style="text-align: center;">
+                                        <form action="/admin/chung-suc/delete/<%= h.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Xóa lịch sử của mã này?')">
+                                            <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="6" style="text-align: center; color: #888; padding: 40px;">Chưa có khách nào trúng mã.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Hàm lọc chung cho mọi bảng
+        function filterTable(inputId, tableId) {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById(inputId);
+            filter = input.value.toUpperCase();
+            table = document.getElementById(tableId);
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) { // Bỏ qua thead
+                tr[i].style.display = "none"; 
+                td = tr[i].getElementsByTagName("td");
+                for (var j = 0; j < td.length - 1; j++) { // Không tìm ở cột ảnh/xóa
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            tr[i].style.display = ""; 
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

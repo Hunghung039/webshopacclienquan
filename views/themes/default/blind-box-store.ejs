@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .gacha-bg { background: radial-gradient(circle at top, #1a202c, #000000); min-height: 100vh; color: #fff; padding-bottom: 60px; overflow-x: hidden; }
+        
+        /* HEADER & MENU NỘI ĐỊA */
+        .store-header { text-align: center; padding: 40px 15px 20px; position: relative; }
+        .store-header h1 { font-size: 32px; font-weight: 900; color: #f1c40f; text-transform: uppercase; text-shadow: 0 0 20px rgba(241, 196, 15, 0.4); margin-bottom: 10px; }
+        .store-header p { color: #a0aec0; font-size: 15px; margin-bottom: 20px; }
+        
+        .action-menu { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 25px; }
+        .action-btn { padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: bold; color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer; display: flex; align-items: center; gap: 8px;}
+        .action-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .action-btn.vip { border-color: rgba(241, 196, 15, 0.5); color: #f1c40f; }
+        .action-btn.inven { border-color: rgba(0, 242, 195, 0.5); color: #00f2c3; }
+        .action-btn.help { border-color: rgba(9, 132, 227, 0.5); color: #74b9ff; }
+
+        .wallet-box { font-size: 16px; display: inline-block; background: #2d3748; padding: 8px 25px; border-radius: 30px; border: 1px solid #4a5568; font-weight: bold; margin-bottom: 30px;}
+        .wallet-box span { color: #48bb78; margin-left: 5px;}
+
+        /* LƯỚI TÚI MÙ */
+        .bag-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px; 
+            padding: 0 15px; 
+            max-width: 1050px; 
+            margin: 0 auto; 
+        }
+
+        .bag-card { 
+            background: #2d3748; 
+            border-radius: 16px; 
+            padding: 25px 20px; 
+            text-align: center; 
+            position: relative; 
+            border: 1px solid #4a5568; 
+            transition: 0.3s; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+            overflow: hidden;
+            min-width: 0; 
+        }
+        .bag-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.6); border-color: #f6e05e; }
+        
+        .vip-badge { position: absolute; top: 15px; right: -5px; background: linear-gradient(90deg, #d69e2e, #f6e05e); color: #000; font-size: 12px; font-weight: 900; padding: 5px 15px; border-radius: 20px 0 0 20px; box-shadow: 0 2px 10px rgba(214, 158, 46, 0.5); z-index: 10;}
+
+        /* HIỆU ỨNG BĂNG CHUYỀN */
+        .conveyor-belt {
+            width: 100%; overflow: hidden; margin: 20px 0; position: relative; white-space: nowrap; 
+            -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        }
+        .conveyor-track { display: inline-block; animation: marqueeScroll 6s linear infinite; }
+        .conveyor-track img { width: 80px; display: inline-block; vertical-align: middle; margin: 0 15px; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.5)); transition: 0.3s; }
+        @keyframes marqueeScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        .bag-card:hover .conveyor-track { animation-play-state: paused; }
+        .bag-card:hover .conveyor-track img { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 15px rgba(246, 224, 94, 0.6)); }
+        
+        .bag-title { font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 5px; position: relative; z-index: 2;}
+        .bag-price { font-size: 26px; color: #48bb78; font-weight: 900; margin-bottom: 15px; position: relative; z-index: 2;}
+        
+        .bag-desc { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; text-align: left; margin-bottom: 20px; font-size: 13px; color: #e2e8f0; line-height: 1.6; border: 1px dashed #4a5568; position: relative; z-index: 2;}
+        .bag-desc i.fa-check-circle { color: #48bb78; margin-right: 8px; font-size: 15px;}
+        .bag-desc i.fa-gem { color: #f6e05e; margin-right: 8px; font-size: 15px;}
+        .bag-desc i.fa-bolt { color: #3182ce; margin-right: 8px; font-size: 15px;}
+
+        .btn-buy { background: linear-gradient(45deg, #3182ce, #2b6cb0); color: #fff; width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: 900; cursor: pointer; transition: 0.3s; text-transform: uppercase; position: relative; z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+        .btn-buy:hover { background: linear-gradient(45deg, #4299e1, #3182ce); box-shadow: 0 0 15px rgba(49, 130, 206, 0.6); transform: scale(1.02);}
+
+        /* CÁC MODAL DÙNG CHUNG */
+        .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 15px; backdrop-filter: blur(5px);}
+        .custom-content { background: #1a202c; max-width: 500px; width: 100%; border-radius: 20px; border: 2px solid #3182ce; padding: 30px; position: relative; animation: slideDown 0.3s ease-out; }
+        .custom-close { position: absolute; top: 15px; right: 20px; font-size: 25px; color: #a0aec0; cursor: pointer; background: none; border: none; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .guide-step { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; background: #2d3748; padding: 15px; border-radius: 12px; }
+        .step-num { background: #3182ce; color: #fff; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; flex-shrink: 0; font-size: 14px;}
+
+        /* POPUP FOMO ĐỘC LẬP */
+        .fomo-box {
+            position: fixed; bottom: 20px; left: 20px;
+            background: rgba(30, 34, 53, 0.95); backdrop-filter: blur(10px);
+            border: 1px solid #f6e05e; border-left: 5px solid #f6e05e;
+            padding: 12px 20px; border-radius: 8px; color: #fff;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 9997; 
+            transform: translateX(-150%); opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none;
+        }
+        .fomo-box.active { transform: translateX(0); opacity: 1; }
+        .fomo-box i { font-size: 24px; color: #f6e05e; animation: shake-fomo 2s infinite; }
+        .fomo-box span { font-size: 14px; line-height: 1.4; }
+        @keyframes shake-fomo { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(15deg); } 50% { transform: rotate(-15deg); } 75% { transform: rotate(5deg); } }
+
+        /* TỐI ƯU MOBILE */
+        @media (max-width: 768px) {
+            .store-header h1 { font-size: 26px; }
+            .bag-grid { grid-template-columns: 1fr; gap: 20px; } 
+            .bag-card { padding: 20px 15px; }
+            .conveyor-track img { width: 70px; margin: 0 10px; }
+            .bag-title { font-size: 18px; }
+            .bag-price { font-size: 22px; }
+            .bag-desc { font-size: 13px; padding: 12px; }
+            .btn-buy { font-size: 15px; padding: 14px; }
+            .fomo-box { left: 15px; right: 15px; bottom: 85px; transform: translateY(150%); flex-direction: row; }
+            .fomo-box.active { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="gacha-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <div class="store-header">
+        <h1><i class="fa-solid fa-gift"></i> Phiên Chợ Túi Mù</h1>
+        <p>Chọn Mức Giá - Bóc Liền Tay - Rinh Ngay Đặc Quyền</p>
+
+        <div class="action-menu">
+            <button class="action-btn help" onclick="document.getElementById('guideModal').style.display='flex'">
+                <i class="fa-solid fa-circle-question"></i> Thể Lệ
+            </button>
+            <a href="/kho-vip" class="action-btn vip"><i class="fa-solid fa-crown"></i> Kho Đổi VIP</a>
+            <a href="/tu-do" class="action-btn inven"><i class="fa-solid fa-backpack"></i> Tủ Đồ Của Bạn</a>
+        </div>
+
+        <% if(user) { %>
+            <div class="wallet-box">
+                Ví của bạn: <span><%= new Intl.NumberFormat('vi-VN').format(user.money) %>đ</span>
+            </div>
+        <% } %>
+    </div>
+
+    <div class="bag-grid">
+        <% if(webBags && webBags.length > 0) { %>
+            <% webBags.forEach(bag => { %>
+                <div class="bag-card">
+                    <div class="vip-badge"><i class="fa-solid fa-star"></i> Tỉ lệ Thẻ VIP: <%= bag.vip_drop_rate %>%</div>
+                    
+                    <div class="conveyor-belt">
+                        <div class="conveyor-track">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                            <img src="/images/tui-mu-dong.png" alt="Túi Mù">
+                        </div>
+                    </div>
+                    
+                    <div class="bag-title"><%= bag.name %></div>
+                    <div class="bag-price"><%= new Intl.NumberFormat('vi-VN').format(bag.price) %>đ</div>
+                    
+                    <div class="bag-desc">
+                        <%- bag.description || 'Đang cập nhật thông tin túi...' %>
+                    </div>
+
+                    <button class="btn-buy" onclick="openConfirm('<%= bag.id %>')"><i class="fa-solid fa-box-open"></i> MUA & XÉ NGAY</button>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #718096; background: #2d3748; border-radius: 15px;">
+                <i class="fa-solid fa-box-open" style="font-size: 50px; margin-bottom: 15px;"></i>
+                <h2>Hiện tại kho túi mù đang được nâng cấp!</h2>
+                <p>Sếp vui lòng quay lại sau ít phút nhé.</p>
+            </div>
+        <% } %>
+    </div>
+
+    <div id="guideModal" class="custom-modal">
+        <div class="custom-content">
+            <button class="custom-close" onclick="document.getElementById('guideModal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="color: #63b3ed; text-align: center; margin-bottom: 25px; margin-top: 0;"><i class="fa-solid fa-book-open"></i> THỂ LỆ TÚI MÙ</h2>
+            
+            <div class="guide-step">
+                <div class="step-num">1</div>
+                <div>
+                    <h4 style="margin: 0 0 5px; color: #e2e8f0; font-size: 15px;">Chọn Mức Giá Túi</h4>
+                    <p style="margin: 0; color: #a0aec0; font-size: 13px;">Dùng số dư để mua. Giá túi càng cao, tài khoản bên trong càng chất lượng và tỉ lệ rơi Thẻ VIP càng lớn.</p>
+                </div>
+            </div>
+            <div class="guide-step">
+                <div class="step-num">2</div>
+                <div>
+                    <h4 style="margin: 0 0 5px; color: #e2e8f0; font-size: 15px;">Xé Túi Nhân Phẩm</h4>
+                    <p style="margin: 0; color: #a0aec0; font-size: 13px;">Nhận ngay <b>1 Nick Game</b> + Cơ hội trúng <b>Thẻ VIP</b>. Tài khoản tự động lưu vào <i>Tủ Đồ Của Bạn</i>.</p>
+                </div>
+            </div>
+            <div class="guide-step">
+                <div class="step-num">3</div>
+                <div>
+                    <h4 style="margin: 0 0 5px; color: #e2e8f0; font-size: 15px;">Tích Thẻ Đổi Đồ VIP</h4>
+                    <p style="margin: 0; color: #a0aec0; font-size: 13px;">Tích lũy đủ Thẻ VIP, hãy vào <i>Kho Đổi VIP</i> để hợp thành Thẻ Siêu Cấp và nhắn Admin nhận Acc Tự Chọn!</p>
+                </div>
+            </div>
+            <button class="btn-buy" style="margin-top: 10px;" onclick="document.getElementById('guideModal').style.display='none'">ĐÃ HIỂU LUẬT CHƠI!</button>
+        </div>
+    </div>
+
+    <div id="confirmBuyModal" class="custom-modal">
+        <div class="custom-content" style="max-width: 400px; text-align: center; padding: 40px 20px; border-color: #f1c40f;">
+            <div style="width: 70px; height: 70px; background: rgba(241, 196, 15, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i class="fa-solid fa-circle-question" style="font-size: 35px; color: #f1c40f;"></i>
+            </div>
+            <h2 style="color: #fff; margin-bottom: 10px; font-size: 20px;">Xác nhận test nhân phẩm?</h2>
+            <p style="color: #a0aec0; font-size: 14px; margin-bottom: 25px;">Hệ thống sẽ trừ tiền trong ví của bạn. Chúc sếp nổ hũ rớt Thẻ VIP nhé!</p>
+            
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button class="action-btn" style="flex: 1; justify-content: center; background: #4a5568; color: #fff; border: none; font-size: 14px;" onclick="closeAllModals()">Suy Nghĩ Lại</button>
+                <button class="btn-buy" style="flex: 1; padding: 12px; font-size: 14px; margin: 0; background: linear-gradient(45deg, #d69e2e, #f6e05e); color: #000; box-shadow: 0 5px 15px rgba(246, 224, 94, 0.4);" id="btnAcceptBuy">Chốt, Xé Ngay</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" class="custom-modal">
+        <div class="custom-content" id="infoModalBorder" style="max-width: 400px; text-align: center; padding: 40px 20px;">
+            <div id="infoModalIconBox" style="width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i id="infoModalIcon" class="" style="font-size: 35px;"></i>
+            </div>
+            <h2 id="infoModalTitle" style="color: #fff; margin-bottom: 10px; font-size: 20px;">Thông Báo</h2>
+            <p id="infoModalDesc" style="color: #a0aec0; font-size: 14px; margin-bottom: 25px;">Nội dung chi tiết...</p>
+            
+            <div id="infoModalAction">
+                </div>
+        </div>
+    </div>
+
+    <div id="privateFomoBox" class="fomo-box">
+        <i class="fa-solid fa-bell-concierge"></i>
+        <span id="privateFomoText">...</span>
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        // Đóng các Modal khi bấm ra ngoài vùng đen
+        window.onclick = function(event) {
+            const guideModal = document.getElementById('guideModal');
+            const confirmModal = document.getElementById('confirmBuyModal');
+            const infoModal = document.getElementById('infoModal');
+            
+            if (event.target == guideModal) guideModal.style.display = "none";
+            if (event.target == confirmModal) closeAllModals();
+            if (event.target == infoModal) infoModal.style.display = "none";
+        }
+
+        function closeAllModals() {
+            document.getElementById('confirmBuyModal').style.display = 'none';
+            document.getElementById('infoModal').style.display = 'none';
+            pendingCategoryId = null;
+        }
+
+        // ===============================================
+        // HÀM HIỂN THỊ MODAL THÔNG BÁO TÙY CHỈNH
+        // ===============================================
+        function showCustomInfoModal(type, title, desc, actionHtml) {
+            const modal = document.getElementById('infoModal');
+            const boxBorder = document.getElementById('infoModalBorder');
+            const iconBox = document.getElementById('infoModalIconBox');
+            const icon = document.getElementById('infoModalIcon');
+            
+            document.getElementById('infoModalTitle').innerText = title;
+            document.getElementById('infoModalDesc').innerHTML = desc;
+            document.getElementById('infoModalAction').innerHTML = actionHtml;
+
+            // Chỉnh màu sắc theo từng loại lỗi
+            if(type === 'error') {
+                boxBorder.style.borderColor = '#e74c3c';
+                iconBox.style.background = 'rgba(231, 76, 60, 0.1)';
+                icon.className = 'fa-solid fa-circle-xmark';
+                icon.style.color = '#e74c3c';
+            } 
+            else if(type === 'warning') {
+                boxBorder.style.borderColor = '#f1c40f';
+                iconBox.style.background = 'rgba(241, 196, 15, 0.1)';
+                icon.className = 'fa-solid fa-triangle-exclamation';
+                icon.style.color = '#f1c40f';
+            }
+            else {
+                boxBorder.style.borderColor = '#00f2c3';
+                iconBox.style.background = 'rgba(0, 242, 195, 0.1)';
+                icon.className = 'fa-solid fa-check-circle';
+                icon.style.color = '#00f2c3';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        // ===============================================
+        // KỊCH BẢN FOMO ẢO ĐỘC LẬP
+        // ===============================================
+        const fakeNames = ["Hoàng*", "Nam*", "Trang*", "Tuấn*", "Minh*", "Kiệt*", "Huy*", "Bảo*", "Long*"];
+        const fakeBags = ["19k", "49k", "99k", "299k"];
+        
+        setInterval(() => {
+            const name = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+            const bag = fakeBags[Math.floor(Math.random() * fakeBags.length)];
+            const fomoBox = document.getElementById('privateFomoBox');
+            const fomoText = document.getElementById('privateFomoText');
+            
+            fomoText.innerHTML = `<b>${name}</b> vừa bóc Túi ${bag}, rơi thẻ VIP!`;
+            fomoBox.classList.add('active');
+            setTimeout(() => { fomoBox.classList.remove('active'); }, 4000);
+        }, 12000); 
+
+        // ===============================================
+        // LOGIC MUA TÚI MÙ (ÁP DỤNG MODAL MỚI TOANH)
+        // ===============================================
+        let pendingCategoryId = null;
+
+        function openConfirm(categoryId) {
+            const isLogged = <%= user ? 'true' : 'false' %>;
+            
+            // Xử lý báo lỗi Chưa Đăng Nhập
+            if(!isLogged) {
+                showCustomInfoModal(
+                    'warning', 
+                    'Chưa Đăng Nhập!', 
+                    'Sếp cần phải đăng nhập tài khoản để có thể tiến hành test nhân phẩm nhé.', 
+                    `<button class="btn-buy" style="background: linear-gradient(45deg, #3182ce, #2b6cb0);" onclick="window.location.href='/auth/login'">ĐĂNG NHẬP NGAY</button>`
+                );
+                return;
+            }
+            
+            pendingCategoryId = categoryId;
+            document.getElementById('confirmBuyModal').style.display = 'flex';
+        }
+
+        document.getElementById('btnAcceptBuy').onclick = async function() {
+            if(!pendingCategoryId) return;
+            
+            const categoryId = pendingCategoryId;
+            closeAllModals(); // Ẩn bảng xác nhận đi
+            
+            // Hiện bảng chờ Xử lý
+            showCustomInfoModal(
+                'warning', 
+                'Đang Xử Lý...', 
+                'Hệ thống đang chuẩn bị túi mù cho sếp, xin vui lòng chờ 1 lát <i class="fa-solid fa-spinner fa-spin"></i>', 
+                ``
+            );
+
+            try {
+                const res = await fetch('/tui-mu/buy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ category_id: categoryId })
+                });
+                const data = await res.json();
+
+                if(data.success) {
+                    // Mua thành công -> Chuyển hướng
+                    showCustomInfoModal('success', 'Thành Công!', 'Đã chốt túi thành công! Đang chuyển hướng sang phòng bóc túi...', '');
+                    setTimeout(() => { window.location.href = `/unbox/${data.orderCode}`; }, 1000);
+                } else {
+                    // LỖI (Thiếu tiền, hoặc hết túi) -> Hiện Bảng lỗi và Nút điều hướng thông minh
+                    
+                    let actionBtn = `<button class="action-btn" style="width: 100%; justify-content: center; background: #4a5568; color: #fff; padding: 12px;" onclick="closeAllModals()">Đóng Bảng Này</button>`;
+                    
+                    // Nếu lỗi do thiếu lúa -> Cho nút Nạp Thẻ
+                    if(data.message.includes("lúa") || data.message.includes("nạp")) {
+                        actionBtn = `<a href="/#nap-the" class="btn-buy" style="display:block; text-align:center; text-decoration:none; background: linear-gradient(45deg, #e74c3c, #c0392b);">NẠP THÊM LÚA NGAY</a>`;
+                    }
+                    
+                    // Nếu lỗi do hết hàng -> Khuyên chọn túi khác
+                    if(data.message.includes("hết")) {
+                        actionBtn = `<button class="btn-buy" style="background: linear-gradient(45deg, #d69e2e, #f6e05e); color: #000;" onclick="closeAllModals()">CHỌN TÚI KHÁC THỬ XEM</button>`;
+                    }
+
+                    showCustomInfoModal('error', 'Ôi Không, Lỗi Rồi!', data.message, actionBtn);
+                }
+            } catch (err) {
+                showCustomInfoModal(
+                    'error', 
+                    'Mất Kết Nối', 
+                    'Lỗi mạng hoặc server bận. Vui lòng F5 tải lại trang và thử lại.', 
+                    `<button class="btn-buy" style="background: #4a5568; border: none;" onclick="closeAllModals()">Đóng</button>`
+                );
+            }
+        };
+    </script>
+</body>
+</html>

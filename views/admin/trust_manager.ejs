@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Uy Tín Shop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<%- include('partials/admin_css') %>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'trust' }) %>
+    <div class="main-content">
+        <% if (typeof msg !== 'undefined' && msg) { %>
+            <div style="background: <%= type === 'success' ? 'rgba(0,242,195,0.2)' : 'rgba(253,93,147,0.2)' %>; color: <%= type === 'success' ? '#00f2c3' : '#fd5d93' %>; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; border-left: 4px solid currentColor;">
+                <%= msg %>
+            </div>
+        <% } %>
+
+        <h1 style="margin: 0 0 30px 0; font-weight: 300; border-left: 4px solid var(--accent); padding-left: 15px;">Quản Lý Ảnh Check Uy Tín</h1>
+
+        <div class="card">
+            <h3 style="margin-top: 0; color: var(--accent);"><i class="fa-solid fa-cloud-arrow-up"></i> Đăng Chuỗi Ảnh Giao Dịch</h3>
+            <form action="/admin/trust/add?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                    <div>
+                        <label>Tên Khách Hàng</label>
+                        <input type="text" name="customer_name" placeholder="VD: Khách chốt Acc VIP 500k" required>
+
+                        <label>Mô tả giao dịch</label>
+                        <textarea name="description" rows="4" placeholder="VD: Giao dịch siêu tốc trong 1 phút..."></textarea>
+                    </div>
+
+                    <div>
+                        <label>Ảnh chụp (Có thể chọn nhiều ảnh 1 lúc)</label>
+                        <div class="upload-box">
+                            <i class="fa-solid fa-images" style="font-size: 35px; color: #aaa; margin-bottom: 10px; display: block;"></i>
+                            <span style="font-size: 13px; color: #888;">Bôi đen để chọn nhiều ảnh (Tối đa 10)</span>
+                            <input type="file" name="images" id="imageInput" multiple accept="image/jpeg, image/png, image/webp" required style="opacity: 0; position: absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" onchange="previewImages(event)">
+                            <div id="preview-container" class="preview-grid"></div>
+                        </div>
+                        <p id="error-msg" style="color: var(--danger); font-size: 12px; margin-top: 10px; display: none;"></p>
+                    </div>
+                </div>
+                <div style="text-align: left; margin-top: 15px;">
+                    <button type="submit" class="btn-add" id="btnSubmit"><i class="fa-solid fa-paper-plane"></i> XUẤT BẢN</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 style="margin: 0;"><i class="fa-solid fa-list"></i> Kho Ảnh Đã Đăng</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">Hình Ảnh</th>
+                        <th>Khách Hàng</th>
+                        <th>Nội Dung</th>
+                        <th>Ngày Đăng</th>
+                        <th style="text-align: center;">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (typeof reviews !== 'undefined' && reviews.length > 0) { %>
+                        <% reviews.forEach(r => { %>
+                            <tr>
+                                <td>
+                                    <% r.images.slice(0, 3).forEach(img => { %>
+                                        <img src="<%= img %>" class="trust-img-td" onerror="this.src='https://placehold.co/60x60/1e1e2f/cccccc?text=Lỗi'">
+                                    <% }) %>
+                                    <% if(r.images.length > 3) { %> 
+                                        <span style="font-size: 12px; color: #888; font-weight: bold; background: #1e1e2f; padding: 5px 10px; border-radius: 20px; border: 1px solid #444;">
+                                            +<%= r.images.length - 3 %>
+                                        </span> 
+                                    <% } %>
+                                </td>
+                                <td><b style="color: var(--accent);"><%= r.customer_name %></b></td>
+                                <td style="color: #a0a5b5; font-size: 13px; max-width: 250px;"><%= r.description %></td>
+                                <td style="color: #888; font-size: 13px;"><%= new Date(r.created_at).toLocaleDateString('vi-VN') %></td>
+                                <td style="text-align: center;">
+                                    <form action="/admin/trust/delete/<%= r.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Xóa bài này sẽ xóa toàn bộ ảnh bên trong. Bạn chắc chứ?')">
+                                        <button type="submit" class="btn-del"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="5" style="text-align: center; padding: 30px; color: #666;">Chưa có bài đăng uy tín nào.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function previewImages(event) {
+            const container = document.getElementById('preview-container');
+            const errorMsg = document.getElementById('error-msg');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const files = event.target.files;
+            
+            container.innerHTML = ''; 
+            errorMsg.style.display = 'none';
+            btnSubmit.disabled = false;
+
+            // 1. Chặn chọn quá 10 ảnh
+            if (files.length > 10) {
+                errorMsg.innerText = '⚠️ Bạn chỉ được chọn tối đa 10 ảnh cùng lúc!';
+                errorMsg.style.display = 'block';
+                btnSubmit.disabled = true;
+                event.target.value = '';
+                return;
+            }
+
+            // 2. Chặn ảnh dung lượng khủng
+            let totalSize = 0;
+            const MAX_TOTAL_SIZE = 20 * 1024 * 1024; // Tối đa 20MB cho 1 lần up
+            const MAX_FILE_SIZE = 5 * 1024 * 1024; // Tối đa 5MB/ảnh
+
+            for(let i = 0; i < files.length; i++) {
+                if (files[i].size > MAX_FILE_SIZE) {
+                    errorMsg.innerText = `⚠️ Ảnh "${files[i].name}" quá nặng (>5MB). Vui lòng chọn ảnh nhẹ hơn!`;
+                    errorMsg.style.display = 'block';
+                    btnSubmit.disabled = true;
+                    event.target.value = '';
+                    container.innerHTML = '';
+                    return;
+                }
+                totalSize += files[i].size;
+            }
+
+            if (totalSize > MAX_TOTAL_SIZE) {
+                errorMsg.innerText = `⚠️ Tổng dung lượng vượt quá 20MB. Vui lòng giảm bớt số lượng ảnh!`;
+                errorMsg.style.display = 'block';
+                btnSubmit.disabled = true;
+                event.target.value = '';
+                container.innerHTML = '';
+                return;
+            }
+
+            // 3. Render ảnh Preview
+            for(let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-img';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(files[i]);
+            }
+        }
+    </script>
+</body>
+</html>

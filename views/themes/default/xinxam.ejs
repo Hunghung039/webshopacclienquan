@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+    <style>
+        .xinxam-bg { background: url('<%= config.banner_image.startsWith("http") ? config.banner_image : "/images/" + config.banner_image %>') center/cover fixed, #1a0b2e; min-height: 100vh; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif;}
+        .overlay-bg { background: rgba(15, 10, 25, 0.9); min-height: 100vh; padding-top: 20px;}
+        
+        /* THANH ĐỒNG HỒ 30 PHÚT */
+        .cooldown-banner { background: rgba(0,0,0,0.6); padding: 15px; text-align: center; border-bottom: 2px solid #00f2c3; border-top: 2px solid #00f2c3; margin-bottom: 20px; backdrop-filter: blur(5px);}
+        .cd-text { color: #fff; font-size: 16px; font-weight: bold; text-transform: uppercase;}
+        .cd-timer { color: #00f2c3; font-size: 24px; font-weight: 900; margin-left: 10px; font-family: monospace; text-shadow: 0 0 10px rgba(0,242,195,0.5);}
+        .cd-ready { color: #f1c40f; font-size: 20px; font-weight: 900; text-shadow: 0 0 15px rgba(241,196,15,0.8); animation: pulse 1s infinite;}
+
+        /* BẢNG THÔNG BÁO LỊCH BƠM THẺ */
+        .alert-box { 
+            max-width: 800px; margin: 0 auto 30px; background: rgba(231, 76, 60, 0.1); 
+            border: 1px dashed #e74c3c; border-radius: 12px; padding: 15px; text-align: center;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.2); position: relative; overflow: hidden;
+        }
+        .alert-title { color: #e74c3c; font-size: 18px; font-weight: 900; margin: 0 0 10px; text-transform: uppercase; animation: pulse-text 2s infinite; }
+        .alert-desc { color: #fff; font-size: 14px; margin: 0; line-height: 1.5; }
+        .time-badge { background: #f1c40f; color: #000; padding: 3px 8px; border-radius: 4px; font-weight: 900; margin: 0 5px; display: inline-block; box-shadow: 0 2px 5px rgba(241,196,15,0.5);}
+
+        .header-box { text-align: center; margin-bottom: 10px; padding: 0 20px;}
+        .title { color: #f1c40f; font-size: 32px; font-weight: 900; text-transform: uppercase; text-shadow: 0 4px 15px rgba(241,196,15,0.6); margin-bottom: 10px; font-family: serif;}
+        .subtitle { color: #e1b12c; font-size: 15px; }
+
+        /* ========================================= */
+        /* KHUNG CHỨA THẺ 3D (SWIPER)                */
+        /* ========================================= */
+        .swiper { width: 100%; padding-top: 30px; padding-bottom: 50px; }
+        .swiper-slide { width: 260px; /* Kích thước cố định của 1 thẻ */ }
+
+        .card-wrapper { background: #1e1e2f; border-radius: 15px; border: 2px solid #f1c40f; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; display: flex; flex-direction: column; position: relative; height: 100%; }
+        .card-img-box { width: 100%; height: 350px; background: #000; position: relative;}
+        .card-img-box img { width: 100%; height: 100%; object-fit: cover;}
+        
+        .stock-badge { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.7); color: #00f2c3; padding: 5px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; border: 1px solid #00f2c3; backdrop-filter: blur(5px);}
+        .stock-badge.out-of-stock { color: #fd5d93; border-color: #fd5d93; }
+
+        .card-info { padding: 15px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: flex-end;}
+        .card-name { color: #fff; font-size: 18px; font-weight: bold; margin: 0 0 10px;}
+        
+        /* NÚT BẤM LINH HOẠT THEO TIMER */
+        .btn-buy { padding: 12px; border-radius: 30px; border: none; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.3s; width: 100%; font-size: 14px;}
+        .btn-buy:disabled { background: #333 !important; color: #888 !important; cursor: not-allowed; box-shadow: none !important; }
+        
+        .btn-paid { background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000; box-shadow: 0 5px 15px rgba(241,196,15,0.3);}
+        .btn-paid:hover:not(:disabled) { transform: translateY(-3px); background: #fff;}
+        
+        .btn-free { background: linear-gradient(45deg, #00f2c3, #00b894); color: #000; box-shadow: 0 5px 15px rgba(0,242,195,0.3);}
+        .btn-free:hover:not(:disabled) { transform: translateY(-3px); background: #fff;}
+
+        /* LỊCH SỬ NHẬN MÃ */
+        .history-box { max-width: 900px; margin: 20px auto 0; padding: 25px 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed #f1c40f; backdrop-filter: blur(5px);}
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; max-height: 380px; overflow-y: auto; padding-right: 5px; }
+        .history-grid::-webkit-scrollbar { width: 6px; }
+        .history-grid::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px;}
+        .history-grid::-webkit-scrollbar-thumb { background: #00f2c3; border-radius: 10px;}
+
+        .h-item { display: flex; align-items: center; justify-content: space-between; background: #1e1e2f; padding: 12px; border-radius: 10px; border-left: 4px solid #00f2c3; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: 0.2s;}
+        .h-item:hover { transform: translateX(5px); background: #27293d; border-color: #f1c40f; }
+        
+        .h-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .h-left img { width: 45px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #444;}
+        .h-name { color: #fff; font-weight: bold; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .h-time { color: #888; font-size: 11px; margin-top: 3px; }
+        
+        .h-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; margin-left: 10px; }
+        .h-code { font-family: monospace; font-size: 15px; color: #00f2c3; font-weight: 900; background: #000; padding: 4px 10px; border-radius: 5px; border: 1px dashed #00f2c3; letter-spacing: 1px;}
+        .btn-copy-code { background: #3498db; color: #fff; border: none; padding: 4px 12px; border-radius: 5px; font-size: 11px; cursor: pointer; transition: 0.2s; font-weight: bold; display: flex; align-items: center; gap: 5px;}
+        .btn-copy-code:hover { background: #2980b9; }
+
+        /* TÚI MÙ PR BOX */
+        .pr-blindbox-container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .pr-title { text-align: center; color: #e14eca; font-size: 26px; font-weight: 900; text-transform: uppercase; margin-bottom: 20px; text-shadow: 0 0 15px rgba(225, 78, 202, 0.5); }
+        .pr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        .pr-card { background: linear-gradient(135deg, #1e1e2f, #27293d); border-radius: 15px; padding: 20px; border: 2px solid transparent; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: 0.3s; overflow: hidden; }
+        .pr-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(transparent, transparent, transparent, #e14eca); animation: rotate-border 4s linear infinite; z-index: 0; opacity: 0.5; }
+        .pr-card::after { content: ''; position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; background: #1e1e2f; border-radius: 13px; z-index: 1; }
+        .pr-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(225, 78, 202, 0.4); }
+        
+        .pr-content { position: relative; z-index: 2; }
+        .pr-name { color: #f1c40f; font-size: 20px; font-weight: 900; margin: 0 0 5px; }
+        .pr-price { color: #00f2c3; font-size: 22px; font-weight: 900; margin-bottom: 15px; }
+        .pr-desc { color: #ccc; font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+        .pr-badge { display: inline-block; background: rgba(225, 78, 202, 0.2); color: #e14eca; padding: 5px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; border: 1px solid #e14eca; margin-bottom: 15px; }
+        
+        .pr-btn { display: block; width: 100%; text-align: center; background: linear-gradient(45deg, #e14eca, #ff7eb3); color: #fff; text-decoration: none; font-weight: 900; padding: 12px 0; border-radius: 30px; box-shadow: 0 5px 15px rgba(225, 78, 202, 0.4); transition: 0.3s; }
+        .pr-btn:hover { background: #fff; color: #e14eca; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes pulse-text { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes rotate-border { 100% { transform: rotate(360deg); } }
+        
+        @media (max-width: 768px) {
+            .swiper-slide { width: 230px; } /* Kích thước thẻ trên mobile */
+            .card-img-box { height: 300px; }
+            .alert-box { margin: 0 15px 30px; }
+            .pr-grid { grid-template-columns: 1fr; }
+            
+            /* Tối ưu History Mobile */
+            .history-grid { grid-template-columns: 1fr; max-height: 350px; }
+            .h-item { padding: 10px; }
+            .h-left img { width: 40px; height: 55px; }
+            .h-name { font-size: 14px; }
+            .h-code { font-size: 13px; }
+        }
+    </style>
+</head>
+<body class="xinxam-bg">
+    <div class="overlay-bg">
+        <%- include('../../includes/header') %>
+        <%- include('../../includes/mobile-nav') %>
+        <%- include('../../includes/modals') %>
+
+        <div class="cooldown-banner">
+            <% if(typeof user === 'undefined') { %>
+                <span class="cd-text">Đăng nhập để nhận Quẻ Miễn Phí mỗi 30 phút!</span>
+            <% } else { %>
+                <span class="cd-text">Lượt Quẻ Miễn Phí: </span>
+                <span id="globalTimer" class="cd-timer">Đang tải...</span>
+            <% } %>
+        </div>
+
+        <div class="alert-box">
+            <h3 class="alert-title"><i class="fa-solid fa-bullhorn"></i> TIN KHẨN CẤP <i class="fa-solid fa-bullhorn"></i></h3>
+            <p class="alert-desc">
+                Hệ thống sẽ <b>CẬP NHẬT THÊM MÃ MIỄN PHÍ</b> vào các khung giờ: 
+                <span class="time-badge">06:00</span> 
+                <span class="time-badge">12:00</span> 
+                <span class="time-badge">18:00</span> 
+                <span class="time-badge">22:00</span> hàng ngày.
+                <br><br>
+                Mọi người nhớ canh đúng giờ vào lụm quẻ ngon nhé! Hoặc có thể <b>MUA BẰNG TIỀN</b> bất cứ lúc nào.
+            </p>
+        </div>
+
+        <div class="header-box">
+            <h1 class="title"><%= config.name %></h1>
+            <p class="subtitle">Vuốt để chọn Quẻ. Nhận Free mỗi 30 phút hoặc Mua Ngay không cần đợi!</p>
+        </div>
+
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+                <% cards.forEach(card => { %>
+                    <div class="swiper-slide">
+                        <div class="card-wrapper">
+                            <div class="card-img-box">
+                                <div class="stock-badge <%= card.stock === 0 ? 'out-of-stock' : '' %>">
+                                    <%= card.stock > 0 ? `Còn ${card.stock} mã Free` : 'HẾT FREE - CÓ THỂ MUA' %>
+                                </div>
+                                <% let imgUrl = card.image_url.startsWith('http') ? card.image_url : '/images/' + card.image_url; %>
+                                <img src="<%= imgUrl %>" alt="<%= card.name %>">
+                            </div>
+                            
+                            <div class="card-info">
+                                <div class="card-name"><%= card.name %></div>
+                                
+                                <button class="btn-buy dynamic-btn" 
+                                    id="btn-card-<%= card.id %>"
+                                    data-id="<%= card.id %>"
+                                    data-price="<%= card.actual_price %>"
+                                    data-name="<%= card.name %>"
+                                    data-stock="<%= card.stock %>">
+                                    ĐANG TẢI...
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+            </div>
+
+        <% if (typeof user !== 'undefined') { %>
+            <div class="history-box">
+                <h3 style="color: #f1c40f; text-align: center; margin-top: 0; margin-bottom: 20px;">
+                    <i class="fa-solid fa-box-open"></i> KHO MÃ BẠN ĐÃ SỞ HỮU (<%= myHistory ? myHistory.length : 0 %>)
+                </h3>
+                
+                <% if (myHistory && myHistory.length > 0) { %>
+                    <div class="history-grid">
+                        <% myHistory.forEach(h => { %>
+                            <div class="h-item">
+                                <div class="h-left">
+                                    <% let hImg = h.image_url.startsWith('http') ? h.image_url : '/images/' + h.image_url; %>
+                                    <img src="<%= hImg %>" loading="lazy">
+                                    <div style="min-width: 0;"> 
+                                        <div class="h-name"><%= h.card_name %></div>
+                                        <div class="h-time"><%= new Date(h.claimed_at).toLocaleString('vi-VN') %></div>
+                                    </div>
+                                </div>
+                                <div class="h-right">
+                                    <div class="h-code"><%= h.code %></div>
+                                    <button class="btn-copy-code" onclick="copyCode('<%= h.code %>')">
+                                        <i class="fa-regular fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <div style="text-align: center; color: #888; padding: 20px;">Bạn chưa sở hữu mã nào!</div>
+                <% } %>
+            </div>
+        <% } %>
+
+        <div class="pr-blindbox-container">
+            <h2 class="pr-title"><i class="fa-solid fa-bag-shopping"></i> PHIÊN CHỢ TÚI MÙ ĐANG HOT <i class="fa-solid fa-fire" style="color: #ff7eb3;"></i></h2>
+            
+            <div class="pr-grid">
+                <div class="pr-card">
+                    <div class="pr-content">
+                        <div class="pr-badge">🔥 Tỉ lệ Thẻ VIP: 10%</div>
+                        <h3 class="pr-name">Túi 2K - Trải Nghiệm Nhân Phẩm</h3>
+                        <div class="pr-price">2.000đ</div>
+                        <div class="pr-desc">
+                            🎯 100% Nhận ngay Nick đúng TK/MK (Bao ban - Không bao trắng TT).<br><br>
+                            ✨ <b>Cơ hội vàng:</b> Tỉ lệ cực cao bóc trúng Acc trải nghiệm có Skin SSS siêu hiếm!
+                        </div>
+                        <a href="/tui-mu" class="pr-btn"><i class="fa-solid fa-hand-pointer"></i> MUA & XÉ NGAY</a>
+                    </div>
+                </div>
+
+                <div class="pr-card" style="border-color: #f1c40f;">
+                    <style>.pr-card:last-child::before { background: conic-gradient(transparent, transparent, transparent, #f1c40f); }</style>
+                    <div class="pr-content">
+                        <div class="pr-badge" style="color: #f1c40f; border-color: #f1c40f; background: rgba(241, 196, 15, 0.2);">💎 CAM KẾT SKIN SS</div>
+                        <h3 class="pr-name" style="color: #00f2c3;">Túi 19K - Khởi Nghiệp Skin SS</h3>
+                        <div class="pr-price" style="color: #f1c40f;">19.000đ</div>
+                        <div class="pr-desc">
+                            🎯 100% Trúng Acc có skin SS - Tuyệt Sắc, Trắng Thông Tin.<br><br>
+                            ✨ <b>Bảo đảm:</b> Chắc chắn có ít nhất 1 Skin SS bất kỳ.<br>
+                            🔥 <b>Nhân phẩm bùng nổ:</b> Cơ hội lớn nổ Acc có 2-3 Skin SS cực kỳ giá trị!
+                        </div>
+                        <a href="/tui-mu" class="pr-btn" style="background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000;"><i class="fa-solid fa-hand-pointer"></i> THỬ VẬN MAY</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // ==========================================
+        // KHỞI TẠO VÒNG XOAY 3D (SWIPER)
+        // ==========================================
+        var swiper = new Swiper(".mySwiper", {
+            effect: "coverflow",
+            grabCursor: true,
+            centeredSlides: true,
+            slidesPerView: "auto",
+            initialSlide: 2, 
+            coverflowEffect: {
+                rotate: 25, 
+                stretch: 0, 
+                depth: 200, 
+                modifier: 1, 
+                slideShadows: true, 
+            }
+        });
+
+        // ==========================================
+        // CẤU HÌNH DANH SÁCH LINK SHOPEE AFFILIATE
+        // ==========================================
+        const SHOPEE_LINKS = [
+            "https://s.shopee.vn/9pZAaGxW7c", "https://s.shopee.vn/9fFkNxy9Sb", "https://s.shopee.vn/9UwKBeymna",
+            "https://s.shopee.vn/9KctzLzQ8Z", "https://s.shopee.vn/AUorNUuylo", "https://s.shopee.vn/AKVRBBvc6n",
+            "https://s.shopee.vn/AAC0yswFRm", "https://s.shopee.vn/9zsamZwsml", "https://s.shopee.vn/8V3mzp2apU",
+            "https://s.shopee.vn/8KkMnW3EAT", "https://s.shopee.vn/8AQwbD3rVS", "https://s.shopee.vn/807WOu4UqR",
+            "https://s.shopee.vn/9AJTn303Tg", "https://s.shopee.vn/9003ak0gof", "https://s.shopee.vn/8pgdOR1K9e",
+            "https://s.shopee.vn/8fNDC81xUd", "https://s.shopee.vn/7AYPPN7fXM", "https://s.shopee.vn/70EzD48IsL",
+            "https://s.shopee.vn/6pvZ0l8wDK", "https://s.shopee.vn/6fc8oS9ZYJ", "https://s.shopee.vn/7po6Cb58BY",
+            "https://s.shopee.vn/7fUg0I5lWX"
+        ];
+
+        function triggerShopeeAffiliate() {
+            const today = new Date().toLocaleDateString('vi-VN'); 
+            let savedDate = localStorage.getItem('shopee_aff_date');
+            let clickCount = parseInt(localStorage.getItem('shopee_aff_count') || '0');
+
+            if (savedDate !== today) {
+                localStorage.setItem('shopee_aff_date', today);
+                clickCount = 0;
+            }
+
+            if (clickCount < 1) {
+                const randomLink = SHOPEE_LINKS[Math.floor(Math.random() * SHOPEE_LINKS.length)];
+                window.open(randomLink, '_blank'); 
+                
+                clickCount++;
+                localStorage.setItem('shopee_aff_count', clickCount);
+            }
+        }
+
+        // ==========================================
+        // CẬP NHẬT LOGIC ĐỒNG HỒ & NÚT BẤM (CHẠY CẢ KHI CHƯA ĐĂNG NHẬP)
+        // ==========================================
+        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const IS_LOGGED = <%= typeof user !== 'undefined' ? 'true' : 'false' %>;
+        
+        // Nếu chưa đăng nhập, gán nextFreeTime = 0 để nó hiểu là đã sẵn sàng
+        let nextFreeTime = <%= typeof nextFreeTime !== 'undefined' ? nextFreeTime : 0 %>;
+        let isFreeReady = false;
+
+        const pendingSpin = <%- typeof pendingSpin !== 'undefined' && pendingSpin ? JSON.stringify(pendingSpin) : 'null' %>;
+        if (pendingSpin) {
+            start20sCountdown(pendingSpin.start_time);
+        }
+
+        // ĐÃ FIX: Luôn luôn chạy updateTimer để khách ngoài nhìn thấy Nút "Nhận Miễn Phí" làm mồi câu
+        setInterval(updateTimer, 1000);
+        updateTimer(); 
+
+        function updateTimer() {
+            const now = Date.now();
+            const timerEl = document.getElementById('globalTimer');
+            const btns = document.querySelectorAll('.dynamic-btn');
+
+            if (now >= nextFreeTime) {
+                isFreeReady = true;
+                if(timerEl) timerEl.innerHTML = '<span class="cd-ready"><i class="fa-solid fa-gift"></i> ĐÃ SẴN SÀNG</span>';
+                
+                btns.forEach(btn => {
+                    let stock = parseInt(btn.getAttribute('data-stock'));
+                    const price = btn.getAttribute('data-price');
+                    
+                    if (stock === 0) {
+                        // HẾT MÃ NHƯNG VẪN ĐỂ NÚT MUA NGAY
+                        btn.className = 'btn-buy dynamic-btn btn-paid';
+                        btn.innerHTML = `<i class="fa-solid fa-cart-shopping"></i> HẾT FREE - MUA ${new Intl.NumberFormat('vi-VN').format(price)}Đ`;
+                        btn.disabled = false; 
+                    } else {
+                        // CÒN MÃ FREE
+                        btn.className = 'btn-buy dynamic-btn btn-free';
+                        btn.innerHTML = '<i class="fa-solid fa-gift"></i> NHẬN MIỄN PHÍ';
+                        btn.disabled = false;
+                    }
+                });
+            } else {
+                isFreeReady = false;
+                const remainingSecs = Math.floor((nextFreeTime - now) / 1000);
+                const m = Math.floor(remainingSecs / 60).toString().padStart(2, '0');
+                const s = (remainingSecs % 60).toString().padStart(2, '0');
+                if(timerEl) timerEl.innerText = `${m}:${s}`;
+
+                btns.forEach(btn => {
+                    const price = btn.getAttribute('data-price');
+                    btn.className = 'btn-buy dynamic-btn btn-paid';
+                    btn.innerHTML = `<i class="fa-solid fa-cart-shopping"></i> MUA ${new Intl.NumberFormat('vi-VN').format(price)}Đ`;
+                    btn.disabled = false; 
+                });
+            }
+        }
+
+        // ==========================================
+        // XỬ LÝ CLICK: BẮT ĐĂNG NHẬP HOẶC CHO CHƠI
+        // ==========================================
+        document.querySelectorAll('.dynamic-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                // CLICK VÀO LÀ KIỂM TRA ĐĂNG NHẬP NGAY
+                if(!IS_LOGGED) {
+                    return Swal.fire({
+                        title: 'Thông báo', 
+                        text: 'Bạn cần Đăng nhập hoặc Tạo tài khoản để tham gia thỉnh quẻ nhé!', 
+                        icon: 'warning',
+                        confirmButtonText: 'Đăng Nhập Ngay',
+                        confirmButtonColor: '#f1c40f'
+                    }).then(() => window.location.href = '/auth/login');
+                }
+                
+                const cardId = this.getAttribute('data-id');
+                const cardName = this.getAttribute('data-name');
+                const price = this.getAttribute('data-price');
+                const stock = parseInt(this.getAttribute('data-stock'));
+
+                // Nếu Sẵn Sàng (isFreeReady = true) VÀ Còn Mã Free (stock > 0)
+                if (isFreeReady && stock > 0) {
+                    const result = await Swal.fire({
+                        title: 'Nhận Miễn Phí?',
+                        text: `Hệ thống sẽ khóa 30 giây để thỉnh ${cardName}.`,
+                        icon: 'info', showCancelButton: true, confirmButtonText: 'Bắt Đầu', confirmButtonColor: '#00f2c3'
+                    });
+
+                    if (result.isConfirmed) {
+                        triggerShopeeAffiliate();
+
+                        try {
+                            Swal.showLoading();
+                            const res = await fetch('/api/xinxam/free-spin', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json', 'CSRF-Token': CSRF_TOKEN },
+                                body: JSON.stringify({ card_id: cardId })
+                            });
+                            const data = await res.json();
+                            if(data.success) {
+                                start20sCountdown(data.start_time);
+                            } else {
+                                Swal.fire('Lỗi', data.message, 'error');
+                            }
+                        } catch(e) { Swal.fire('Lỗi', 'Lỗi mạng!', 'error'); }
+                    }
+                } else {
+                    // CÒN LẠI (Chưa tới giờ HOẶC Hết Free) ĐỀU MUA BẰNG TIỀN
+                    const result = await Swal.fire({
+                        title: 'Xác Nhận Mua Thẻ?',
+                        text: `Hệ thống sẽ trừ ${new Intl.NumberFormat('vi-VN').format(price)}đ để thanh toán cho ${cardName}.`,
+                        icon: 'question', showCancelButton: true, confirmButtonText: 'Thanh Toán', confirmButtonColor: '#f1c40f'
+                    });
+
+                    if (result.isConfirmed) {
+                        try {
+                            Swal.showLoading();
+                            const res = await fetch('/api/xinxam/buy-paid', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json', 'CSRF-Token': CSRF_TOKEN },
+                                body: JSON.stringify({ card_id: cardId })
+                            });
+                            const data = await res.json();
+                            
+                            if(data.success) {
+                                if(document.getElementById('user_money')) document.getElementById('user_money').innerText = new Intl.NumberFormat('vi-VN').format(data.new_money) + 'đ';
+                                
+                                if(data.contact_admin) {
+                                    Swal.fire({
+                                        title: 'ĐẶT MUA THÀNH CÔNG!',
+                                        html: `Hệ thống đã nhận đơn và trừ tiền thành công.<br><br><b>Hiện tại thẻ ${cardName} tạm hết mã trên web.</b><br>Vui lòng nhắn tin cho Admin để nhận thẻ trực tiếp!<br><br>
+                                        <a href="https://zalo.me/<%= typeof settings !== 'undefined' ? settings.admin_zalo : '0392232180' %>" target="_blank" style="display:inline-block; background:#0068ff; color:#fff; padding:12px 25px; border-radius:8px; font-weight:bold; text-decoration:none; font-size:16px; margin-top:10px; box-shadow: 0 4px 10px rgba(0,104,255,0.4);">
+                                            <i class="fa-solid fa-comment-dots"></i> NHẮN ZALO ADMIN
+                                        </a>`,
+                                        icon: 'success',
+                                        showConfirmButton: false, 
+                                        allowOutsideClick: false
+                                    });
+                                } else {
+                                    showCodeSuccess(data.code);
+                                }
+                            } else {
+                                Swal.fire('Lỗi', data.message, 'error');
+                            }
+                        } catch(e) { Swal.fire('Lỗi', 'Lỗi mạng!', 'error'); }
+                    }
+                }
+            });
+        });
+
+        function start20sCountdown(startTime) {
+            let timerInterval;
+            Swal.fire({
+                title: 'ĐANG THỈNH QUẺ...',
+                html: 'Tâm tịnh vạn sự thành... Vui lòng đợi <b style="font-size:24px; color:#e74c3c;"></b> giây.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                    const b = Swal.getHtmlContainer().querySelector('b');
+                    timerInterval = setInterval(() => {
+                        const elapsed = Date.now() - startTime;
+                        let remain = Math.ceil((30000 - elapsed) / 1000);
+                        if(remain < 0) remain = 0;
+                        b.textContent = remain;
+                        
+                        if (remain <= 0) {
+                            clearInterval(timerInterval);
+                            callFreeReveal();
+                        }
+                    }, 100);
+                },
+                willClose: () => { clearInterval(timerInterval); }
+            });
+        }
+
+        async function callFreeReveal() {
+            try {
+                const res = await fetch('/api/xinxam/free-reveal', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'CSRF-Token': CSRF_TOKEN }
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showCodeSuccess(data.code);
+                } else {
+                    Swal.fire('Lỗi', data.message, 'error').then(() => window.location.reload());
+                }
+            } catch(e) {
+                Swal.fire('Lỗi mạng', 'Tải lại trang và thử lại', 'error').then(() => window.location.reload());
+            }
+        }
+
+        function showCodeSuccess(code) {
+            Swal.fire({
+                title: 'RƯỚC QUẺ THÀNH CÔNG!',
+                html: `Mã VIP của sếp là:<br><br><b style="font-size:24px; color:#00f2c3; background:#000; padding:10px 20px; border-radius:8px; border: 1px dashed #00f2c3; display:inline-block;">${code}</b>`,
+                icon: 'success',
+                confirmButtonText: 'Tuyệt Vời',
+                confirmButtonColor: '#f1c40f'
+            }).then(() => window.location.reload());
+        }
+
+        function copyCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Đã copy mã: ' + code,
+                    showConfirmButton: false,
+                    timer: 2000,
+                    background: '#1e1e2f',
+                    color: '#00f2c3'
+                });
+            }).catch(err => {
+                Swal.fire('Lỗi', 'Không thể copy tự động, vui lòng bôi đen bằng tay', 'error');
+            });
+        }
+    </script>
+</body>
+</html>

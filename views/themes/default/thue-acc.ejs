@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+
+    <style>
+        .rent-header { background: linear-gradient(to right, #2c3e50, #3498db); padding: 50px 20px; text-align: center; border-radius: 15px; color: #fff; margin-top: 20px;}
+        .warning-box { background: rgba(231, 76, 60, 0.1); border: 2px dashed var(--danger); padding: 20px; border-radius: 12px; margin-top: 20px;}
+        .warning-title { color: var(--danger); font-size: 16px; font-weight: 900; margin-top: 0;}
+        .warning-box ul { padding-left: 20px; font-size: 13px; color: var(--dark); font-weight: bold;}
+        
+        .filter-bar { background: #fff; padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;}
+        .filter-input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; flex: 1; min-width: 200px;}
+        .btn-search { background: var(--primary); color: #fff; padding: 12px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; white-space: nowrap;}
+
+        /* THIẾT KẾ GRID MẶC ĐỊNH CHO MÁY TÍNH */
+        .acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 30px;}
+        .acc-card { background: #fff; border-radius: 15px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid #eee; display: flex; flex-direction: column; transition: 0.3s;}
+        .acc-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: var(--primary);}
+        .acc-img { width: 100%; height: 160px; object-fit: cover;}
+        .acc-body { padding: 15px; flex: 1; display: flex; flex-direction: column;}
+        .acc-title { font-size: 16px; font-weight: 900; color: var(--dark); margin: 0 0 10px;}
+        .acc-skins { background: rgba(142,68,173,0.1); color: var(--primary); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; flex: 1;}
+        .btn-rent { background: linear-gradient(45deg, #00b894, #00cec9); color: #fff; text-align: center; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor:pointer; border:none; width: 100%; text-transform: uppercase;}
+
+        .rented-section { margin-top: 50px; border-top: 2px dashed #ccc; padding-top: 30px;}
+        .acc-rented { filter: grayscale(80%); opacity: 0.8;}
+        .rented-tag { background: #333; color: #fff; text-align: center; padding: 10px; font-weight: bold; font-size: 13px;}
+        .rented-time { color: var(--warning); font-size: 18px;}
+
+        /* CSS TỐI ƯU GIAO DIỆN MOBILE LƯỚT NGANG */
+        @media (max-width: 768px) {
+            .rent-header { padding: 30px 15px; }
+            .rent-header h1 { font-size: 24px !important; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .btn-search { width: 100%; }
+            
+            /* Biến danh sách Acc thành vuốt ngang trên Mobile */
+            .acc-grid { 
+                display: flex; 
+                overflow-x: auto; 
+                scroll-snap-type: x mandatory; 
+                padding-bottom: 20px; 
+                -webkit-overflow-scrolling: touch; 
+                gap: 15px;
+            }
+            .acc-card { 
+                flex: 0 0 260px; /* Cố định chiều rộng thẻ khi vuốt ngang */
+                scroll-snap-align: start; 
+            }
+            /* Ẩn thanh cuộn xấu xí */
+            .acc-grid::-webkit-scrollbar { display: none; }
+        }
+
+        /* Style Gói Thuê Trong Modal */
+        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;}
+        .modal-box { background: #fff; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center;}
+        
+        .pkg-option { border: 2px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center;}
+        .pkg-option:hover { border-color: var(--primary); background: rgba(142,68,173,0.05); }
+        .pkg-option.selected { border-color: var(--primary); background: rgba(142,68,173,0.1); box-shadow: 0 0 10px rgba(142,68,173,0.3);}
+        .pkg-price { font-size: 18px; font-weight: 900; color: var(--danger);}
+    </style>
+</head>
+<body>
+    <%- include('../../includes/ui-common') %>
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container">
+        <div class="rent-header">
+            <h1 style="margin:0; font-size: 32px; font-weight: 900; text-transform: uppercase;">THUÊ ACC LIÊN QUÂN VIP</h1>
+            <p>Tuyển Tập Các Acc Skin Hiếm - Giá Học Sinh</p>
+        </div>
+
+        <div class="warning-box">
+            <h3 class="warning-title"><i class="fa-solid fa-shield-halved"></i> QUY ĐỊNH & BẢO HÀNH KHI THUÊ ACC</h3>
+            <ul>
+                <li><b>Bảo hành 100%:</b> Trong suốt thời gian bạn thuê, cam kết không có ai đăng nhập vào acc làm phiền bạn.</li>
+                <li><b>Cấm tuyệt đối:</b> Không dùng acc thuê để sử dụng Hack map, Mod skin, Buff bẩn. (Vi phạm sẽ bị ban IP và cấm thuê vĩnh viễn trên shop).</li>
+                <li>Hết giờ hệ thống tự động đổi Pass, vui lòng tự giác out game đúng giờ.</li>
+            </ul>
+        </div>
+
+        <form class="filter-bar" method="GET" action="/thue-acc">
+            <input type="text" name="skin" class="filter-input" placeholder="Tìm kiếm tên Tướng hoặc Skin (VD: Nakroth, Tuyệt Sắc...)" value="<%= query.skin || '' %>">
+            <button type="submit" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> TÌM ACC</button>
+        </form>
+
+        <h2 style="margin-top:40px;"><i class="fa-solid fa-unlock-keyhole" style="color:var(--success)"></i> ACC ĐANG SẴN SÀNG CHỜ LỆNH</h2>
+        <div class="acc-grid">
+            <% if (availableAccs.length === 0) { %>
+                <p style="text-align: center; color:#888; width: 100%;">Hiện tại chưa có Acc nào hoặc đang được thuê hết!</p>
+            <% } %>
+            <% availableAccs.forEach(acc => { %>
+                <div class="acc-card">
+                    <img src="<%= acc.images.split(',')[0] %>" class="acc-img" onerror="this.src='/images/default-blog.webp'">
+                    <div class="acc-body">
+                        <h3 class="acc-title">Mã: #<%= acc.id %> - <%= acc.title %></h3>
+                        <div class="acc-skins"><i class="fa-solid fa-vest"></i> Skin nổi bật: <br> <span style="color:#333; font-weight:normal;"><%= acc.skins %></span></div>
+                        <% if(acc.note) { %><div style="font-size: 11px; color: var(--danger); margin-top:5px;"><i>*<%= acc.note %></i></div><% } %>
+                        <button class="btn-rent" onclick="openRentModal('<%= acc.id %>')"><i class="fa-solid fa-bolt"></i> CHỌN GÓI THUÊ</button>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <div class="rented-section">
+            <h2><i class="fa-solid fa-lock" style="color:var(--danger)"></i> DANH SÁCH ACC ĐANG CÓ NGƯỜI THUÊ</h2>
+            <div class="acc-grid">
+                <% rentedAccs.forEach(acc => { %>
+                    <div class="acc-card acc-rented">
+                        <img src="<%= acc.images.split(',')[0] %>" class="acc-img" onerror="this.src='/images/default-blog.webp'">
+                        <div class="acc-body">
+                            <h3 class="acc-title" style="color:#555;">Mã: #<%= acc.id %> - <%= acc.title %></h3>
+                            <div class="acc-skins" style="background:#eee;">Skin: <%= acc.skins %></div>
+                        </div>
+                        <div class="rented-tag">
+                            <i class="fa-solid fa-hourglass-half"></i> Rảnh vào lúc:<br>
+                            <span class="rented-time"><%= new Date(acc.available_at).toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) %></span>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="rentModal">
+        <div class="modal-box">
+            <h2 style="color:var(--primary); margin-top:0;">CHỌN GÓI THUÊ ACC #<span id="m_acc_id"></span></h2>
+            <input type="hidden" id="val_acc_id">
+            <input type="hidden" id="val_package_id" value="">
+
+            <div style="text-align: left; margin-bottom: 20px;">
+                <% packages.forEach(p => { %>
+                    <div class="pkg-option" id="pkg_<%= p.id %>" onclick="selectPackage('<%= p.id %>')">
+                        <div>
+                            <div style="font-weight: bold; color: var(--dark);"><i class="fa-regular fa-clock"></i> <%= p.package_name %></div>
+                            <div style="font-size: 12px; color: #888;">Trải nghiệm <%= p.hours %> giờ</div>
+                        </div>
+                        <div class="pkg-price"><%= new Intl.NumberFormat('vi-VN').format(p.price) %>đ</div>
+                    </div>
+                <% }) %>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('rentModal').style.display='none'" style="flex:1; padding:12px; background:#eee; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Hủy</button>
+                <button id="btnConfirmRent" style="flex:2; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">XÁC NHẬN THUÊ</button>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/scripts') %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function openRentModal(id) {
+            <% if(!user) { %> return Swal.fire('Opps', 'Sếp phải đăng nhập mới thuê được nhé!', 'warning'); <% } %>
+            document.getElementById('m_acc_id').innerText = id;
+            document.getElementById('val_acc_id').value = id;
+            
+            document.querySelectorAll('.pkg-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById('val_package_id').value = "";
+
+            document.getElementById('rentModal').style.display = 'flex';
+        }
+
+        function selectPackage(pkgId) {
+            document.querySelectorAll('.pkg-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById('pkg_' + pkgId).classList.add('selected');
+            document.getElementById('val_package_id').value = pkgId;
+        }
+
+        document.getElementById('btnConfirmRent').addEventListener('click', async () => {
+            const accId = document.getElementById('val_acc_id').value;
+            const pkgId = document.getElementById('val_package_id').value;
+            
+            if(!pkgId) return Swal.fire('Lỗi', 'Vui lòng chọn 1 gói thuê!', 'warning');
+
+            const btn = document.getElementById('btnConfirmRent');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Chờ...'; btn.disabled = true;
+
+            try {
+                const res = await fetch('/thue-acc/book', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'CSRF-Token': '<%= csrfToken %>' },
+                    body: JSON.stringify({ account_id: accId, package_id: pkgId })
+                });
+                const result = await res.json();
+                
+                document.getElementById('rentModal').style.display='none';
+                
+                if(result.success) {
+                    Swal.fire({
+                        icon: 'success', title: 'THUÊ ACC THÀNH CÔNG!',
+                        html: `Mã Acc: <b>${result.data.acc_title}</b><br>Thời gian: <b>${result.data.hours} giờ</b><br><br><b style="color:red">Vui lòng nhắn tin Zalo cho Admin đọc MÃ ACC để nhận Tài khoản / Mật khẩu vào game nhé!</b>`,
+                        showCancelButton: true, confirmButtonText: '<i class="fa-brands fa-zalo"></i> Nhắn Zalo Lấy Pass', cancelButtonText: 'Đóng', confirmButtonColor: '#0068ff'
+                    }).then((r) => {
+                        if (r.isConfirmed) window.open('https://zalo.me/<%= typeof settings !== "undefined" ? settings.admin_zalo : "0392232180" %>', '_blank');
+                        window.location.reload();
+                    });
+                } else Swal.fire('Thất bại', result.message, 'error');
+            } catch(e) { Swal.fire('Lỗi', 'Lỗi mạng!', 'error'); }
+            btn.innerText = 'XÁC NHẬN THUÊ'; btn.disabled = false;
+        });
+    </script>
+</body>
+</html>

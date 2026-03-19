@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head><title>Quản Lý Cho Thuê Acc</title><%- include('partials/admin_css') %></head>
+<body>
+    <%- include('partials/sidebar', { page: 'rent_manager' }) %>
+    <div class="main-content">
+        <h1 class="page-title"><i class="fa-solid fa-clock"></i> Quản Lý Cho Thuê Acc Giờ</h1>
+
+        <div class="card" style="border-top: 4px solid var(--danger); margin-bottom: 20px;">
+            <h3><i class="fa-solid fa-coins"></i> Cấu Hình Gói Thuê (Chỉnh Giá)</h3>
+            <form action="/admin/thue-acc/packages?_csrf=<%= csrfToken %>" method="POST" style="display:flex; gap:20px;">
+                <% packages.forEach(p => { %>
+                    <div style="background:#111; padding:15px; border-radius:8px; flex:1; border:1px dashed #555;">
+                        <input type="hidden" name="package_id[]" value="<%= p.id %>">
+                        <strong style="color:var(--primary);"><%= p.package_name %></strong><br><br>
+                        <label style="font-size:12px; color:#aaa;">Số Giờ:</label>
+                        <input type="number" name="hours[]" value="<%= p.hours %>" required style="width:100%; padding:8px; margin-bottom:10px; background:#000; color:#fff; border:1px solid #333;">
+                        <label style="font-size:12px; color:#aaa;">Giá Tiền (VNĐ):</label>
+                        <input type="number" name="price[]" value="<%= p.price %>" required style="width:100%; padding:8px; font-weight:bold; color:var(--danger); background:#000; border:1px solid #333;">
+                    </div>
+                <% }) %>
+                <div style="display:flex; align-items:center;">
+                    <button type="submit" class="btn-action" style="background:var(--danger); height:100%;"><i class="fa-solid fa-save"></i> LƯU GIÁ</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="grid-2">
+            <div class="card" style="border-top: 4px solid var(--primary);">
+                <h3><i class="fa-solid fa-plus"></i> Đưa Acc Mới Lên Kệ</h3>
+                <form action="/admin/thue-acc/add?_csrf=<%= csrfToken %>" method="POST">
+                    <input type="text" name="title" placeholder="Tiêu đề (VD: Acc full tướng, Nakroth Thứ Nguyên...)" required style="width:100%; padding:10px; margin-bottom:10px;">
+                    <textarea name="skins" placeholder="Nhập tên Skin nổi bật để khách dễ tìm (VD: Ngộ không Nhóc tì, Raz Muay)..." required style="width:100%; padding:10px; margin-bottom:10px;" rows="3"></textarea>
+                    <input type="text" name="images" placeholder="Link ảnh (Nhiều ảnh cách nhau dấu phẩy)" required style="width:100%; padding:10px; margin-bottom:10px;">
+                    <input type="text" name="note" placeholder="Lưu ý thêm cho khách (Tùy chọn)" style="width:100%; padding:10px; margin-bottom:10px;">
+                    <button type="submit" class="btn-action" style="width:100%; background:var(--primary);">ĐĂNG ACC NÀY</button>
+                </form>
+            </div>
+
+            <div class="card" style="border-top: 4px solid var(--success);">
+                <h3><i class="fa-solid fa-list"></i> Kho Acc Hiện Có</h3>
+                <div style="max-height: 350px; overflow-y:auto;">
+                    <table style="width:100%; font-size:13px; text-align:left;">
+                        <tr><th>Mã Acc</th><th>Tiêu đề / Skin</th><th>Trạng thái</th><th>Thao tác</th></tr>
+                        <% accounts.forEach(a => { %>
+                            <tr>
+                                <td><b>#<%= a.id %></b></td>
+                                <td><b><%= a.title %></b><br><span style="color:#aaa; font-size:11px;"><%= a.skins.substring(0, 50) %>...</span></td>
+                                <td>
+                                    <% if(a.status === 'available') { %><span style="color:var(--success)">Đang Rảnh</span>
+                                    <% } else { %>
+                                        <span style="color:var(--warning)">Đang cho thuê</span>
+                                        <form action="/admin/thue-acc/unlock?_csrf=<%= csrfToken %>" method="POST" style="margin-top:5px;">
+                                            <input type="hidden" name="id" value="<%= a.id %>">
+                                            <button type="submit" style="font-size:10px; background:red; color:#fff; border:none; padding:2px 5px; cursor:pointer; border-radius:4px;">Ép Mở Khóa</button>
+                                        </form>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <form action="/admin/thue-acc/delete/<%= a.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Chắc chắn xóa?');">
+                                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--warning); margin-top:20px;">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Khách Thuê Gần Đây</h3>
+<table style="width:100%; font-size:13px; text-align:left;">
+                <tr>
+                    <th>Mã Thuê</th>
+                    <th>Khách</th>
+                    <th>Acc Được Thuê</th>
+                    <th>Số giờ</th>
+                    <th>Tổng tiền</th>
+                    <th>Khung giờ thuê</th>
+                    <th>Thao Tác</th>
+                </tr>
+                <% if(orders.length === 0) { %>
+                    <tr><td colspan="7" style="text-align: center; padding: 20px; color: #888;">Chưa có lịch sử thuê nào.</td></tr>
+                <% } %>
+                <% orders.forEach(o => { %>
+                    <tr style="border-bottom: 1px solid #333;">
+                        <td style="padding: 10px 0;">#<%= o.id %></td>
+                        <td style="color:var(--primary); font-weight:bold;"><%= o.username %></td>
+                        <td>#<%= o.account_id %> - <%= o.title %></td>
+                        <td><b style="color: #fff;"><%= o.hours_rented %>h</b></td>
+                        <td style="color:var(--danger); font-weight:bold;"><%= new Intl.NumberFormat('vi-VN').format(o.total_price) %>đ</td>
+                        <td style="color:#888; font-size: 11px;">
+                            <%= new Date(o.start_time).toLocaleString('vi-VN') %> <br> 
+                            <i class="fa-solid fa-arrow-down" style="color:var(--warning)"></i> <br> 
+                            <%= new Date(o.end_time).toLocaleString('vi-VN') %>
+                        </td>
+                        <td>
+                            <form action="/admin/thue-acc/order/delete/<%= o.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Sếp có chắc chắn muốn xóa vĩnh viễn lịch sử đơn thuê này không?');">
+                                <button type="submit" style="background:var(--danger); color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;" title="Xóa khỏi lịch sử">
+                                    <i class="fa-solid fa-trash-can"></i> Xóa
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

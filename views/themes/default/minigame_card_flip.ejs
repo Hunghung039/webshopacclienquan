@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .flip-bg { background: radial-gradient(circle at center, #2c1a4d, #090a0f); min-height: 100vh; color: #fff; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif;}
+        .glass-box { background: rgba(20, 25, 45, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(225, 78, 202, 0.3); border-radius: 20px; padding: 30px; max-width: 900px; margin: 30px auto 0; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
+        
+        .game-title { font-size: 32px; font-weight: 900; color: #e14eca; text-transform: uppercase; margin-bottom: 5px; text-shadow: 0 0 15px rgba(225, 78, 202, 0.5);}
+        
+        /* THANH NHÂN PHẨM (PITY SYSTEM) */
+        .pity-container { background: #111; border: 2px solid #00f2c3; border-radius: 30px; height: 25px; width: 100%; max-width: 400px; margin: 20px auto; position: relative; overflow: hidden; box-shadow: 0 0 15px rgba(0, 242, 195, 0.3);}
+        .pity-bar { background: linear-gradient(90deg, #00f2c3, #00b894); height: 100%; width: <%= user ? user.luck_points : 0 %>%; transition: width 0.8s ease-out; }
+        .pity-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; text-shadow: 1px 1px 2px #000; z-index: 2;}
+
+        /* CSS KHUNG CHỨA 6 THẺ BÀI */
+        .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 600px; margin: 40px auto; perspective: 1000px; }
+
+        /* CSS BẢN THÂN THẺ BÀI (3D EFFECT) */
+        .magic-card { width: 100%; aspect-ratio: 3/4; cursor: pointer; position: relative; }
+        .magic-card-inner { position: absolute; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; box-shadow: 0 10px 20px rgba(0,0,0,0.5); border-radius: 12px; }
+        
+        /* Khi thẻ bị lật */
+        .magic-card.flipped .magic-card-inner { transform: rotateY(180deg); }
+        /* Hiệu ứng rung nhẹ khi di chuột */
+        .magic-card:hover:not(.flipped) .magic-card-inner { transform: scale(1.05) translateY(-5px); box-shadow: 0 15px 30px rgba(225, 78, 202, 0.4); }
+
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* MẶT ÚP (Lưng bài) */
+        .card-back { background: linear-gradient(135deg, #1e0b36, #4a196b); border: 2px solid #e14eca; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 10px, transparent 10px, transparent 20px); }
+        .card-back::after { content: '?'; font-size: 60px; font-weight: 900; color: rgba(255,255,255,0.2); }
+        
+        /* MẶT NGỬA (Mặt trúng thưởng) */
+        .card-front { background: linear-gradient(135deg, #f1c40f, #e67e22); transform: rotateY(180deg); border: 2px solid #fff; padding: 10px; box-sizing: border-box; }
+        .card-front img { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-bottom: 10px; box-shadow: 0 5px 10px rgba(0,0,0,0.3);}
+        .card-front .prize-text { font-size: 14px; font-weight: 900; color: #000; text-shadow: none; line-height: 1.2; }
+
+        /* KHO GIẢI THƯỞNG BÊN DƯỚI ĐỂ CHIM MỒI */
+        .prize-pool-box { margin-top: 40px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; border: 1px dashed #555; }
+        .prize-pool-grid { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; margin-top: 15px; scrollbar-width: none; }
+        .pool-item { min-width: 100px; background: #1e1e2f; padding: 10px; border-radius: 10px; border: 1px solid #333; text-align: center; flex-shrink: 0; }
+        .pool-item img { width: 40px; height: 40px; border-radius: 5px; margin-bottom: 5px; }
+        .pool-item .p-name { font-size: 11px; font-weight: bold; color: #ccc; height: 28px; overflow: hidden;}
+
+        @media (max-width: 768px) { .cards-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; } .card-back::after { font-size: 40px; } .card-front img { width: 40px; height: 40px; } .card-front .prize-text { font-size: 11px; } }
+    </style>
+</head>
+<body class="flip-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+    <%- include('../../includes/modals') %> <div class="glass-box">
+        <h1 class="game-title"><%= game.name %></h1>
+        <p style="color: #f1c40f; font-weight: bold; margin-bottom: 20px;">
+            Giá lật thẻ: <%= game.price === 0 ? 'MIỄN PHÍ' : new Intl.NumberFormat('vi-VN').format(game.price) + 'đ' %>
+        </p>
+
+        <% if (game.price > 0 && typeof user !== 'undefined') { %>
+            <div class="pity-container">
+                <div class="pity-bar" id="pityBar"></div>
+                <div class="pity-text">Thanh Nhân Phẩm: <span id="pityText"><%= user.luck_points %></span>/100</div>
+            </div>
+            <p style="font-size: 11px; color: #a0aec0; margin-top: -15px;">(Đạt 100 điểm lật thẻ nào cũng trúng Đặc Biệt)</p>
+        <% } %>
+
+        <div class="cards-grid">
+            <% for(let i=1; i<=6; i++) { %>
+                <div class="magic-card" id="card-<%= i %>" onclick="flipCard(this)">
+                    <div class="magic-card-inner">
+                        <div class="card-face card-back"></div>
+                        <div class="card-face card-front">
+                            <img src="" class="prize-img" alt="Giải">
+                            <div class="prize-text">...</div>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+
+        <button class="btn-primary" style="display:none; margin: 20px auto 0; font-size: 16px; padding: 12px 30px; border-radius: 30px;" id="btnReset" onclick="resetCards()">XÁO BÀI (CHƠI LẠI)</button>
+
+        <div class="prize-pool-box">
+            <h3 style="font-size: 16px; color: #00f2c3; margin: 0; text-transform: uppercase;">Cơ Cấu Giải Thưởng</h3>
+            <div class="prize-pool-grid">
+                <% prizes.forEach(p => { %>
+                    <div class="pool-item" style="<%= p.is_special ? 'border-color: #f1c40f; box-shadow: 0 0 10px rgba(241,196,15,0.2);' : '' %>">
+                        <img src="<%= p.image_url %>" alt="<%= p.name %>">
+                        <div class="p-name"><%= p.name %></div>
+                        <% if(p.is_special) { %><span style="font-size: 9px; background:#f1c40f; color:#000; padding: 2px 5px; border-radius: 5px; font-weight:bold;">ĐẶC BIỆT</span><% } %>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        const gameId = <%= game.id %>;
+        let isProcessing = false; // Khóa chống click đúp
+
+        async function flipCard(cardElement) {
+            // 1. Nếu đang lật thẻ khác hoặc thẻ này đã lật thì bỏ qua
+            if (isProcessing || cardElement.classList.contains('flipped')) return;
+
+            const isLogged = <%= typeof user !== 'undefined' && user ? 'true' : 'false' %>;
+            if(!isLogged) {
+                if(typeof showToast === 'function') showToast("Vui lòng đăng nhập để lật thẻ!", "error");
+                else alert("Vui lòng đăng nhập!");
+                setTimeout(() => window.location.href = '/auth/login', 1500);
+                return;
+            }
+
+            isProcessing = true; // Khóa UI
+            
+            // Thêm hiệu ứng nhấp nháy cho thẻ đang click
+            cardElement.style.filter = 'brightness(1.5)';
+
+            try {
+                // 2. GỌI API BACKEND ĐỂ RÚT THẺ
+                const res = await fetch('/minigame/play', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ game_id: gameId })
+                });
+
+                const data = await res.json();
+                cardElement.style.filter = 'none';
+
+                if(!data.success) {
+                    if(typeof showCustomInfoModal === 'function') {
+                        // Nếu sếp có dùng modal tùy chỉnh ở đây
+                        showCustomInfoModal('error', 'Lỗi', data.message, `<button class="btn-primary" onclick="document.getElementById('infoModal').style.display='none'">Đóng</button>`);
+                    } else {
+                        if(typeof showToast === 'function') showToast(data.message, "error");
+                        else alert(data.message);
+                    }
+                    isProcessing = false;
+                    return;
+                }
+
+                // 3. TRÚNG RỒI -> CẬP NHẬT ẢNH & TÊN GIẢI VÀO MẶT TRONG CỦA THẺ
+                const frontFace = cardElement.querySelector('.card-front');
+                frontFace.querySelector('.prize-img').src = data.prize.image;
+                frontFace.querySelector('.prize-text').innerText = data.prize.name;
+
+                // 4. THỰC THI ANIMATION LẬT THẺ BẰNG CSS
+                cardElement.classList.add('flipped');
+
+                // 5. HIỂN THỊ THÔNG BÁO VÀ THANH NHÂN PHẨM
+                setTimeout(() => {
+                    // Update thanh nhân phẩm
+                    if(document.getElementById('pityText')) {
+                        document.getElementById('pityText').innerText = data.new_luck;
+                        document.getElementById('pityBar').style.width = data.new_luck + '%';
+                        if(data.pity_hit) {
+                            if(typeof showToast === 'function') showToast("💥 NỔ HŨ NHÂN PHẨM 100 ĐIỂM! 💥", "success");
+                        }
+                    }
+
+                    // Bật nút "Chơi lại" (Xáo bài)
+                    document.getElementById('btnReset').style.display = 'block';
+
+                    if(typeof showToast === 'function') showToast(`🎉 Trúng: ${data.prize.name}`, "success");
+                    else alert(`🎉 Chúc mừng bạn trúng: ${data.prize.name}`);
+                    
+                    // Mở khóa UI nhưng thẻ này không cho bấm nữa
+                    isProcessing = false; 
+
+                }, 700); // 700ms là chờ cái thẻ lật xong (CSS đang set 0.6s)
+
+            } catch (err) {
+                cardElement.style.filter = 'none';
+                if(typeof showToast === 'function') showToast("Lỗi mạng! Vui lòng thử lại", "error");
+                isProcessing = false;
+            }
+        }
+
+        // HÀM RESET TẤT CẢ THẺ ĐỂ CHƠI VÁN MỚI
+        function resetCards() {
+            if(isProcessing) return;
+            const cards = document.querySelectorAll('.magic-card');
+            cards.forEach(c => c.classList.remove('flipped'));
+            document.getElementById('btnReset').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

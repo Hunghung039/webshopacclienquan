@@ -1,0 +1,20 @@
+# ==========================================
+# CẤU HÌNH ROBOTS.TXT CHUẨN SEO CHO SHOP ACC
+# ==========================================
+
+User-agent: *
+Allow: /
+
+# CẤM BOT QUÉT CÁC KHU VỰC NHẠY CẢM VÀ GÂY NẶNG SERVER
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /user/
+Disallow: /api/
+
+# CẤM QUÉT CÁC THAM SỐ TÌM KIẾM (Tránh trùng lặp nội dung SEO)
+Disallow: /*?page=*
+Disallow: /*?category=*
+Disallow: /*?price=*
+
+# LIÊN KẾT ĐẾN SITEMAP TỰ ĐỘNG CỦA HỆ THỐNG
+Sitemap: https://shoplienquan.site/sitemap.xml

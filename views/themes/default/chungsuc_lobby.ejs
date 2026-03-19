@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    
+    <meta name="description" content="Tham gia sự kiện Chung Sức Liên Quân nhận mã code skin bậc SS, SSS. Nơi tổng hợp các sự kiện lật thẻ Nakroth Thứ Nguyên Vệ Thần, Flo Tinh Hệ, Ngộ Không miễn phí!">
+    <meta name="keywords" content="chung sức liên quân, chung sức garena, chung sức liên quân free, chéo chung sức liên quân, sự kiện liên quân, nakroth siêu việt, flo tinh hệ, code liên quân vip">
+    
+    <style>
+        .lobby-bg { background: radial-gradient(circle at top, #1a0b2e, #000); min-height: 100vh; color: #fff; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif;}
+        .lobby-header { text-align: center; padding: 60px 20px 40px; }
+        .lobby-header h1 { font-size: 42px; font-weight: 900; color: #f1c40f; text-transform: uppercase; text-shadow: 0 0 30px rgba(241, 196, 15, 0.5); margin: 0 0 15px; }
+        .lobby-header p { color: #a0aec0; font-size: 16px; max-width: 600px; margin: 0 auto; line-height: 1.6;}
+
+        /* LƯỚI CARD GAME */
+        .event-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        .event-card { background: #1e1e2f; border-radius: 20px; overflow: hidden; border: 1px solid #333; transition: 0.4s; box-shadow: 0 15px 35px rgba(0,0,0,0.5); text-align: center; position: relative;}
+        .event-card:hover { transform: translateY(-10px); border-color: #00f2c3; box-shadow: 0 15px 40px rgba(0, 242, 195, 0.3); }
+        
+        .event-img { width: 100%; height: 180px; object-fit: cover; border-bottom: 2px solid #00f2c3; }
+        .event-content { padding: 25px 20px; }
+        .event-title { font-size: 22px; font-weight: 900; color: #fff; margin: 0 0 10px; }
+        
+        .btn-play { background: linear-gradient(45deg, #00f2c3, #00b894); color: #000; padding: 12px 30px; border-radius: 30px; font-size: 16px; font-weight: 900; text-decoration: none; display: inline-block; transition: 0.3s; text-transform: uppercase; width: 100%; box-sizing: border-box;}
+        .btn-play:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 242, 195, 0.6); color: #000; }
+
+        /* KHU VỰC BÀI VIẾT SEO */
+        .seo-container { max-width: 1100px; margin: 80px auto 40px; padding: 40px; background: rgba(20, 25, 45, 0.6); border-radius: 20px; border: 1px dashed #444; backdrop-filter: blur(10px); }
+        .seo-container h2 { color: #f1c40f; font-size: 24px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0;}
+        .seo-container h3 { color: #00f2c3; font-size: 18px; margin-top: 25px;}
+        .seo-container p { color: #ccc; line-height: 1.8; font-size: 15px; margin-bottom: 15px;}
+        .seo-container ul { color: #ccc; line-height: 1.8; font-size: 15px; padding-left: 20px;}
+        
+        @media (max-width: 768px) { 
+            .lobby-header h1 { font-size: 30px; } 
+            .event-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 15px; } 
+            .event-img { height: 120px; } 
+            .event-title { font-size: 16px; } 
+            .btn-play { padding: 10px; font-size: 14px; } 
+            .seo-container { margin: 40px 15px; padding: 20px; }
+            .seo-container h2 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body class="lobby-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <div class="lobby-header">
+        <h1><i class="fa-solid fa-crown"></i> Sảnh Sự Kiện Chung Sức</h1>
+        <p>Chọn một vũ trụ bên dưới để tham gia lật bài nhân phẩm. Cơ hội săn ngay code skin SS, SSS cực hiếm chỉ với 1 lượt click!</p>
+    </div>
+
+    <div class="event-grid">
+        <% if (typeof events !== 'undefined' && events.length > 0) { %>
+            <% events.forEach(e => { %>
+                <% let bannerUrl = e.banner_image && e.banner_image.startsWith('http') ? e.banner_image : '/images/' + (e.banner_image || 'default-banner.webp'); %>
+                <div class="event-card">
+                    <img src="<%= bannerUrl %>" class="event-img" alt="<%= e.name %>">
+                    <div class="event-content">
+                        <h2 class="event-title"><%= e.name %></h2>
+                        <a href="/chung-suc/<%= e.slug %>" class="btn-play">THAM GIA NGAY</a>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #888; font-size: 18px;">Hệ thống đang bảo trì sảnh Chung Sức. Sếp Admin chưa tạo sự kiện nào!</div>
+        <% } %>
+    </div>
+
+    <div class="seo-container">
+        <h2>Tổng Hợp Sự Kiện Chung Sức Liên Quân Qua Các Mùa</h2>
+        <p><b>Chung Sức Liên Quân</b> luôn là một trong những chuỗi sự kiện được cộng đồng game thủ săn đón nhiệt tình nhất. Bằng cách chéo link hoặc thử vận may qua hệ thống vòng quay thẻ, người chơi có cơ hội sở hữu ngay những bộ trang phục bậc SS, SSS cực kỳ đắt giá hoàn toàn miễn phí. Tại hệ thống Shop, chúng tôi mang đến một sân chơi Gacha tái hiện lại cảm giác hồi hộp của những mùa sự kiện đỉnh cao nhất.</p>
+
+        <h3>1. Sự Kiện Chung Sức Nakroth Thứ Nguyên Vệ Thần</h3>
+        <p>Chắc hẳn cộng đồng chưa quên cơn sốt săn lùng mã <b>Chung Sức Nakroth Bboy</b> hay <b>Nakroth Thứ Nguyên Vệ Thần</b>. Đây là sự kiện tốn nhiều "giấy mực" và mồ hôi nhất khi người chơi phải xin link chéo chung sức liên quân mỏi tay. Tham gia sảnh sự kiện lật thẻ của chúng tôi, bạn có cơ hội nổ ngay mã code trang phục này mà không cần phiền đến bạn bè.</p>
+
+        <h3>2. Chung Sức Nhận Florentino Tinh Hệ & Ultraman</h3>
+        <p>Với các "boy one champ" đường tà thần, sự kiện Chung sức săn <b>Flo Tinh Hệ</b>, <b>Flo Ultraman Seven</b> hay <b>Flo Giám Sát Tinh Hệ</b> là cơ hội ngàn năm có một. Cơ chế lật bài tại Shop cho phép bạn cày nhân phẩm với mức giá vô cùng rẻ, đảm bảo bảo hiểm nổ 100% khi đạt mốc nạp.</p>
+
+        <h3>3. Các Sự Kiện Lớn Lễ Tết & Mùng 1 Tháng 5</h3>
+        <ul>
+            <li><b>Sự kiện Mùng 1 Tháng 5 Liên Quân:</b> Dấu ấn của chuỗi ngày nghỉ lễ dài ngày với cơn mưa Thẻ giảm giá và Rương skin Tự chọn.</li>
+            <li><b>Sự kiện Tết Liên Quân:</b> Rút thẻ mùng 1 đầu năm, cơ hội nhận lì xì Quân Huy hoặc các skin giới hạn Tết siêu hiếm.</li>
+            <li><b>Sự kiện Chung Sức Mùa Hè:</b> Lật thẻ nhận ngay trang phục Tiệc Bãi Biển của Violet, Krixi, Điêu Thuyền.</li>
+        </ul>
+
+        <h3>Mẹo Săn Code Chung Sức Free Tại Hệ Thống</h3>
+        <p>Mỗi ngày, các mini game Chung sức đều tặng người chơi <b>1 lượt quay đầu tiên hoàn toàn MIỄN PHÍ (0đ)</b>. Đừng quên đăng nhập mỗi ngày để test nhân phẩm. Biết đâu chỉ với 1 lượt lật bài duy nhất, mã VIP 500 Quân Huy hoặc Acc Siêu VIP sẽ thuộc về tay bạn. Chúc bạn may mắn!</p>
+    </div>
+
+    <%- include('../../includes/footer') %>
+</body>
+</html>

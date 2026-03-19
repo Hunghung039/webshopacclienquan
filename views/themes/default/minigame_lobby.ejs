@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .lobby-bg { background: radial-gradient(circle at top, #1a0b2e, #000); min-height: 100vh; color: #fff; padding-bottom: 60px; font-family: 'Be Vietnam Pro', sans-serif;}
+        .lobby-header { text-align: center; padding: 50px 15px 30px; }
+        .lobby-header h1 { font-size: 36px; font-weight: 900; color: #f1c40f; text-transform: uppercase; text-shadow: 0 0 20px rgba(241, 196, 15, 0.5); margin: 0 0 10px; }
+        .lobby-header p { color: #a0aec0; font-size: 15px; }
+
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; max-width: 1100px; margin: 0 auto; padding: 0 15px; }
+        
+        .game-card { background: #1e1e2f; border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; padding-bottom: 20px;}
+        .game-card:hover { transform: translateY(-5px); border-color: #e14eca; box-shadow: 0 10px 40px rgba(225, 78, 202, 0.3); }
+        
+        .game-img { width: 100%; height: 180px; object-fit: cover; border-bottom: 2px solid #e14eca; }
+        .game-title { font-size: 20px; font-weight: 800; color: #fff; margin: 15px 0 5px; }
+        .game-price { font-size: 24px; font-weight: 900; color: #00f2c3; margin-bottom: 15px; }
+        
+        .btn-play { background: linear-gradient(45deg, #e14eca, #ba54f5); color: #fff; padding: 12px 30px; border-radius: 30px; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-block; transition: 0.3s; text-transform: uppercase;}
+        .btn-play:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(225, 78, 202, 0.6); }
+
+        @media (max-width: 768px) { .game-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; } .game-img { height: 120px; } .game-title { font-size: 16px; } .game-price { font-size: 18px; } .btn-play { padding: 10px 20px; font-size: 14px; } }
+    </style>
+</head>
+<body class="lobby-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <div class="lobby-header">
+        <h1><i class="fa-solid fa-gem"></i> Sảnh Minigame VIP</h1>
+        <p>Thử thách nhân phẩm - Cơ hội x10 tài sản chỉ với 1 lượt click!</p>
+    </div>
+
+    <div class="game-grid">
+        <% if (typeof games !== 'undefined' && games.length > 0) { %>
+            <% games.forEach(g => { %>
+                <div class="game-card">
+                    <img src="<%= g.image_url %>" class="game-img" alt="<%= g.name %>">
+                    <div class="game-title"><%= g.name %></div>
+                    <div class="game-price"><%= g.price === 0 ? 'MIỄN PHÍ' : new Intl.NumberFormat('vi-VN').format(g.price) + 'đ' %></div>
+                    <a href="/minigame/<%= g.slug %>" class="btn-play">Vào Chơi Ngay</a>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #888;">Hệ thống đang bảo trì sảnh Minigame. Vui lòng quay lại sau!</div>
+        <% } %>
+    </div>
+
+    <%- include('../../includes/footer') %>
+</body>
+</html>

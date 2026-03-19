@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', {
+        title: 'Chính Sách Bảo Hành & Đổi Trả | ShopLienQuan.Site',
+        description: 'Chính sách bảo hành tài khoản Liên Quân, quy định đổi trả và bảo mật thông tin khách hàng tại Shop Liên Quân Gen Z.'
+    }) %>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "Shop có bảo hành Acc không?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Có. Chúng tôi bảo hành 100% đối với các trường hợp Acc sai mật khẩu, tài khoản bị khóa trước thời điểm mua, hoặc thông tin không đúng như mô tả."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Chính sách hoàn tiền như thế nào?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nếu lỗi xuất phát từ phía hệ thống, khách hàng sẽ được hoàn 100% số tiền vào số dư trên Web hoặc tài khoản ngân hàng trong vòng 24h."
+        }
+      }]
+    }
+    </script>
+
+    <style>
+        .policy-wrapper { background: #fff; border-radius: 15px; padding: 40px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 40px; }
+        .breadcrumb { font-size: 14px; margin-bottom: 20px; color: #636e72; }
+        .breadcrumb a { color: var(--primary); text-decoration: none; font-weight: bold; }
+        .policy-title { font-size: 28px; font-weight: 900; color: #2d3436; margin-bottom: 30px; text-transform: uppercase; border-bottom: 3px solid var(--primary); display: inline-block; padding-bottom: 10px; }
+        
+        .policy-section { margin-bottom: 30px; }
+        .policy-section h2 { color: var(--primary); font-size: 20px; margin-bottom: 15px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .policy-section p, .policy-section li { color: #444; font-size: 15px; line-height: 1.8; margin-bottom: 10px; }
+        .policy-section ul { padding-left: 20px; }
+        
+        .highlight-box { background: #fdf2e9; border-left: 4px solid #e67e22; padding: 15px; border-radius: 5px; margin: 20px 0; color: #d35400; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <%- include('../../includes/ui-common') %>
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container" style="margin-top: 30px; min-height: 60vh;">
+        
+        <div class="breadcrumb">
+            <a href="/"><i class="fa-solid fa-house"></i> Trang Chủ</a> <i class="fa-solid fa-angle-right" style="margin: 0 10px; font-size: 12px;"></i> <span>Chính Sách Bảo Hành</span>
+        </div>
+
+        <div class="policy-wrapper">
+            <h1 class="policy-title">Chính Sách & Điều Khoản Dịch Vụ</h1>
+            
+            <div class="policy-section">
+                <h2><i class="fa-solid fa-shield-halved"></i> 1. Chính sách bảo hành tài khoản (Acc Game)</h2>
+                <p>Shop Liên Quân Gen Z cam kết cung cấp tài khoản game đúng 100% như mô tả trên website. Khách hàng sẽ được bảo hành trong các trường hợp sau:</p>
+                <ul>
+                    <li>Tài khoản bị sai mật khẩu ngay sau khi vừa mua xong.</li>
+                    <li>Tài khoản bị khóa (ban) trước thời gian giao dịch.</li>
+                    <li>Tài khoản không đúng rank, không đúng số lượng trang phục (skin) hoặc tướng như trên hình ảnh mô tả.</li>
+                </ul>
+                <div class="highlight-box">
+                    LƯU Ý: Chúng tôi TỪ CHỐI bảo hành nếu khách hàng đã đổi mật khẩu, đã chơi và vi phạm luật game (hack/cheat) dẫn đến bị khóa nick.
+                </div>
+            </div>
+
+            <div class="policy-section">
+                <h2><i class="fa-solid fa-money-bill-transfer"></i> 2. Chính sách đổi trả & Hoàn tiền</h2>
+                <p>Khách hàng có quyền yêu cầu hoàn tiền 100% về số dư tài khoản trên Web nếu đơn hàng bị lỗi thuộc diện bảo hành ở mục 1.</p>
+                <p>Đối với nạp thẻ, nếu thẻ cào đúng nhưng hệ thống lỗi không cộng tiền, quý khách vui lòng liên hệ Admin qua Zalo/Fanpage kèm theo Mã Thẻ & Seri để được cộng tiền tay trong vòng 15 phút.</p>
+            </div>
+
+            <div class="policy-section">
+                <h2><i class="fa-solid fa-user-lock"></i> 3. Chính sách bảo mật thông tin (Privacy Policy)</h2>
+                <p>Việc thu thập thông tin cá nhân (Email, Tên đăng nhập) chỉ nhằm mục đích hỗ trợ khôi phục tài khoản và đối soát giao dịch.</p>
+                <ul>
+                    <li>Chúng tôi KHÔNG bán, chia sẻ hoặc trao đổi thông tin khách hàng cho bất kỳ bên thứ 3 nào.</li>
+                    <li>Toàn bộ mật khẩu của khách hàng và mật khẩu Acc game trên hệ thống đều được mã hóa bằng thuật toán cấp cao.</li>
+                </ul>
+            </div>
+            
+            <p style="text-align: center; margin-top: 40px; color: #999; font-style: italic;">Cập nhật lần cuối: Tháng 2/2026</p>
+        </div>
+
+    </main>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/scripts') %>
+
+</body>
+</html>

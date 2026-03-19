@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Túi Mù Gacha</title>
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+
+    <%- include('partials/sidebar', { page: 'blind_box' }) %>
+
+    <div class="main-content">
+        <h1 class="page-title"><i class="fa-solid fa-gift"></i> Quản Lý Hệ Sinh Thái Túi Mù</h1>
+
+        <div class="grid-2">
+            <div>
+                <div class="card" style="border-top: 4px solid var(--accent);">
+                    <h3 style="margin-top: 0; color: var(--accent);"><i class="fa-solid fa-folder-plus"></i> Tạo Loại Túi Mới</h3>
+                    <form action="/admin/blind-box/category/add?_csrf=<%= csrfToken %>" method="POST">
+                        <label>Tên hiển thị túi mù (VD: Túi Mù 19k)</label>
+                        <input type="text" name="name" required placeholder="Nhập tên túi...">
+                        
+                        <div class="form-grid">
+                            <div>
+                                <label>Giá bán (VNĐ)</label>
+                                <input type="number" name="price" required placeholder="VD: 19000">
+                            </div>
+                            <div>
+                                <label>Tỉ lệ rớt Thẻ VIP (%)</label>
+                                <input type="number" name="vip_drop_rate" value="5" min="0" max="100" required>
+                            </div>
+                        </div>
+
+                        <label>Hình Thức Bóc Túi</label>
+                        <select name="type">
+                            <option value="web">⚡ Bóc trực tiếp trên Web (Trả nick ngay lập tức)</option>
+                            <option value="live">🎥 Chờ bóc trên Live Tiktok (Phải đợi Admin live)</option>
+                        </select>
+
+                        <label>Nội dung chi tiết (Mô tả luật chơi, quà tặng)</label>
+                        <textarea name="description" rows="3" placeholder="VD: 100% trúng nick trắng thông tin..." required></textarea>
+
+                        <button type="submit" class="btn-add btn-green"><i class="fa-solid fa-plus"></i> TẠO TÚI MỚI NGAY</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top: 0; margin-bottom: 20px;"><i class="fa-solid fa-list-check"></i> Các Loại Túi Đang Bán (<%= categories.length %>)</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Thông Tin Túi</th>
+                                    <th>Giá / Tỉ Lệ</th>
+                                    <th>Kho</th>
+                                    <th style="text-align: center;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% categories.forEach(c => { 
+                                    let stockCount = accounts.filter(a => a.category_id === c.id && a.status === 'available').length;
+                                %>
+                                <tr>
+                                    <td>
+                                        <strong style="color: var(--primary); font-size: 14px;"><%= c.name %></strong><br>
+                                        <span class="badge <%= c.type === 'web' ? 'badge-web' : 'badge-live' %>" style="margin-top: 5px;">
+                                            <i class="fa-solid <%= c.type === 'web' ? 'fa-globe' : 'fa-video' %>"></i> 
+                                            <%= c.type === 'web' ? 'Bóc trên Web' : 'Bóc trên Live' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <b style="color: #fff;"><%= new Intl.NumberFormat('vi-VN').format(c.price) %>đ</b><br>
+                                        <span style="color: var(--warning); font-size: 11px;"><i class="fa-solid fa-star"></i> VIP: <%= c.vip_drop_rate %>%</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-stock" style="<%= stockCount === 0 ? 'color: var(--danger); border: 1px solid var(--danger);' : 'color: var(--accent); border: 1px solid var(--accent);' %>">
+                                            <i class="fa-solid fa-box-open"></i> <%= stockCount %>
+                                        </span>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <form action="/admin/blind-box/category/delete/<%= c.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('CẢNH BÁO: Xóa túi này sẽ XÓA SẠCH TOÀN BỘ ACC CHƯA BÁN nằm trong túi. Sếp chắc chắn chứ?')">
+                                            <button type="submit" class="btn-del" title="Xóa loại túi này"><i class="fa-solid fa-trash-can"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="border-top: 4px solid var(--warning);">
+                    <h3 style="margin-top: 0; color: var(--warning);"><i class="fa-solid fa-truck-ramp-box"></i> Bơm Hàng Vào Túi (Nạp Acc)</h3>
+                    <form action="/admin/blind-box/account/add?_csrf=<%= csrfToken %>" method="POST">
+                        <label>Chọn Túi Muốn Bơm Hàng</label>
+                        <select name="category_id" required>
+                            <% if(categories.length === 0) { %>
+                                <option value="">-- Vui lòng tạo Loại Túi trước --</option>
+                            <% } %>
+                            <% categories.forEach(c => { %>
+                                <option value="<%= c.id %>"><%= c.name %> - Giá: <%= new Intl.NumberFormat('vi-VN').format(c.price) %>đ</option>
+                            <% }) %>
+                        </select>
+
+                        <label>Dán Danh Sách Acc (Mỗi nick 1 dòng)</label>
+                        <div style="background: #111; padding: 10px; border-radius: 6px; font-size: 11px; color: #aaa; margin-bottom: 5px; font-family: monospace;">
+                            Cú pháp: <b style="color:var(--accent);">Tài khoản</b> | <b style="color:var(--primary);">Mật khẩu</b> | <b style="color:var(--warning);">Thông tin nổi bật (không bắt buộc)</b><br>
+                            Ví dụ: <br>
+                            user_game_01 | pass123 | 60 Tướng, 10 Skin
+                        </div>
+                        <textarea name="account_data" rows="6" placeholder="Dán danh sách nick vào đây..." required></textarea>
+
+                        <button type="submit" class="btn-submit btn-gold"><i class="fa-solid fa-bolt"></i> BƠM VÀO KHO NGAY</button>
+                    </form>
+                </div>
+
+                <div class="card" style="border-top: 4px solid var(--danger);">
+                    <h3 style="margin-top: 0; color: var(--danger);"><i class="fa-solid fa-broom"></i> Dọn Rác (Xóa Acc Hàng Loạt)</h3>
+                    <form action="/admin/blind-box/accounts/bulk-delete?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('CẢNH BÁO: Bạn chuẩn bị xóa lượng lớn Acc. Hành động này không thể hoàn tác!')">
+                        <div class="form-grid">
+                            <div>
+                                <label>Chọn Loại Túi Mù</label>
+                                <select name="category_id">
+                                    <option value="all">-- Áp dụng cho TẤT CẢ các loại túi --</option>
+                                    <% categories.forEach(cat => { %>
+                                        <option value="<%= cat.id %>"><%= cat.name %></option>
+                                    <% }) %>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Trạng Thái Acc Cần Xóa</label>
+                                <select name="delete_type">
+                                    <option value="sold">Xóa các Acc ĐÃ BÁN (Dọn rác)</option>
+                                    <option value="available">Xóa các Acc TỒN KHO (Chưa bán)</option>
+                                    <option value="all">XÓA SẠCH SÀNH SANH</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit" style="background: var(--danger);"><i class="fa-solid fa-trash-can"></i> THỰC THI LỆNH DỌN DẸP</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;"><i class="fa-solid fa-database"></i> Chi Tiết Kho Acc (<%= accounts.length %>)</h3>
+                    </div>
+                    
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchInput" onkeyup="filterAccounts()" placeholder="Nhập TK, MK hoặc Tên túi để tìm nhanh...">
+                    </div>
+
+                    <div class="table-container">
+                        <table id="accTable">
+                            <thead>
+                                <tr>
+                                    <th>Phân Loại Túi</th>
+                                    <th>Thông Tin Đăng Nhập</th>
+                                    <th>Tình Trạng</th>
+                                    <th style="text-align: center;">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% accounts.forEach(a => { %>
+                                <tr>
+                                    <td style="font-size: 11px; color: #aaa;"><%= a.category_name || 'Túi đã bị xóa' %></td>
+                                    <td>
+                                        <div style="font-family: monospace; color: var(--accent); font-weight: bold;"><%= a.acc_username %></div>
+                                        <div style="font-size: 11px; color: #666;"><%= a.acc_password %></div>
+                                    </td>
+                                    <td>
+                                        <% if (a.status === 'available') { %>
+                                            <span class="badge badge-web">Chờ bóc</span>
+                                        <% } else { %>
+                                            <span class="badge badge-sold">Đã bán</span>
+                                        <% } %>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <form action="/admin/blind-box/account/delete/<%= a.id %>?_csrf=<%= csrfToken %>" method="POST">
+                                            <button type="submit" class="btn-del" title="Xóa nick này"><i class="fa-solid fa-xmark"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div> 
+
+        <div class="card" style="border-top: 4px solid var(--warning); margin-top: 10px;">
+            <h3 style="margin-top: 0; color: var(--warning);"><i class="fa-solid fa-crown"></i> Quản Lý Thẻ VIP Khách Hàng</h3>
+            
+            <div class="grid-2">
+                <div class="table-container">
+                    <table id="vipTable">
+                        <thead>
+                            <tr>
+                                <th>Khách Hàng (ID)</th>
+                                <th style="text-align: center;">Số Lượng Thẻ</th>
+                                <th>Tác Vụ Nhanh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (typeof vipUsers !== 'undefined' && vipUsers.length > 0) { %>
+                                <% vipUsers.forEach(u => { %>
+                                    <tr>
+                                        <td>
+                                            <b style="color: var(--accent);"><%= u.username %></b> <br>
+                                            <span style="font-size: 11px; color: #888;">ID: <%= u.id %></span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="badge" style="background: var(--warning); color: #000; font-size: 14px; padding: 5px 10px;"><i class="fa-solid fa-ticket"></i> <%= u.vip_cards %></span>
+                                        </td>
+                                        <td>
+                                            <form action="/admin/blind-box/vip/update?_csrf=<%= csrfToken %>" method="POST" style="display: flex; gap: 5px; align-items: center;">
+                                                <input type="hidden" name="user_id" value="<%= u.id %>">
+                                                <input type="number" name="amount" value="1" min="1" style="width: 60px; margin: 0; padding: 6px; text-align: center;">
+                                                <button type="submit" name="action" value="add" class="btn-plus" title="Cộng thêm"><i class="fa-solid fa-plus"></i></button>
+                                                <button type="submit" name="action" value="sub" class="btn-minus" title="Trừ bớt"><i class="fa-solid fa-minus"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #888; padding: 20px;">Chưa có khách hàng nào sở hữu Thẻ VIP.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="background: #1a1a2e; padding: 20px; border-radius: 8px; border: 1px dashed var(--accent);">
+                    <h4 style="margin-top: 0; color: var(--accent);"><i class="fa-solid fa-gift"></i> Trao Thẻ Thủ Công</h4>
+                    <p style="font-size: 12px; color: #aaa; margin-bottom: 15px;">Sử dụng form này để tặng Thẻ VIP cho User ID bất kỳ (Event, Đền bù...).</p>
+                    
+                    <form action="/admin/blind-box/vip/update?_csrf=<%= csrfToken %>" method="POST">
+                        <label>ID Khách Hàng (User ID)</label>
+                        <input type="number" name="user_id" placeholder="VD: 15" required>
+                        
+                        <label>Số lượng Thẻ muốn thao tác</label>
+                        <input type="number" name="amount" value="1" min="1" required>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button type="submit" name="action" value="add" class="btn-submit btn-green" style="flex: 1; font-size: 12px;"><i class="fa-solid fa-plus"></i> CỘNG THẺ</button>
+                            <button type="submit" name="action" value="sub" class="btn-submit" style="flex: 1; background: var(--danger); font-size: 12px;"><i class="fa-solid fa-minus"></i> TRỪ THẺ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // 1. Chức năng Lọc (Tìm kiếm) Acc trực tiếp trên Frontend
+        function filterAccounts() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("accTable");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) { 
+                tr[i].style.display = "none"; 
+                td = tr[i].getElementsByTagName("td");
+                for (var j = 0; j < td.length - 1; j++) { 
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            tr[i].style.display = ""; 
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Tự động hiển thị Alert bằng SweetAlert
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const msg = urlParams.get('msg');
+            if (msg) {
+                const isError = msg.toLowerCase().includes('lỗi') || msg.toLowerCase().includes('chưa');
+                
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: isError ? 'error' : 'success',
+                    title: msg,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    background: '#27293d',
+                    color: '#fff'
+                });
+
+                // Xóa param msg khỏi URL sau khi hiển thị để không bị hiện lại khi F5
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    </script>
+</body>
+</html>

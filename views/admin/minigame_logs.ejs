@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Lịch Sử Gacha Khách Hàng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --bg: #1e1e2f; --card: #27293d; --text: #fff; --accent: #00f2c3;}
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; margin: 0; min-height: 100vh; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 4px solid var(--accent);}
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { color: #888; font-size: 12px; text-transform: uppercase; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        .badge-acc { background: #e74c3c; padding: 3px 8px; border-radius: 5px; font-size: 11px; }
+        .badge-money { background: #00f2c3; color: #000; padding: 3px 8px; border-radius: 5px; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <%- include('partials/sidebar', { page: 'minigame_logs' }) %>
+
+    <div class="main-content">
+        <h1 style="margin: 0 0 30px 0; font-weight: 300;">Lịch Sử Chơi <b style="color: var(--accent);">Gacha</b></h1>
+
+        <div class="card">
+            <h3 style="margin-top: 0;"><i class="fa-solid fa-clock-rotate-left"></i> 500 Giao dịch gần nhất</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tài khoản</th>
+                        <th>Trò chơi</th>
+                        <th>Tiền mất</th>
+                        <th>Trúng Giải</th>
+                        <th>Loại Giải</th>
+                        <th>Thời gian</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% logs.forEach(l => { %>
+                        <tr>
+                            <td style="color: var(--accent); font-weight: bold;"><%= l.username %></td>
+                            <td><%= l.game_name %></td>
+                            <td style="color: #fd5d93;">-<%= new Intl.NumberFormat('vi-VN').format(l.price_paid) %>đ</td>
+                            <td style="font-weight: bold;"><%= l.prize_name || 'Không xác định' %></td>
+                            <td>
+                                <% if(l.prize_type === 'ACC') { %> <span class="badge-acc">Tài Khoản</span>
+                                <% } else if(l.prize_type === 'MONEY') { %> <span class="badge-money">Cộng Tiền</span>
+                                <% } else { %> <span style="color: #aaa; font-size: 12px;">Rác</span> <% } %>
+                            </td>
+                            <td><%= new Date(l.created_at).toLocaleString('vi-VN') %></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

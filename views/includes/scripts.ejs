@@ -1,0 +1,475 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    const socket = io('/', {
+    transports: ['websocket'], // Ép dùng Websocket, bỏ qua polling (nguồn gốc lỗi 400)
+    secure: true,
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 2000
+});
+
+    // ==========================================
+    // 1. HỆ THỐNG THÔNG BÁO (TOAST & COPY)
+    // ==========================================
+    function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text);
+        } else {
+            let textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+        if(typeof showToast === 'function') showToast('Đã sao chép: ' + text, 'success');
+        else alert('Đã sao chép: ' + text);
+    }
+
+    // ==========================================
+    // 2. LOGIC BỘ LỌC SẢN PHẨM & MUA ACC
+    // ==========================================
+    function filterProducts(criteria, btnElement) {
+        document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+        if(btnElement) btnElement.classList.add('active');
+
+        const products = document.querySelectorAll('.product-card');
+        products.forEach(card => {
+            const cat = card.getAttribute('data-cat');
+            const price = parseInt(card.getAttribute('data-price') || 0);
+            let isShow = false;
+
+            if (criteria === 'all') isShow = true;
+            else if (criteria === '9k') { if (price < 20000 || cat === '9k') isShow = true; }
+            else if (criteria === 'vip') { if (price >= 500000 || cat === 'vip') isShow = true; }
+            else { if (cat === criteria) isShow = true; }
+
+            if (isShow) { card.style.display = 'block'; card.style.animation = 'fadeIn 0.5s'; } 
+            else { card.style.display = 'none'; }
+        });
+    }
+
+    const buyModal = document.getElementById('buy-modal');
+    
+    function openBuyModal(name, price) {
+        if (!buyModal) return;
+        const nameEl = document.getElementById('m-name');
+        const priceEl = document.getElementById('m-price');
+        if (nameEl) nameEl.innerText = name;
+        if (priceEl) priceEl.innerText = price;
+        buyModal.style.display = 'flex';
+    }
+
+    function closeModal() { if (buyModal) buyModal.style.display = 'none'; }
+
+    const btnConfirmBuy = document.getElementById('btn-confirm-buy');
+    if (btnConfirmBuy) {
+        btnConfirmBuy.addEventListener('click', async () => {
+            if (btnConfirmBuy.disabled) return;
+            const originalText = btnConfirmBuy.dataset.originalText || btnConfirmBuy.innerText;
+            btnConfirmBuy.dataset.originalText = originalText;
+            btnConfirmBuy.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+            btnConfirmBuy.disabled = true;
+            btnConfirmBuy.style.cursor = 'not-allowed';
+            btnConfirmBuy.style.opacity = '0.7';
+
+            const contact = document.querySelector('.guest-input')?.value || 'Khách vãng lai';
+            const title = document.getElementById('m-name')?.innerText || '';
+
+            try {
+                const response = await fetch('/api/order/buy', {
+                    method: 'POST',
+                    headers: { 
+    'Content-Type': 'application/json',
+    'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+},
+                    body: JSON.stringify({ productTitle: title, contact: contact })
+                });
+
+                if (response.status === 401 || response.redirected) {
+                    showToast('Vui lòng đăng nhập để mua hàng!', 'error');
+                    setTimeout(() => window.location.href = '/auth/login', 1500);
+                    return; 
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(data.message || 'Mua thành công!', 'success');
+                    setTimeout(() => window.location.href = '/user/profile', 1500);
+                } else {
+                    showToast(data.message || 'Lỗi mua hàng', 'error');
+                    if(data.requireLogin) {
+                        setTimeout(() => window.location.href = '/auth/login', 1500);
+                    }
+                    else if(data.requireRecharge) {
+                        closeModal();
+                        setTimeout(() => {
+                            const rechargeArea = document.getElementById('nap-the');
+                            if(rechargeArea) {
+                                rechargeArea.scrollIntoView({ behavior: 'smooth' });
+                                const wrapper = document.querySelector('.recharge-box');
+                                if(wrapper) {
+                                    wrapper.style.transition = "0.3s";
+                                    wrapper.style.border = "2px solid red";
+                                    setTimeout(() => wrapper.style.border = "none", 2000);
+                                }
+                            }
+                        }, 1000);
+                    } else {
+                        btnConfirmBuy.innerHTML = originalText;
+                        btnConfirmBuy.disabled = false;
+                        btnConfirmBuy.style.cursor = 'pointer';
+                        btnConfirmBuy.style.opacity = '1';
+                    }
+                }
+            } catch (err) {
+                if (!navigator.onLine) showToast('Mất kết nối Internet!', 'error');
+                else showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+                
+                btnConfirmBuy.innerHTML = originalText;
+                btnConfirmBuy.disabled = false;
+                btnConfirmBuy.style.cursor = 'pointer';
+                btnConfirmBuy.style.opacity = '1';
+            }
+        });
+    }
+
+    // ==========================================
+    // 3. LOGIC NẠP THẺ (API DOITHE1S & PHỤC HỒI)
+    // ==========================================
+    function switchTab(type) {
+        document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        const tabLink = type === 'card' ? document.querySelector('.tab-link:nth-child(1)') : document.querySelector('.tab-link:nth-child(2)');
+        const tabContent = type === 'card' ? document.getElementById('tab-card') : document.getElementById('tab-qr');
+        if (tabLink) tabLink.classList.add('active');
+        if (tabContent) tabContent.style.display = 'block';
+    }
+
+    const modalConfirm = document.getElementById('modal-confirm-recharge');
+
+    function confirmRecharge() {
+        const network = document.getElementById('rc-network')?.value.trim();
+        const amount = document.getElementById('rc-amount')?.value.trim();
+        const seri = document.getElementById('rc-seri')?.value.trim();
+        const pin = document.getElementById('rc-pin')?.value.trim();
+
+        if(!network || !amount || !seri || !pin) {
+            showToast("Vui lòng nhập đầy đủ thông tin thẻ!", 'warning');
+            return;
+        }
+
+        // Kiểm tra biến window_IS_LOGGED_IN được nạp từ file recharge-form.ejs
+        if (typeof window_IS_LOGGED_IN !== 'undefined' && !window_IS_LOGGED_IN) {
+            sessionStorage.setItem('pendingCard', JSON.stringify({ network, amount, seri, pin }));
+            showToast('Sếp cần đăng nhập để hệ thống nạp tiền!', 'error');
+            setTimeout(() => {
+                const msg = encodeURIComponent('Vui lòng đăng nhập để hệ thống cộng tiền!');
+                window.location.href = `/auth/login?message=${msg}&type=error`;
+            }, 1500);
+            return;
+        }
+
+        document.getElementById('c-network').innerText = network;
+        document.getElementById('c-amount').innerText = new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+        modalConfirm.style.display = 'flex';
+    }
+
+    function closeConfirmModal() { 
+        if(modalConfirm) modalConfirm.style.display = 'none'; 
+    }
+
+    async function submitRealForm() {
+        const btn = document.getElementById('btn-submit-real');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG GỬI...';
+        btn.disabled = true;
+
+        // [KHỚP 100% VỚI CONTROLLER DOITHE1S]
+        const data = {
+            network: document.getElementById('rc-network').value.trim(),
+            amount: document.getElementById('rc-amount').value.trim(),
+            seri: document.getElementById('rc-seri').value.trim(),
+            pin: document.getElementById('rc-pin').value.trim()
+        };
+
+        try {
+            const res = await fetch('/api/recharge/submit', {
+                method: 'POST',
+                headers: { 
+    'Content-Type': 'application/json',
+    'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+},
+                body: JSON.stringify(data)
+            });
+
+            if (res.status === 401 || res.redirected) {
+                showToast('Vui lòng đăng nhập lại!', 'error');
+                setTimeout(() => window.location.href = '/auth/login', 1500);
+                return;
+            }
+
+            const result = await res.json();
+            closeConfirmModal();
+            
+            if(res.ok && result.success !== false) { 
+                showToast(result.message || 'Gửi thẻ thành công! Chờ duyệt nhé sếp.', 'success');
+                document.getElementById('form-recharge').reset();
+            } else {
+                showToast(result.message || 'Thẻ lỗi hoặc sai mệnh giá', 'error');
+            }
+        } catch (err) {
+            closeConfirmModal();
+            showToast('Lỗi kết nối tới Server Nạp Thẻ!', 'error');
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
+    }
+
+    // ==========================================
+    // 4. LỊCH SỬ NẠP THẺ ẢO & PHỤC HỒI DỮ LIỆU
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // A. Phục hồi thông tin thẻ bị mất khi chưa đăng nhập
+        if (typeof window_IS_LOGGED_IN !== 'undefined' && window_IS_LOGGED_IN) {
+            const savedCard = sessionStorage.getItem('pendingCard');
+            if (savedCard) {
+                try {
+                    const cardData = JSON.parse(savedCard);
+                    if(document.getElementById('rc-network')) document.getElementById('rc-network').value = cardData.network;
+                    if(document.getElementById('rc-amount')) document.getElementById('rc-amount').value = cardData.amount;
+                    if(document.getElementById('rc-seri')) document.getElementById('rc-seri').value = cardData.seri;
+                    if(document.getElementById('rc-pin')) document.getElementById('rc-pin').value = cardData.pin;
+                    
+                    sessionStorage.removeItem('pendingCard'); 
+                    setTimeout(() => {
+                        const rBox = document.querySelector('.recharge-box');
+                        if(rBox) rBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        showToast('Đã khôi phục thông tin thẻ. Sếp bấm nạp lại nhé!', 'success');
+                    }, 800);
+                } catch (e) { sessionStorage.removeItem('pendingCard'); }
+            }
+        }
+
+        // B. Sinh lịch sử nạp thẻ ảo
+        const historyBody = document.getElementById('fake-history');
+        if (historyBody) {
+            const fakeNames = ['pro_nak***', 'tuandung**', 'lienquan***', 'thanhdat***', 'minh_dz***', 'best_tul***', 'shopgiare***'];
+            const fakeAmounts = [10000, 20000, 50000, 20000, 100000, 10000, 50000];
+            const formatTime = (date) => date.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+            
+            let currentTime = new Date();
+            for(let i=0; i<5; i++) {
+                const randMin = Math.floor(Math.random() * 5) + 1; 
+                currentTime = new Date(currentTime.getTime() - randMin * 60000);
+                const name = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+                const amount = fakeAmounts[Math.floor(Math.random() * fakeAmounts.length)];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td style="color:#888; font-size:12px;">${formatTime(currentTime)}</td><td style="color:var(--primary); font-weight:bold;">${name}</td><td>${new Intl.NumberFormat('vi-VN').format(amount)}đ</td><td><span style="color:#27ae60; font-weight:bold; font-size:12px;"><i class="fa-solid fa-check"></i> Hoàn tất</span></td>`;
+                historyBody.appendChild(tr);
+            }
+
+            function pushNewFakeOrder() {
+                const randTime = Math.floor(Math.random() * 15000) + 15000; 
+                setTimeout(() => {
+                    const name = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+                    const amount = fakeAmounts[Math.floor(Math.random() * fakeAmounts.length)];
+                    const tr = document.createElement('tr');
+                    tr.style.animation = 'fadeIn 0.5s';
+                    tr.style.background = 'rgba(46, 204, 113, 0.1)'; 
+                    tr.innerHTML = `<td style="color:#888; font-size:12px;">Vừa xong</td><td style="color:var(--primary); font-weight:bold;">${name}</td><td>${new Intl.NumberFormat('vi-VN').format(amount)}đ</td><td><span style="color:#27ae60; font-weight:bold; font-size:12px;"><i class="fa-solid fa-check"></i> Hoàn tất</span></td>`;
+                    historyBody.insertAdjacentElement('afterbegin', tr);
+                    setTimeout(() => tr.style.background = 'transparent', 1500);
+                    if(historyBody.children.length > 5) historyBody.lastElementChild.remove();
+                    pushNewFakeOrder(); 
+                }, randTime);
+            }
+            pushNewFakeOrder();
+        }
+    });
+
+    // ==========================================
+    // 5. LOGIC SỰ KIỆN CHUNG SỨC
+    // ==========================================
+    const eventModal = document.getElementById('event-modal');
+    
+    function openEventModal(type, name, price) {
+        if (!eventModal) return;
+        const eType = document.getElementById('e-type');
+        const eName = document.getElementById('e-name');
+        const ePrice = document.getElementById('e-price');
+        const eIngame = document.getElementById('e-ingame');
+        const eCode = document.getElementById('e-code');
+
+        if (eType) eType.value = type;
+        if (eName) eName.innerText = name;
+        if (ePrice) ePrice.innerText = price;
+        if (eIngame) eIngame.value = '';
+        if (eCode) eCode.value = '';
+        eventModal.style.display = 'flex';
+    }
+
+    function closeEventModal() { if (eventModal) eventModal.style.display = 'none'; }
+
+    const formEvent = document.getElementById('form-event-submit');
+    if (formEvent) {
+        formEvent.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            if(btn.disabled) return;
+
+            const oldText = btn.innerText;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG XỬ LÝ...';
+            btn.disabled = true;
+
+            const packageType = document.getElementById('e-type').value;
+            const ingameName = document.getElementById('e-ingame').value;
+            const eventCode = document.getElementById('e-code').value;
+
+            try {
+                const res = await fetch('/api/event/join', {
+                    method: 'POST',
+                    headers: { 
+    'Content-Type': 'application/json',
+    'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+},
+                    body: JSON.stringify({ packageType, ingameName, eventCode })
+                });
+
+                if (res.status === 401 || res.redirected) {
+                    showToast('Vui lòng đăng nhập để tham gia sự kiện!', 'error');
+                    setTimeout(() => window.location.href = '/auth/login', 1500);
+                    return;
+                }
+
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message, 'success');
+                    closeEventModal();
+                    setTimeout(() => window.location.reload(), 1500); 
+                } else {
+                    showToast(data.message, 'error');
+                    if (data.requireRecharge) {
+                        closeEventModal();
+                        setTimeout(() => {
+                            const rechargeSection = document.getElementById('nap-the');
+                            if (rechargeSection) rechargeSection.scrollIntoView({ behavior: 'smooth' });
+                        }, 1000);
+                    }
+                    if (data.requireLogin) setTimeout(() => window.location.href = '/auth/login', 1000);
+                    if(!data.requireLogin && !data.requireRecharge) {
+                        btn.innerText = oldText;
+                        btn.disabled = false;
+                    }
+                }
+            } catch (err) {
+                if (!navigator.onLine) showToast('Mất kết nối Internet!', 'error');
+                else showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+                btn.innerText = oldText;
+                btn.disabled = false;
+            }
+        });
+    }
+
+
+    // ============================================================
+    // 7. GLOBAL EVENT LISTENERS (CHỐNG SPAM FORM & URL CLEANER)
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        const type = urlParams.get('type') || 'success'; 
+
+        if (message) {
+            if (typeof showToast === 'function') showToast(message, type);
+            else alert(message);
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+        }
+
+        document.querySelectorAll('form').forEach(form => {
+            if(form.id === 'form-recharge' || form.id === 'form-recharge-card') return; 
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    if (submitBtn.disabled) { e.preventDefault(); return; }
+                    submitBtn.dataset.originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+                    submitBtn.disabled = true;
+                    submitBtn.style.cursor = 'not-allowed';
+                    submitBtn.style.opacity = '0.7';
+                    setTimeout(() => {
+                        submitBtn.innerHTML = submitBtn.dataset.originalText;
+                        submitBtn.disabled = false;
+                        submitBtn.style.cursor = 'pointer';
+                        submitBtn.style.opacity = '1';
+                    }, 5000);
+                }
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const openBtn = document.getElementById('open-menu-btn');
+        const closeBtn = document.getElementById('close-menu-btn');
+        const overlay = document.getElementById('mobile-category-overlay');
+        const body = document.body;
+        function openMenu() { overlay.classList.add('active'); body.classList.add('no-scroll'); }
+        function closeMenu() { overlay.classList.remove('active'); body.classList.remove('no-scroll'); }
+        if(openBtn) openBtn.addEventListener('click', openMenu);
+        if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+        document.querySelectorAll('.cat-card').forEach(link => { link.addEventListener('click', closeMenu); });
+    });
+    async function loadFomoMarquee() {
+        const marqueeEl = document.querySelector('.marquee-top marquee');
+        if (!marqueeEl) return;
+
+        // Dữ liệu chim mồi (Fake Data) để phòng khi web mới mở chưa ai chơi
+        const fakeNames = ["Hoàng***", "Nam***", "Trang***", "Tuấn***", "Minh***", "Kiệt***", "Huy***", "Bảo***", "Long***"];
+        const fakePrizes = ["Acc Florentino Tinh Hệ", "Nhận 50.000đ", "Acc Full Tướng", "Acc VIP Rank Cao Thủ", "Bùa Thứ Nguyên Vệ Thần"];
+        const fakeGames = ["Vòng Quay Sinh Viên", "Lật Thẻ VIP", "Vẽ Bùa Chân Lý"];
+
+        // Lời chào gốc của sếp
+        let messages = [
+            "🧧 SHOP LIÊN QUÂN UY TÍN 2026: SĂN ACC 1Đ KHUNG GIỜ VÀNG - VÒNG QUAY 100% TRÚNG NICK VIP 🧧",
+            "🔥 BÁN THẺ GARENA, VIETTEL CHIẾT KHẤU SIÊU CAO - GIAO DỊCH TỰ ĐỘNG 24/7 🔥"
+        ];
+
+        try {
+            // 1. Lấy người trúng THẬT từ Database
+            const res = await fetch('/api/minigame/recent-winners');
+            const data = await res.json();
+            if (data.success && data.data.length > 0) {
+                data.data.forEach(log => {
+                    messages.push(`🎉 <b style="color:#00f2c3;">${log.username}</b> vừa trúng <b style="color:#f1c40f;">${log.prize_name}</b> từ trò <i>${log.game_name}</i>!`);
+                });
+            }
+        } catch (e) { console.log("Lỗi tải Marquee"); }
+
+        // 2. Nhồi thêm 3 con BOT Chim mồi vào xen kẽ
+        for(let i = 0; i < 3; i++) {
+            const name = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+            const prize = fakePrizes[Math.floor(Math.random() * fakePrizes.length)];
+            const game = fakeGames[Math.floor(Math.random() * fakeGames.length)];
+            messages.push(`🔥 <b style="color:#00f2c3;">${name}</b> nhân phẩm bùng nổ trúng <b style="color:#f1c40f;">${prize}</b> từ <i>${game}</i>!`);
+        }
+
+        // 3. Trộn đều mảng (Xáo trộn ảo và thật lẫn lộn không ai nhận ra)
+        messages.sort(() => Math.random() - 0.5);
+
+        // 4. In ra màn hình
+        marqueeEl.innerHTML = messages.join(' &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ⚡ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ');
+    }
+
+    // Chạy khi web load xong
+    document.addEventListener('DOMContentLoaded', loadFomoMarquee);
+</script>

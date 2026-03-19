@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        .vault-bg { background: radial-gradient(circle at top, #1a1a2e, #000); min-height: 100vh; color: #fff; padding-bottom: 50px; overflow-x: hidden; }
+        .vault-header { text-align: center; padding: 50px 15px 30px; }
+        .vault-header h1 { font-size: 36px; font-weight: 900; color: #f1c40f; text-shadow: 0 0 30px rgba(241, 196, 15, 0.6); margin-bottom: 10px; }
+        
+        .card-status { display: inline-flex; align-items: center; background: rgba(0,0,0,0.6); border: 2px solid #f1c40f; padding: 10px 25px; border-radius: 50px; margin-top: 20px; }
+        .card-status img { width: 40px; margin-right: 15px; animation: float 2s infinite ease-in-out; }
+        .card-status span { font-size: 20px; font-weight: bold; }
+        .card-status .num { color: #f1c40f; font-size: 28px; margin-left: 5px; }
+
+        .vip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; padding: 0 15px; max-width: 1200px; margin: 0 auto; }
+        .vip-card { background: #222; border-radius: 15px; overflow: hidden; border: 1px solid #444; transition: 0.4s; text-align: center; padding-bottom: 20px;}
+        .vip-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(241, 196, 15, 0.2); border-color: #f1c40f; }
+        
+        .vip-img { width: 80%; margin: 30px auto 10px; display: block; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)); transition: 0.4s;}
+        .vip-card:hover .vip-img { transform: scale(1.1); filter: drop-shadow(0 0 20px #f1c40f); }
+
+        .vip-title { font-size: 18px; font-weight: 800; color: #fff; margin: 15px 10px; }
+        .price-tag { color: #f1c40f; font-weight: bold; font-size: 18px; margin-bottom: 20px; }
+        .price-tag img { width: 25px; vertical-align: middle; margin-left: 5px; }
+
+        .btn-exchange { width: 80%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .btn-ready { background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000; box-shadow: 0 0 15px rgba(241,196,15,0.5); }
+        .btn-ready:hover { transform: scale(1.05); }
+        .btn-locked { background: #444; color: #888; cursor: not-allowed; }
+
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+
+        /* HIỆU ỨNG NHẬN THẺ HOÀNH TRÁNG (GRAND UNBOX) */
+        .grand-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        
+        .flash-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 2; opacity: 0; pointer-events: none; }
+        @keyframes doFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        .reward-card { width: 300px; z-index: 3; filter: drop-shadow(0 0 50px #f1c40f); transform: scale(0); opacity: 0; }
+        @keyframes revealCard { 
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; } 
+            60% { transform: scale(1.2) rotate(10deg); opacity: 1; } 
+            100% { transform: scale(1) rotate(0deg); opacity: 1; } 
+        }
+
+        .reward-text { z-index: 3; color: #f1c40f; font-size: 30px; font-weight: 900; margin-top: 30px; text-transform: uppercase; text-shadow: 0 0 20px #e67e22; opacity: 0; }
+        @keyframes slideUp { 0% { transform: translateY(50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
+        .btn-claim { z-index: 3; margin-top: 30px; background: #e74c3c; color: #fff; padding: 15px 40px; border-radius: 30px; font-weight: bold; border: none; font-size: 18px; cursor: pointer; opacity: 0; transition: 0.3s;}
+        .btn-claim:hover { background: #c0392b; box-shadow: 0 0 20px rgba(231,76,60,0.8); }
+    </style>
+</head>
+<body class="vault-bg">
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <div class="vault-header">
+        <h1><i class="fa-solid fa-crown"></i> KHO BÁU VIP</h1>
+        <p style="color: #bdc3c7;">Đổi Thẻ Cấp Thấp Lấy Thẻ Siêu Cấp - Liên Hệ Admin Để Nhận Acc!</p>
+        
+        <div class="card-status">
+            <img src="/images/the-vip.png" alt="Thẻ VIP" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5619/5619374.png'">
+            <span>SỐ THẺ CỦA BẠN: <span class="num"><%= user ? user.vip_cards : 0 %></span></span>
+        </div>
+    </div>
+
+    <div class="vip-grid">
+        <% vipProducts.forEach(p => { %>
+            <div class="vip-card">
+                <img src="<%= p.image_url %>" class="vip-img" alt="<%= p.title %>" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5619/5619374.png'">
+                
+                <div class="vip-title"><%= p.title %></div>
+                <div class="price-tag">Cần: <%= p.vip_price %> <img src="/images/the-vip.png" alt="Thẻ VIP"></div>
+
+                <% if (!user) { %>
+                    <button class="btn-exchange btn-locked" onclick="window.location.href='/auth/login'">ĐĂNG NHẬP ĐỂ ĐỔI</button>
+                <% } else if (user.vip_cards >= p.vip_price) { %>
+                    <button class="btn-exchange btn-ready" onclick="exchangeAcc('<%= p.id %>', '<%= p.title %>', <%= p.vip_price %>)">ĐỔI NGAY</button>
+                <% } else { %>
+                    <button class="btn-exchange btn-locked" onclick="window.location.href='/tui-mu'">THIẾU <%= p.vip_price - user.vip_cards %> THẺ</button>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+
+    <div id="grandModal" class="grand-modal">
+        <div id="flashScreen" class="flash-screen"></div>
+        <img src="" id="rewardImg" class="reward-card" alt="Phần Thưởng">
+        <div id="rewardText" class="reward-text"></div>
+        <p style="color: #ccc; z-index:3; margin-top:10px; opacity: 0; animation: slideUp 0.5s forwards 1.5s;">Đã lưu vào Tủ Đồ / Lịch sử. Chụp ảnh màn hình gửi Admin nhé!</p>
+        <button class="btn-claim" id="btnClaim" onclick="window.location.href='/user/inventory'" style="animation: slideUp 0.5s forwards 2s;">CẤT VÀO TỦ ĐỒ</button>
+    </div>
+
+    <%- include('../../includes/footer') %>
+
+    <script>
+        async function exchangeAcc(itemId, title, price) {
+            if (!confirm(`Bạn sẽ dùng ${price} Thẻ VIP gốc để hợp thành:\n"${title}"\nBạn chắc chắn chứ?`)) return;
+
+            try {
+                const res = await fetch('/kho-vip/exchange', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ itemId: itemId })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    // KÍCH HOẠT HIỆU ỨNG HOÀNH TRÁNG
+                    const modal = document.getElementById('grandModal');
+                    const flash = document.getElementById('flashScreen');
+                    const img = document.getElementById('rewardImg');
+                    const text = document.getElementById('rewardText');
+
+                    // Gắn data
+                    img.src = data.reward.image_url;
+                    text.innerText = `BẠN NHẬN ĐƯỢC: ${data.reward.title}`;
+
+                    // Hiện Modal
+                    modal.style.display = 'flex';
+                    
+                    // Chớp lóa trắng (Animation)
+                    flash.style.animation = 'doFlash 1s ease-out forwards';
+                    
+                    // Bật hoạt ảnh thẻ bay ra
+                    img.style.animation = 'revealCard 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+                    text.style.animation = 'slideUp 0.5s ease-out forwards 1s';
+
+                } else {
+                    alert(data.message);
+                    window.location.reload();
+                }
+            } catch (err) {
+                alert("Lỗi kết nối tới Server!");
+            }
+        }
+    </script>
+</body>
+</html>

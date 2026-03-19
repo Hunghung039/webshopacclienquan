@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Quản Lý Săn Acc 1đ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <%- include('partials/admin_css') %>
+</head>
+<body>
+
+    <%- include('partials/sidebar', { page: 'flash_sale' }) %>
+
+    <div class="main-content">
+        <h1 class="page-title"><i class="fa-solid fa-bolt" style="color: #e74c3c;"></i> Quản Lý Sự Kiện Flash Sale (1đ)</h1>
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
+            
+            <div>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #f1c40f;">Treo Thêm Acc Sự Kiện</h3>
+                    <form action="/admin/flash-sale/add?_csrf=<%= csrfToken %>" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        
+                        <label>Tiêu đề Acc (Hiển thị cho khách)</label>
+                        <input type="text" name="title" required placeholder="VD: Nick Flo Tinh Hệ Siêu Phẩm">
+                        
+                        <div class="form-grid">
+                            <div>
+                                <label>Tài khoản Game</label>
+                                <input type="text" name="acc_username" required>
+                            </div>
+                            <div>
+                                <label>Mật khẩu Game</label>
+                                <input type="text" name="acc_password" required>
+                            </div>
+                        </div>
+
+                        <label>Thông tin tóm tắt (Hiện sau khi mua)</label>
+                        <textarea name="info_summary" rows="2" placeholder="Rank Cao Thủ, 90 Tướng, 100 Skin..." required></textarea>
+
+                        <label>Link Ảnh (Bỏ trống sẽ lấy ảnh Túi Mù mặc định)</label>
+                        <input type="text" name="image_url" placeholder="/images/tui-mu-dong.png">
+
+                        <div class="form-grid">
+                            <div>
+                                <label>Giá bán (VNĐ)</label>
+                                <input type="number" name="price" value="1" required>
+                            </div>
+                            <div>
+                                <label style="color: #e74c3c;">Thời gian Mở Bán</label>
+                                <input type="datetime-local" name="flash_sale_time" required>
+                            </div>
+                        </div>
+
+                        <label style="color: #00f2c3;"><i class="fa-solid fa-copy"></i> Số lượng nhân bản (Clone ra mấy Nick?)</label>
+                        <input type="number" name="quantity" value="1" min="1" max="100" class="highlight-input" required>
+
+                        <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> Đưa Lên Kệ Ngay</button>
+                    </form>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">Lịch Trình & Kết Quả Săn Acc</h3>
+                    <div style="overflow-x: auto; max-height: 700px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên Acc / Giá</th>
+                                    <th>Thời gian mở bán</th>
+                                    <th>Trạng thái</th>
+                                    <th>Người săn được</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(accounts && accounts.length > 0) { %>
+                                    <% accounts.forEach(a => { %>
+                                        <tr>
+                                            <td style="color: #888;">#<%= a.id %></td>
+                                            <td>
+                                                <div style="font-weight: bold; color: #fff;"><%= a.title %></div>
+                                                <div style="color: #e74c3c; font-size: 12px;"><%= new Intl.NumberFormat('vi-VN').format(a.price) %>đ</div>
+                                            </td>
+                                            <td style="color: #f1c40f; font-family: monospace;">
+                                                <%= new Date(a.flash_sale_time).toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'}) %>
+                                            </td>
+                                            <td>
+                                                <% if(a.status === 'available') { %>
+                                                    <span class="badge badge-wait">Đang treo</span>
+                                                <% } else { %>
+                                                    <span class="badge badge-sold">Đã bán</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <% if(a.buyer_name) { %>
+                                                    <span style="color: #00f2c3; font-weight: bold;"><i class="fa-solid fa-user-ninja"></i> <%= a.buyer_name %></span>
+                                                <% } else { %>
+                                                    <span style="color: #555;">Chưa có</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <form action="/admin/flash-sale/delete/<%= a.id %>?_csrf=<%= csrfToken %>" method="POST" onsubmit="return confirm('Chắc chắn muốn xóa Acc này khỏi sự kiện?');">
+                                                    <button type="submit" class="btn-del" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 30px; color: #888;">Chưa có Acc nào trong danh sách. Hãy thêm ở form bên trái!</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

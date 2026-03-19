@@ -1,0 +1,59 @@
+<style>
+    /* CSS Chỉ dành riêng cho thanh Sidebar */
+    .sidebar { width: 250px; background: var(--sidebar); padding: 20px; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; transition: 0.3s ease-in-out; overflow-y: auto; height: 100vh; box-sizing: border-box; z-index: 1000;}
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+    .admin-logo { font-size: 24px; font-weight: 900; color: var(--text); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;}
+    .admin-logo span { color: var(--purple); }
+    
+    .menu-link { display: flex; align-items: center; gap: 12px; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: 0.3s; margin-bottom: 5px; font-size: 14px; font-weight: 600;}
+    .menu-link:hover, .menu-link.active { background: var(--purple); color: #fff; box-shadow: 0 4px 15px rgba(225, 78, 202, 0.4); }
+    .menu-link i { width: 20px; text-align: center; font-size: 16px; }
+    
+    /* Giao diện Nút bấm Mobile */
+    .mobile-toggle { display: none; position: fixed; top: 15px; left: 15px; z-index: 1001; background: var(--sidebar); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;}
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; backdrop-filter: blur(2px); opacity: 0; transition: 0.3s; }
+
+    @media (max-width: 768px) {
+        .mobile-toggle { display: block; }
+        .sidebar-overlay.active { display: block; opacity: 1; }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 260px; box-shadow: none; }
+        .sidebar.active { left: 0; box-shadow: 5px 0 25px rgba(0,0,0,0.5); }
+    }
+</style>
+
+<button class="mobile-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar">
+    <div class="admin-logo"><i class="fa-solid fa-user-secret"></i> ADMIN<span>PANEL</span></div>
+    
+    <a href="/admin" class="menu-link <%= typeof page !== 'undefined' && page === 'dashboard' ? 'active' : '' %>"><i class="fa-solid fa-chart-line"></i> Tổng Quan</a>
+    <a href="/admin/products" class="menu-link <%= typeof page !== 'undefined' && page === 'products' ? 'active' : '' %>"><i class="fa-solid fa-box-open"></i> Kho Acc Game</a>
+    <a href="/admin/bulk-add" class="menu-link <%= typeof page !== 'undefined' && page === 'bulk_add' ? 'active' : '' %>"><i class="fa-solid fa-layer-group"></i> Đăng Nhiều Nick</a>
+    <a href="/admin/users" class="menu-link <%= typeof page !== 'undefined' && page === 'users' ? 'active' : '' %>"><i class="fa-solid fa-users"></i> Thành Viên</a>
+    <a href="/admin/blogs" class="menu-link <%= typeof page !== 'undefined' && page === 'blogs' ? 'active' : '' %>"><i class="fa-solid fa-newspaper"></i> Tin Tức / Blog</a>
+    <a href="/admin/seo-pages" class="menu-link <%= typeof page !== 'undefined' && page === 'seo_pages' ? 'active' : '' %>"><i class="fa-solid fa-magnifying-glass-chart"></i> Quản lý SEO Pages</a>
+    <a href="/admin/images" class="menu-link <%= typeof page !== 'undefined' && page === 'images' ? 'active' : '' %>"><i class="fa-solid fa-images"></i> Quản Lý Media</a>
+    <a href="/admin/blind-box" class="menu-link <%= typeof page !== 'undefined' && page === 'blind_box' ? 'active' : '' %>"><i class="fa-solid fa-gift"></i> Quản Lý Túi Mù</a>
+    <a href="/admin/flash-sale" class="menu-link <%= typeof page !== 'undefined' && page === 'flash_sale' ? 'active' : '' %>"><i class="fa-solid fa-bolt"></i> Quản Lý Sale 1đ</a>
+    <a href="/admin/trust" class="menu-link <%= typeof page !== 'undefined' && page === 'trust' ? 'active' : '' %>"><i class="fa-solid fa-shield-halved"></i> Quản Lý Uy Tín</a>
+    <a href="/admin/minigames" class="menu-link <%= typeof page !== 'undefined' && page === 'minigames' ? 'active' : '' %>"><i class="fa-solid fa-gamepad"></i> Quản Lý Minigame</a>
+    <!-- <a href="/admin/minigames/logs" class="menu-link <%= typeof page !== 'undefined' && page === 'logs' ? 'active' : '' %>"><i class="fa-solid fa-clock-rotate-left"></i> Log Minigame</a> -->
+    <a href="/admin/chung-suc" class="menu-link <%= typeof page !== 'undefined' && page === 'chung_suc' ? 'active' : '' %>"><i class="fa-solid fa-handshake-angle"></i> Quản Lý Chung Sức</a>
+    <a href="/admin/xinxam" class="menu-link <%= typeof page !== 'undefined' && page === 'xinxam' ? 'active' : '' %>"><i class="fa-solid fa-fan"></i> Quản Lý Xin Xăm</a>
+    <a href="/admin/settings" class="menu-link <%= typeof page !== 'undefined' && page === 'settings' ? 'active' : '' %>"><i class="fa-solid fa-gear"></i> Cấu Hình Web</a>
+    <a href="/admin/matchmaking" class="menu-link <%= typeof page !== 'undefined' && page === 'matchmaking' ? 'active' : '' %>"><i class="fa-solid fa-satellite-dish"></i> Trạm Ghép Đội LFG</a>
+    <a href="/admin/cay-thue" class="menu-link <%= typeof page !== 'undefined' && page === 'cay-thue' ? 'active' : '' %>"><i class="fa-solid fa-satellite-dish"></i> Quản Lý Cày Thuê</a>
+     <a href="/admin/thue-acc" class="menu-link <%= typeof page !== 'undefined' && page === 'thue-acc' ? 'active' : '' %>"><i class="fa-solid fa-satellite-dish"></i> Quản Lý Thuê Acc</a>
+    <a href="/" class="menu-link" target="_blank" style="margin-top: auto; background: rgba(255,255,255,0.1);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Xem Shop</a>
+    
+</div>
+
+<script>
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('active');
+        document.querySelector('.sidebar-overlay').classList.toggle('active');
+    }
+</script>

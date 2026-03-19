@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": "<%= product.title %>",
+      "image": "https://shoplienquan.site<%= product.image_url %>",
+      "description": "Tài khoản game Liên Quân Mobile VIP: <%= product.title %>. Mua ngay tại Shop Liên Quân Uy Tín - Giao dịch tự động, bảo hành trắng thông tin 100%.",
+      "sku": "ACC-<%= product.id %>",
+      "brand": {
+        "@type": "Brand",
+        "name": "Liên Quân Mobile"
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": "https://shoplienquan.site/chi-tiet/<%= product.slug %>",
+        "priceCurrency": "VND",
+        "price": "<%= product.price_new %>",
+        "itemCondition": "https://schema.org/UsedCondition",
+        "availability": "<%= product.status === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' %>",
+        "seller": {
+          "@type": "Organization",
+          "name": "Shop Liên Quân Uy Tín"
+        }
+      }
+    }
+    </script>
+    
+    <style>
+        .detail-box { background: #fff; border-radius: 20px; padding: 30px; margin-top: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .d-img img { width: 100%; border-radius: 15px; border: 2px solid #eee; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .d-info h1 { font-size: 26px; color: var(--primary); margin-bottom: 10px; line-height: 1.4; }
+        .d-price { font-size: 32px; font-weight: 900; color: #e74c3c; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.05); }
+        
+        .d-meta-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
+        .d-meta-table td { padding: 12px 0; border-bottom: 1px dashed #eee; font-size: 15px; }
+        
+        /* Cụm Nút Mua & Liên Hệ */
+        .action-group { display: flex; flex-direction: column; gap: 12px; margin-top: 25px; }
+        
+        .btn-buy-now { width: 100%; padding: 15px; font-size: 16px; font-weight: 800; border-radius: 50px; background: linear-gradient(45deg, #e74c3c, #c0392b); color: #fff; border:none; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase;}
+        .btn-buy-now:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3); }
+        
+        .btn-contact { width: 100%; padding: 15px; font-size: 15px; font-weight: 800; border-radius: 50px; background: #fff; color: #0984e3; border: 2px solid #0984e3; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; text-decoration: none;}
+        .btn-contact:hover { background: #0984e3; color: #fff; box-shadow: 0 10px 20px rgba(9, 132, 227, 0.2); }
+
+        /* Cụm Nút Share MXH */
+        .share-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-share { flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff; }
+        .btn-share.fb { background: #1877f2; }
+        .btn-share.fb:hover { background: #166fe5; }
+        .btn-share.copy { background: #636e72; }
+        .btn-share.copy:hover { background: #2d3436; }
+
+        /* Sản Phẩm Cùng Giá */
+        .related-title { font-size: 20px; font-weight: 900; color: #2d3436; margin: 50px 0 20px; text-transform: uppercase; border-left: 5px solid var(--primary); padding-left: 10px;}
+        .product-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .product-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #f1f2f6; transition: 0.3s; display: flex; flex-direction: column;}
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: var(--primary);}
+        .p-thumb { position: relative; padding-top: 56.25%; }
+        .p-thumb img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .p-body { padding: 10px; display: flex; flex-direction: column; flex-grow: 1;}
+        .p-body h3 { font-size: 13px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.4; height: 36px; overflow: hidden; }
+        .p-body h3 a { color: #2c3e50; text-decoration: none; }
+
+        @media(max-width: 768px) { 
+            .d-grid { grid-template-columns: 1fr; gap: 20px; } 
+            .product-list { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+    <%- include('../../includes/ui-common') %>
+
+    <main class="container">
+        <div style="margin-top: 20px; font-size: 14px; color: #636e72;">
+            <a href="/" style="color: #636e72; text-decoration: none;"><i class="fa-solid fa-house"></i> Trang chủ</a> 
+            <span style="margin: 0 5px;">/</span> 
+            <a href="/tai-khoan" style="color: #636e72; text-decoration: none;">Tài khoản game</a>
+            <span style="margin: 0 5px;">/</span> 
+            <span style="font-weight: bold; color: var(--primary);">MS: #<%= product.id %></span>
+        </div>
+
+        <div class="detail-box">
+            <div class="d-grid">
+                <div class="d-img">
+                    <img src="<%= product.image_url %>" alt="Chi tiết Acc Liên Quân <%= product.title %> - Giá rẻ">
+                </div>
+
+                <div class="d-info">
+                    <h1><%= product.title %></h1>
+                    <div class="d-price"><%= new Intl.NumberFormat('vi-VN').format(product.price_new) %>đ</div>
+                    
+                    <table class="d-meta-table">
+                        <tr>
+                            <td style="color:#999; width: 40%;">Mã số:</td>
+                            <td style="font-weight: bold;">#<%= product.id %></td>
+                        </tr>
+                        
+                        <% if (product.details) { %>
+                            <% for (const [key, value] of Object.entries(product.details)) { %>
+                                <tr>
+                                    <td style="color:#636e72;"><%= key %>:</td>
+                                    <td style="font-weight:bold; color:var(--primary);"><%= value %></td>
+                                </tr>
+                            <% } %>
+                        <% } %>
+                        
+                        <tr>
+                            <td style="color:#636e72;">Tình trạng:</td>
+                            <td style="color:green; font-weight: bold;"><i class="fa-solid fa-check"></i> Acc có sẵn (Giao tự động)</td>
+                        </tr>
+                    </table>
+
+                    <div class="action-group">
+                        <button class="btn-buy-now" id="btn-buy-trigger" 
+                            data-title="<%= product.title %>" 
+                            data-price="<%= new Intl.NumberFormat('vi-VN').format(product.price_new) %>đ">
+                            <i class="fa-solid fa-cart-shopping"></i> MUA NGAY (AUTO)
+                        </button>
+                        
+                        <a href="https://zalo.me/<%= typeof settings !== 'undefined' ? settings.admin_zalo : '0392232180' %>" target="_blank" class="btn-contact">
+                            <i class="fa-solid fa-headset"></i> Liên hệ Admin tư vấn
+                        </a>
+                        <a href="/check-uy-tin" class="btn-contact" style="border-color: #00b894; color: #00b894; margin-top: 5px;">
+    <i class="fa-solid fa-shield-halved"></i> Xem 1000+ Giao Dịch Thành Công
+</a>
+                    </div>
+
+                    <div class="share-group">
+                        <button class="btn-share fb" onclick="shareToFacebook()">
+                            <i class="fa-brands fa-facebook-f"></i> Share Fanpage
+                        </button>
+                        <button class="btn-share copy" onclick="copyProductLink()">
+                            <i class="fa-solid fa-link"></i> Copy Link Bài
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <% if (typeof relatedProducts !== 'undefined' && relatedProducts.length > 0) { %>
+            <h2 class="related-title">🔥 Các Tài Khoản Cùng Giá Khác 🔥</h2>
+            <div class="product-list">
+                <% relatedProducts.forEach(function(rp) { %>
+                    <article class="product-card">
+                        <div class="p-thumb">
+                            <a href="/chi-tiet/<%= rp.slug %>" title="<%= rp.title %>">
+                                <img src="<%= rp.image_url %>" alt="<%= rp.title %>" loading="lazy">
+                            </a>
+                        </div>
+                        <div class="p-body">
+                            <h3><a href="/chi-tiet/<%= rp.slug %>"><%= rp.title %></a></h3>
+                            <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 8px;">MS: <b>#<%= rp.id %></b></div>
+                            
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; margin-top: auto;">
+                                <span style="font-size: 16px; font-weight: 900; color: #e74c3c;"><%= new Intl.NumberFormat('vi-VN').format(rp.price_new) %>đ</span>
+                            </div>
+                            
+                            <a href="/chi-tiet/<%= rp.slug %>" style="display: block; width: 100%; text-align: center; background: #3498db; color: #fff; font-size: 12px; font-weight: bold; padding: 8px 0; border-radius: 6px; text-decoration: none; transition: 0.3s;">
+                                XEM NGAY
+                            </a>
+                        </div>
+                    </article>
+                <% }); %>
+            </div>
+        <% } %>
+
+    </main>
+
+    <script>
+        // 1. Script Mua Hàng (Gốc)
+        document.getElementById('btn-buy-trigger').addEventListener('click', function() {
+            const title = this.getAttribute('data-title');
+            const price = this.getAttribute('data-price');
+            openBuyModal(title, price);
+        });
+
+        // 2. Script Chia Sẻ Lên Facebook
+        function shareToFacebook() {
+            const currentUrl = encodeURIComponent(window.location.href);
+            const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${currentUrl}`;
+            window.open(fbShareUrl, 'facebook-share-dialog', 'width=800,height=600');
+        }
+
+        // 3. Script Copy Link Bán Hàng
+        function copyProductLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                // Tích hợp hoàn hảo với hệ thống Toast của sếp
+                if(typeof showToast === 'function') {
+                    showToast("Đã copy link bài viết! Sếp có thể dán để gửi cho bạn bè.", "success");
+                } else {
+                    alert("Đã copy link thành công!");
+                }
+            }).catch(err => {
+                alert("Lỗi trình duyệt, không thể copy!");
+            });
+        }
+    </script>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/modals') %>
+    <%- include('../../includes/scripts') %>
+
+</body>
+</html>

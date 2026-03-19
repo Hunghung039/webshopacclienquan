@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <%- include('../../includes/head', locals) %>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
+    <style>
+        /* ==========================================================================
+           1. CẤU HÌNH BIẾN TOÀN CỤC (GLOBAL VARIABLES) - TONE MÀU SÁNG THANH LỊCH
+           ========================================================================== */
+        :root { 
+            /* Bảng màu chủ đạo (Color Palette) */
+            --game-bg: #f4f7f6; 
+            --game-primary: #e74c3c; 
+            --game-primary-hover: #c0392b;
+            --game-gold: #f1c40f; 
+            --game-gold-hover: #f39c12;
+            --game-cyan: #00cec9;
+            --game-dark: #2d3436;
+            --game-gray: #b2bec3;
+            --game-light: #ffffff;
+            
+            /* Cấu hình đổ bóng (Box Shadows) */
+            --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 15px 30px rgba(0, 0, 0, 0.12);
+            --shadow-colored: 0 8px 20px rgba(231, 76, 60, 0.2);
+            
+            /* Cấu hình bo góc (Border Radius) */
+            --border-radius-sm: 8px;
+            --border-radius-md: 15px;
+            --border-radius-lg: 20px;
+            --border-radius-xl: 30px;
+            
+            /* Cấu hình hiệu ứng chuyển động (Transitions) */
+            --transition-fast: 0.2s ease-in-out;
+            --transition-normal: 0.3s ease-in-out;
+            --transition-slow: 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* ==========================================================================
+           2. THIẾT LẬP CƠ BẢN (RESET & BASE TYPOGRAPHY)
+           ========================================================================== */
+        body { 
+            background-color: var(--game-bg); 
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333333;
+            overflow-x: hidden;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Áp dụng Font chữ hiển thị chuyên biệt cho các Tiêu đề và Nút bấm */
+        h1, 
+        h2, 
+        h3, 
+        h4, 
+        h5, 
+        h6, 
+        .btn, 
+        .qa-item { 
+            font-family: 'Be Vietnam Pro', sans-serif; 
+        }
+
+        /* Ẩn thanh cuộn (Scrollbar) nhưng vẫn cho phép vuốt/scroll */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Lớp Animation (AOS - Animate On Scroll) dùng cho JS bên dưới */
+        .aos-init {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .aos-animate {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ==========================================================================
+           3. KHU VỰC BANNER CHÍNH TRÊN CÙNG (MAIN SLIDER)
+           ========================================================================== */
+        .main-banner-zone {
+            position: relative;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .banner-slider { 
+            width: 100%; 
+            border-radius: var(--border-radius-md); 
+            overflow: hidden; 
+            box-shadow: var(--shadow-md); 
+            background: #ffffff;
+            position: relative;
+            z-index: 10;
+        }
+
+        .banner-slider img { 
+            width: 100%; 
+            height: auto; 
+            object-fit: cover; 
+            aspect-ratio: 21/9; 
+            display: block;
+            transition: transform var(--transition-slow);
+        }
+
+        /* Hiệu ứng zoom nhẹ bức ảnh khi slide đó đang hiện (Active) */
+        .swiper-slide-active img {
+            transform: scale(1.02);
+        }
+
+        .swiper-pagination-bullet {
+            background: var(--game-light);
+            opacity: 0.6;
+            width: 10px;
+            height: 10px;
+            transition: width var(--transition-fast), background var(--transition-fast);
+        }
+
+        .swiper-pagination-bullet-active {
+            background: var(--game-primary);
+            opacity: 1;
+            width: 25px;
+            border-radius: 5px;
+        }
+
+        /* ==========================================================================
+           4. MENU TRUY CẬP NHANH (QUICK ACTIONS NAV)
+           ========================================================================== */
+        .qa-nav-wrapper {
+            margin-top: 30px;
+            margin-bottom: 30px;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+
+        .qa-grid { 
+            display: grid; 
+            /* Đã chuyển từ 8 xuống 7 cột do ẩn Gieo Quẻ */
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px; 
+            text-align: center; 
+        }
+
+        .qa-item { 
+            text-decoration: none; 
+            color: var(--game-dark); 
+            font-weight: 700; 
+            font-size: 13px; 
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            border-radius: var(--border-radius-md);
+        }
+
+        .qa-item:hover { 
+            transform: translateY(-5px); 
+            background: #ffffff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .qa-item:active { 
+            transform: scale(0.95); 
+        }
+
+        .qa-icon { 
+            width: 60px; 
+            height: 60px; 
+            margin-top: 0;
+            margin-right: auto;
+            margin-bottom: 10px;
+            margin-left: auto;
+            border-radius: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 26px; 
+            color: #ffffff; 
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); 
+            position: relative;
+            overflow: hidden;
+            transition: border-radius var(--transition-normal);
+        }
+
+        .qa-item:hover .qa-icon {
+            border-radius: 50%;
+        }
+
+        /* Hiệu ứng tia sáng lướt qua Icon (Shine Effect) */
+        .qa-icon::after {
+            content: '';
+            position: absolute;
+            top: -50%; 
+            left: -50%;
+            width: 200%; 
+            height: 200%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(45deg) translateY(-100%);
+            animation: shineIcon 3s infinite;
+        }
+
+        @keyframes shineIcon {
+            0% { transform: rotate(45deg) translateY(-100%); }
+            20% { transform: rotate(45deg) translateY(100%); }
+            100% { transform: rotate(45deg) translateY(100%); }
+        }
+
+        /* Cấu hình màu nền Gradient cho từng nút truy cập nhanh */
+        .qa-icon.uytin { background: linear-gradient(135deg, #00b894, #00cec9); }
+        .qa-icon.tuimu { background: linear-gradient(135deg, #f1c40f, #e67e22); color: #ffffff;}
+        .qa-icon.thueacc { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .qa-icon.san1d { background: linear-gradient(135deg, #00cec9, #00b894); }
+        .qa-icon.minigame { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .qa-icon.chungsuc { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .qa-icon.caythue { background: linear-gradient(135deg, #fd79a8, #e84393); }
+
+        /* ==========================================================================
+           5. TIÊU ĐỀ CÁC KHU VỰC (SECTION HEADERS)
+           ========================================================================== */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e1e8ed;
+            position: relative;
+        }
+
+        .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background: var(--game-primary);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--game-dark);
+            margin: 0;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--game-primary);
+        }
+
+        .btn-view-all {
+            font-size: 13px;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color var(--transition-fast), transform var(--transition-fast);
+        }
+
+        .btn-view-all:hover {
+            color: var(--game-primary);
+            transform: translateX(3px);
+        }
+
+        /* ==========================================================================
+           6. LOBBY SỰ KIỆN NỔI BẬT
+           ========================================================================== */
+        .hot-events-wrapper {
+            margin-top: 40px;
+            width: 100%;
+        }
+        
+        /* 1. Mega Banner: Check Uy Tín (Ưu tiên số 1) */
+        .mega-promo-banner.trust {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            border-radius: var(--border-radius-lg);
+            padding: 40px 30px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 184, 148, 0.3);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .mega-promo-banner.trust::before {
+            content: '\f328';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 150px;
+            opacity: 0.15;
+            transform: rotate(-15deg);
+        }
+
+        /* 2. Mega Banner: TÚI MÙ (Thay thế Gieo Quẻ) */
+        .mega-promo-banner.tuimu {
+            background: linear-gradient(135deg, #f39c12, #d35400);
+            border-radius: var(--border-radius-lg);
+            padding: 40px 30px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(211, 84, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px solid #f1c40f;
+        }
+
+        .mega-promo-banner.tuimu::before {
+            content: '\f06b'; /* Icon Hộp Quà */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: -30px;
+            left: -20px;
+            font-size: 160px;
+            opacity: 0.1;
+            transform: rotate(15deg);
+        }
+
+        /* Typography cho Mega Banner */
+        .mp-title {
+            font-size: 32px;
+            font-weight: 900;
+            margin-top: 0;
+            margin-right: 0;
+            margin-bottom: 10px;
+            margin-left: 0;
+            text-transform: uppercase;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            font-family: 'Be Vietnam Pro', serif;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .mega-promo-banner.trust .mp-title { color: #ffffff; }
+        .mega-promo-banner.tuimu .mp-title { color: #ffffff; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        .mp-desc {
+            font-size: 16px;
+            margin-top: 0;
+            margin-right: 0;
+            margin-bottom: 25px;
+            margin-left: 0;
+            font-weight: 600;
+            max-width: 650px;
+            position: relative;
+            z-index: 2;
+            line-height: 1.5;
+        }
+        
+        .btn-play-mega {
+            font-weight: 900;
+            padding: 16px 45px;
+            border-radius: var(--border-radius-xl);
+            font-size: 18px;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal), background var(--transition-normal);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-play-mega.trust-btn { 
+            background: #ffffff; 
+            color: #00b894; 
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1); 
+        }
+        
+        .btn-play-mega.tm-btn { 
+            background: #ffffff; 
+            color: #d35400; 
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15); 
+        }
+
+        .btn-play-mega:hover { 
+            transform: translateY(-3px) scale(1.05); 
+        }
+
+        /* ==========================================================================
+           7. LƯỚI DỊCH VỤ (TÚI MÙ, THUÊ ACC, SĂN 1Đ, MINIGAME, CHUNG SỨC, CÀY THUÊ)
+           ========================================================================== */
+        .services-scroll-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .svc-card {
+            background: #ffffff;
+            border-radius: var(--border-radius-md);
+            padding: 25px 20px;
+            box-shadow: var(--shadow-sm);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e1e8ed;
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+        }
+
+        .svc-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .svc-icon-wrap {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: #ffffff;
+            transition: transform var(--transition-fast);
+        }
+
+        .svc-card:hover .svc-icon-wrap {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        /* Cấu hình riêng cho từng khối dịch vụ */
+        .svc-tuimu .svc-icon-wrap { background: linear-gradient(135deg, #f1c40f, #e67e22); box-shadow: 0 5px 15px rgba(241,196,15,0.4);}
+        .svc-tuimu { border-bottom: 5px solid #f1c40f; }
+        
+        .svc-thueacc .svc-icon-wrap { background: linear-gradient(135deg, #9b59b6, #8e44ad); box-shadow: 0 5px 15px rgba(155,89,182,0.4);}
+        .svc-thueacc { border-bottom: 5px solid #9b59b6; }
+
+        .svc-san1d .svc-icon-wrap { background: linear-gradient(135deg, #00cec9, #00b894); box-shadow: 0 5px 15px rgba(0,206,201,0.4);}
+        .svc-san1d { border-bottom: 5px solid #00cec9; }
+
+        .svc-minigame .svc-icon-wrap { background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 5px 15px rgba(231,76,60,0.4);}
+        .svc-minigame { border-bottom: 5px solid #e74c3c; }
+
+        .svc-chungsuc .svc-icon-wrap { background: linear-gradient(135deg, #3498db, #2980b9); box-shadow: 0 5px 15px rgba(52,152,219,0.4);}
+        .svc-chungsuc { border-bottom: 5px solid #3498db; }
+
+        .svc-caythue .svc-icon-wrap { background: linear-gradient(135deg, #fd79a8, #e84393); box-shadow: 0 5px 15px rgba(253,121,168,0.4);}
+        .svc-caythue { border-bottom: 5px solid #fd79a8; }
+        
+        .svc-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--game-dark);
+            margin-top: 0;
+            margin-right: 0;
+            margin-bottom: 8px;
+            margin-left: 0;
+            text-transform: uppercase;
+        }
+
+        .svc-desc {
+            font-size: 13px;
+            color: #636e72;
+            margin-top: 0;
+            margin-right: 0;
+            margin-bottom: 20px;
+            margin-left: 0;
+            flex-grow: 1;
+            line-height: 1.5;
+        }
+
+        .svc-action {
+            font-size: 13px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-transform: uppercase;
+            transition: gap var(--transition-fast);
+        }
+
+        /* Phối màu cho chữ Action dựa theo Theme của thẻ */
+        .svc-tuimu .svc-action { color: #d35400; }
+        .svc-thueacc .svc-action { color: #8e44ad; }
+        .svc-san1d .svc-action { color: #00b894; }
+        .svc-minigame .svc-action { color: #c0392b; }
+        .svc-chungsuc .svc-action { color: #2980b9; }
+        .svc-caythue .svc-action { color: #e84393; }
+        
+        .svc-card:hover .svc-action { 
+            gap: 10px; /* Hiệu ứng đẩy mũi tên ra xa khi hover */
+        }
+
+        /* Dấu mác HOT góc phải */
+        .tag-hot-corner {
+            position: absolute;
+            top: 15px;
+            right: -30px;
+            background: #e74c3c;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 5px 40px;
+            transform: rotate(45deg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+            z-index: 5;
+        }
+
+        /* ==========================================================================
+           8. SẢNH KHO TÀI KHOẢN (CAROUSEL VUỐT NGANG)
+           ========================================================================== */
+        .account-showcase-zone {
+            margin-top: 50px;
+            background: linear-gradient(to bottom, #ffffff, var(--game-bg));
+            padding: 30px 20px;
+            border-radius: var(--border-radius-lg);
+            border: 1px solid #e1e8ed;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .acc-slider-container { 
+            width: 100%; 
+            padding-top: 10px; 
+            padding-bottom: 30px; /* Để shadow không bị cắt */
+            overflow: hidden; 
+        }
+        
+        .acc-slide-card {
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #f1f2f6;
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .acc-slide-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: var(--shadow-lg); 
+            border-color: var(--game-primary); 
+        }
+        
+        .acc-thumb { 
+            position: relative; 
+            width: 100%; 
+            padding-top: 56.25%; /* Tỉ lệ 16:9 cho ảnh Acc */
+            overflow: hidden; 
+        }
+
+        .acc-thumb img { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transition: transform 0.5s ease-in-out; 
+        }
+
+        .acc-slide-card:hover .acc-thumb img { 
+            transform: scale(1.1); 
+        }
+
+        .acc-tag-new { 
+            position: absolute; 
+            top: 8px; 
+            left: 8px; 
+            background: #e74c3c; 
+            color: #ffffff; 
+            font-size: 10px; 
+            font-weight: 900; 
+            padding: 3px 8px; 
+            border-radius: 4px; 
+            z-index: 2; 
+        }
+        
+        .acc-info { 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            flex-grow: 1; 
+        }
+
+        .acc-name { 
+            font-size: 14px; 
+            font-weight: 700; 
+            color: var(--game-dark); 
+            margin-top: 0; 
+            margin-bottom: 10px; 
+            line-height: 1.4; 
+            height: 40px; 
+            overflow: hidden; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+        }
+
+        .acc-ms { 
+            font-size: 11px; 
+            color: #7f8c8d; 
+            margin-bottom: 10px; 
+            padding-bottom: 10px; 
+            border-bottom: 1px dashed #eeeeee; 
+        }
+
+        .acc-price-box { 
+            display: flex; 
+            flex-direction: column; 
+            margin-bottom: 15px; 
+            margin-top: auto; 
+        }
+
+        .acc-price-old { 
+            font-size: 12px; 
+            color: #95a5a6; 
+            text-decoration: line-through; 
+        }
+
+        .acc-price-new { 
+            font-size: 18px; 
+            font-weight: 900; 
+            color: var(--game-primary); 
+        }
+
+        .btn-view-acc { 
+            display: block; 
+            width: 100%; 
+            text-align: center; 
+            background: #f8f9fa; 
+            color: var(--game-primary); 
+            border: 1px solid var(--game-primary); 
+            font-size: 12px; 
+            font-weight: 800; 
+            padding: 10px 0; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            transition: background var(--transition-fast), color var(--transition-fast); 
+            text-transform: uppercase; 
+        }
+
+        .btn-view-acc:hover { 
+            background: var(--game-primary); 
+            color: #ffffff; 
+        }
+
+        .btn-massive-store {
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+            width: max-content; 
+            margin: 20px auto 0; 
+            padding: 16px 40px;
+            background: var(--game-dark); 
+            color: #ffffff; 
+            font-size: 14px; 
+            font-weight: 900;
+            text-transform: uppercase; 
+            border-radius: 50px; 
+            text-decoration: none;
+            box-shadow: 0 5px 20px rgba(45, 52, 54, 0.4); 
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal), background var(--transition-normal);
+        }
+
+        .btn-massive-store:hover { 
+            transform: translateY(-3px); 
+            background: #1a1e21; 
+            box-shadow: 0 10px 25px rgba(45, 52, 54, 0.6); 
+        }
+
+        /* ==========================================================================
+           9. KHU VỰC NẠP THẺ TỰ ĐỘNG
+           ========================================================================== */
+        .recharge-zone { 
+            margin-top: 50px; 
+        }
+
+        .recharge-wrapper { 
+            background: #ffffff; 
+            padding: 25px; 
+            border-radius: var(--border-radius-lg); 
+            box-shadow: var(--shadow-sm); 
+            border: 1px solid #e1e8ed; 
+        }
+
+        /* ==========================================================================
+           10. KHU VỰC TIN TỨC & CẨM NANG
+           ========================================================================== */
+        .news-zone { 
+            margin-top: 50px; 
+            margin-bottom: 40px; 
+        }
+
+        .news-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1.2fr; 
+            gap: 20px; 
+        }
+        
+        .news-hot-card { 
+            display: block; 
+            position: relative; 
+            border-radius: var(--border-radius-md); 
+            overflow: hidden; 
+            text-decoration: none; 
+            height: 100%; 
+            min-height: 280px; 
+            box-shadow: var(--shadow-sm); 
+        }
+
+        .news-hot-card img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            transition: transform 0.5s ease-in-out; 
+        }
+
+        .news-hot-card:hover img { 
+            transform: scale(1.05); 
+        }
+
+        .news-hot-overlay { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background: linear-gradient(transparent, rgba(0,0,0,0.9)); 
+            padding: 40px 20px 20px 20px; 
+            color: #ffffff; 
+        }
+
+        .news-tag-hot { 
+            background: var(--game-primary); 
+            font-size: 10px; 
+            padding: 4px 12px; 
+            border-radius: 4px; 
+            text-transform: uppercase; 
+            font-weight: 800; 
+        }
+
+        .news-hot-title { 
+            font-size: 18px; 
+            margin-top: 10px; 
+            margin-bottom: 0; 
+            line-height: 1.4; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
+            font-weight: 800; 
+        }
+
+        .news-list-wrap { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
+
+        .news-mini-card { 
+            display: flex; 
+            gap: 15px; 
+            text-decoration: none; 
+            background: #ffffff; 
+            padding: 12px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
+            border: 1px solid #f1f2f6; 
+            transition: transform var(--transition-fast), border-color var(--transition-fast); 
+        }
+
+        .news-mini-card:hover { 
+            border-color: var(--game-cyan); 
+            transform: translateX(5px); 
+        }
+
+        .news-mini-img { 
+            width: 110px; 
+            height: 80px; 
+            border-radius: 8px; 
+            object-fit: cover; 
+        }
+
+        .news-mini-content { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+        }
+
+        .news-mini-title { 
+            font-size: 14px; 
+            color: var(--game-dark); 
+            margin-bottom: 8px; 
+            line-height: 1.4; 
+            font-weight: 700; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            overflow: hidden; 
+        }
+
+        .news-mini-meta { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 11px; 
+            color: #95a5a6; 
+            font-weight: 600; 
+        }
+
+        /* ==========================================================================
+           11. KHU VỰC SEO BÀI BẢN VÀ SCHEMA
+           ========================================================================== */
+        .seo-content { 
+            background: #ffffff; 
+            padding: 30px; 
+            border-radius: var(--border-radius-md); 
+            margin-top: 50px; 
+            font-size: 13px; 
+            color: #555555; 
+            line-height: 1.8; 
+            box-shadow: var(--shadow-sm); 
+            border: 1px dashed #cccccc; 
+        }
+
+        .seo-content h1 { 
+            font-size: 18px; 
+            color: var(--game-primary); 
+            margin-bottom: 12px; 
+            text-transform: uppercase; 
+            font-weight: 900;
+        }
+
+        .seo-content h2, 
+        .seo-content h3 { 
+            font-size: 15px; 
+            color: var(--game-dark); 
+            margin-top: 20px; 
+            margin-bottom: 8px; 
+            font-weight: 800;
+        }
+
+        .seo-content p {
+            margin-bottom: 15px;
+        }
+
+        .seo-content strong { 
+            color: #d35400; 
+            font-weight: 700;
+        }
+
+        /* ==========================================================================
+           12. MEDIA QUERIES - THIẾT KẾ ĐỘC QUYỀN CHO MOBILE (BỐ CỤC 2 CỘT CHUẨN)
+           ========================================================================== */
+        @media (max-width: 992px) {
+            .qa-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 10px; 
+            }
+            .news-grid { 
+                grid-template-columns: 1fr; 
+            }
+            .news-hot-card { 
+                min-height: 220px; 
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* 1. Rút gọn Banner Chính */
+            .banner-slider { 
+                border-radius: 10px; 
+                margin-top: 10px; 
+            }
+            
+            /* 2. Menu Truy Cập Nhanh thành vuốt ngang */
+            .qa-nav-wrapper { 
+                margin: 20px -15px; 
+                padding: 0 15px; 
+            }
+            .qa-grid { 
+                display: flex; 
+                overflow-x: auto; 
+                scroll-snap-type: x mandatory; 
+                padding-bottom: 15px; 
+                gap: 5px; 
+            }
+            .qa-item { 
+                flex: 0 0 22%; /* Hiển thị 4.5 item để user biết có thể vuốt */
+                scroll-snap-align: start; 
+                padding: 5px; 
+            }
+            .qa-icon { 
+                width: 50px; 
+                height: 50px; 
+                font-size: 20px; 
+                border-radius: 14px;
+            }
+            .qa-item span { 
+                font-size: 11px; 
+                white-space: nowrap; 
+            }
+
+            /* 3. ĐIỀU CHỈNH LƯỚI DỊCH VỤ THÀNH 2 CỘT DỌC ĐỂ CHỐNG DÀI TRANG */
+            .services-scroll-container {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important; /* HIỂN THỊ 2 CỘT MỖI HÀNG */
+                gap: 12px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            
+            .svc-card { 
+                flex: none !important;
+                padding: 15px 10px !important; 
+                text-align: center !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            
+            .svc-icon-wrap {
+                width: 45px !important;
+                height: 45px !important;
+                font-size: 20px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .svc-title {
+                font-size: 13px !important;
+                margin-bottom: 5px !important;
+            }
+
+            .svc-desc {
+                font-size: 11px !important;
+                margin-bottom: 10px !important;
+                display: -webkit-box;
+                -webkit-line-clamp: 2; /* Chỉ hiện 2 dòng mô tả */
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            .svc-action {
+                font-size: 11px !important;
+                flex-direction: column !important;
+                gap: 3px !important;
+                margin-top: auto;
+            }
+
+            .tag-hot-corner {
+                top: 8px;
+                right: -25px;
+                padding: 3px 25px;
+                font-size: 9px;
+            }
+            
+            /* Điều chỉnh Mega Banner cho vừa Mobile */
+            .mp-title { 
+                font-size: 22px; 
+            }
+            .btn-play-mega { 
+                padding: 12px 25px; 
+                font-size: 14px; 
+            }
+
+            /* 4. Kho Acc Showcase tối ưu cho Mobile */
+            .account-showcase-zone { 
+                padding: 20px 15px; 
+            }
+            .btn-massive-store { 
+                width: 100%; 
+                justify-content: center; 
+                padding: 14px 20px; 
+            }
+
+            .section-title { 
+                font-size: 18px; 
+            }
+            .recharge-wrapper { 
+                padding: 15px; 
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <%- include('../../includes/ui-common') %>
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container">
+        
+        <div class="main-banner-zone aos-init">
+            <div class="swiper banner-slider">
+                <div class="swiper-wrapper">
+                    <% if(typeof banners !== 'undefined' && banners.length > 0) { %>
+                        <% banners.forEach(b => { %>
+                            <div class="swiper-slide">
+                                <a href="<%= b.link %>">
+                                    <img src="<%= b.image_url %>" alt="Banner Khuyến Mãi ShopLienQuan">
+                                </a>
+                            </div>
+                        <% }) %>
+                    <% } %>
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+        </div>
+
+        <div class="qa-nav-wrapper aos-init">
+            <nav class="qa-grid hide-scrollbar" aria-label="Menu Truy Cập Nhanh">
+                <a href="/check-uy-tin" class="qa-item"><div class="qa-icon uytin"><i class="fa-solid fa-shield-halved"></i></div><span>Uy Tín</span></a>
+                <a href="/tui-mu" class="qa-item"><div class="qa-icon tuimu"><i class="fa-solid fa-gift"></i></div><span>Túi Mù</span></a>
+                <a href="/thue-acc" class="qa-item"><div class="qa-icon thueacc"><i class="fa-solid fa-clock"></i></div><span>Thuê Acc</span></a>
+                <a href="/san-acc-1d" class="qa-item"><div class="qa-icon san1d"><i class="fa-solid fa-bolt"></i></div><span>Săn Nick 1Đ</span></a>
+                <a href="/minigame" class="qa-item"><div class="qa-icon minigame"><i class="fa-solid fa-rotate"></i></div><span>Vòng Quay</span></a>
+                <a href="/chung-suc" class="qa-item"><div class="qa-icon chungsuc"><i class="fa-solid fa-people-group"></i></div><span>Chung Sức</span></a>
+                <a href="/cay-thue" class="qa-item"><div class="qa-icon caythue"><i class="fa-solid fa-khanda"></i></div><span>Cày Thuê</span></a>
+            </nav>
+        </div>
+
+        <section class="hot-events-wrapper">
+            <div class="section-header aos-init">
+                <h2 class="section-title"><i class="fa-solid fa-fire"></i> SỰ KIỆN HOT TRONG TUẦN</h2>
+            </div>
+            
+            <div class="mega-promo-banner trust aos-init">
+                <h3 class="mp-title"><i class="fa-solid fa-shield-halved"></i> GIAO DỊCH UY TÍN 100%</h3>
+                <p class="mp-desc">Hàng ngàn giao dịch thành công mỗi ngày. Check lịch sử nạp thẻ và mua acc minh bạch, công khai để anh em yên tâm giao dịch.</p>
+                <a href="/check-uy-tin" class="btn-play-mega trust-btn">
+                    XEM BẰNG CHỨNG GIAO DỊCH <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="mega-promo-banner tuimu aos-init">
+                <h3 class="mp-title"><i class="fa-solid fa-gift"></i> ĐẠI TIỆC TÚI MÙ GACHA</h3>
+                <p class="mp-desc">Chỉ từ 9.000đ - Mở ra Acc Liên Quân Siêu VIP. Cơ hội trúng Skin SSS, nick Thách Đấu với tỷ lệ cực cao. Xé túi thử nhân phẩm ngay!</p>
+                <a href="/tui-mu" class="btn-play-mega tm-btn">
+                    XÉ TÚI MÙ NGAY <i class="fa-solid fa-box-open"></i>
+                </a>
+            </div>
+
+            <div class="services-scroll-container hide-scrollbar aos-init">
+                
+                <a href="/tui-mu" class="svc-card svc-tuimu">
+                    <div class="tag-hot-corner">HOT</div>
+                    <div class="svc-icon-wrap"><i class="fa-solid fa-gift"></i></div>
+                    <h4 class="svc-title">Túi Mù Gacha</h4>
+                    <p class="svc-desc">Chỉ từ 9k/túi. Mở ra Acc Liên Quân VIP, thử thách nhân phẩm.</p>
+                    <span class="svc-action">Xé Túi Ngay <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+
+                <a href="/thue-acc" class="svc-card svc-thueacc">
+                    <div class="svc-icon-wrap"><i class="fa-solid fa-clock"></i></div>
+                    <h4 class="svc-title">Thuê Acc Rẻ</h4>
+                    <p class="svc-desc">Trải nghiệm Skin SSS siêu hiếm, nick Thách Đấu từ 5.000đ.</p>
+                    <span class="svc-action">Thuê Acc Ngay <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+
+                <a href="/san-acc-1d" class="svc-card svc-san1d">
+                    <div class="svc-icon-wrap"><i class="fa-solid fa-bolt"></i></div>
+                    <h4 class="svc-title">Săn Acc 1 Đồng</h4>
+                    <p class="svc-desc">Flashsale khung giờ vàng. Canh đúng giờ rước ngay siêu phẩm 1đ.</p>
+                    <span class="svc-action">Đến Khu Săn <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+
+                <a href="/minigame" class="svc-card svc-minigame">
+                    <div class="svc-icon-wrap"><i class="fa-solid fa-rotate"></i></div>
+                    <h4 class="svc-title">Vòng Quay Game</h4>
+                    <p class="svc-desc">Thử tài vòng quay chỉ với vài nghìn đồng, trúng nick xịn.</p>
+                    <span class="svc-action">Quay Ngay <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+
+                <a href="/chung-suc" class="svc-card svc-chungsuc">
+                    <div class="svc-icon-wrap"><i class="fa-solid fa-people-group"></i></div>
+                    <h4 class="svc-title">Sảnh Chung Sức</h4>
+                    <p class="svc-desc">Thu thập đủ mảnh ghép nhận ngay Skin SSS Hữu hạn cực cháy.</p>
+                    <span class="svc-action">Lật Thẻ Ngay <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+
+                <a href="/cay-thue" class="svc-card svc-caythue">
+                    <div class="svc-icon-wrap"><i class="fa-solid fa-khanda"></i></div>
+                    <h4 class="svc-title">Cày Thuê Rank</h4>
+                    <p class="svc-desc">Thách đấu gánh tạ, bảo mật tuyệt đối, hoàn thành siêu tốc.</p>
+                    <span class="svc-action">Đặt Đơn Ngay <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+
+            </div>
+        </section>
+
+        <section class="account-showcase-zone aos-init" id="shop-acc">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-store"></i> TÀI KHOẢN VIP VỪA LÊN KỆ</h2>
+                <a href="/tai-khoan" class="btn-view-all">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+            </div>
+
+            <div class="swiper acc-slider-container">
+                <div class="swiper-wrapper">
+                    <% if (typeof products !== 'undefined' && products.length > 0) { %>
+                        <% products.slice(0, 10).forEach(function(product) { %>
+                            <div class="swiper-slide">
+                                <article class="acc-slide-card">
+                                    <div class="acc-thumb">
+                                        <div class="acc-tag-new">MỚI</div>
+                                        <a href="/chi-tiet/<%= product.slug %>" title="<%= product.title %>">
+                                            <img src="<%= product.image_url %>" alt="<%= product.title %>" loading="lazy">
+                                        </a>
+                                    </div>
+                                    <div class="acc-info">
+                                        <a href="/chi-tiet/<%= product.slug %>" style="text-decoration:none;">
+                                            <h3 class="acc-name"><%= product.title %></h3>
+                                        </a>
+                                        <div class="acc-ms">Mã Số: <b>#<%= product.id %></b></div>
+                                        
+                                        <div class="acc-price-box">
+                                            <% if (product.price_old > product.price_new) { %>
+                                                <span class="acc-price-old"><%= new Intl.NumberFormat('vi-VN').format(product.price_old) %>đ</span>
+                                            <% } %>
+                                            <span class="acc-price-new"><%= new Intl.NumberFormat('vi-VN').format(product.price_new) %>đ</span>
+                                        </div>
+                                        
+                                        <a href="/chi-tiet/<%= product.slug %>" class="btn-view-acc">
+                                            XEM CHI TIẾT
+                                        </a>
+                                    </div>
+                                </article>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="swiper-slide" style="width:100%; text-align:center; padding:40px; color:#95a5a6;">
+                            <i class="fa-solid fa-ghost" style="font-size:40px; margin-bottom:10px;"></i>
+                            <p>Kho Acc đang tạm trống, sếp quay lại sau nhé!</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <a href="/tai-khoan" class="btn-massive-store">
+                ĐI TỚI KHO HÀNG NGÀN ACC <i class="fa-solid fa-arrow-right-long"></i>
+            </a>
+        </section>
+
+        <section class="recharge-zone aos-init" id="nap-the">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-wallet" style="color:#2ecc71"></i> NẠP THẺ / NẠP ATM TỰ ĐỘNG</h2>
+            </div>
+            <div class="recharge-wrapper">
+                 <%- include('../../includes/partials/recharge-form') %> 
+            </div>
+        </section>
+
+        <section class="news-zone aos-init">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-newspaper" style="color:#e67e22"></i> TIN TỨC & CẨM NANG</h2>
+                <a href="/tin-tuc" class="btn-view-all">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+            </div>
+
+            <div class="news-grid">
+                <% if (typeof popularArticles !== 'undefined' && popularArticles.length > 0) { %>
+                    <article>
+                        <a href="/tin-tuc/<%= popularArticles[0].slug %>" title="<%= popularArticles[0].title %>" class="news-hot-card">
+                            <img src="<%= popularArticles[0].thumbnail %>" alt="<%= popularArticles[0].title %>" loading="lazy">
+                            <div class="news-hot-overlay">
+                                <span class="news-tag-hot">Đáng chú ý</span>
+                                <h3 class="news-hot-title"><%= popularArticles[0].title %></h3>
+                            </div>
+                        </a>
+                    </article>
+                <% } %>
+
+                <div class="news-list-wrap">
+                    <% if (typeof latestArticles !== 'undefined') { %>
+                        <% latestArticles.forEach(function(article) { %>
+                            <article>
+                                <a href="/tin-tuc/<%= article.slug %>" title="<%= article.title %>" class="news-mini-card">
+                                    <img src="<%= article.thumbnail %>" alt="<%= article.title %>" loading="lazy" class="news-mini-img">
+                                    <div class="news-mini-content">
+                                        <h3 class="news-mini-title"><%= article.title %></h3>
+                                        <div class="news-mini-meta">
+                                            <span><i class="fa-regular fa-clock"></i> <%= new Date(article.created_at).toLocaleDateString('vi-VN') %></span>
+                                            <span><i class="fa-solid fa-fire" style="color:var(--game-primary);"></i> <%= article.views %></span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </article>
+                        <% }); %>
+                    <% } %>
+                </div>
+            </div>
+        </section>
+
+        <article class="seo-content aos-init">
+            <h1>Shop Acc Liên Quân - Túi Mù & Các Dịch Vụ Cày Thuê, Thuê Acc VIP Giá Rẻ</h1>
+            <p>Chào mừng bạn đến với hệ thống <strong>Shop Acc Liên Quân</strong> tự động uy tín hàng đầu. Tại đây, chúng tôi mang đến cho bạn không chỉ là một nơi để mua tài khoản game, mà còn là một tổ hợp vũ trụ giải trí cực kỳ hấp dẫn. Nếu bạn thích trải nghiệm cảm giác mạnh, hãy tham gia ngay <strong>vòng quay túi mù liên quân</strong> với tỷ lệ trúng thưởng cực cao, hoặc thử vận may với <strong>sự kiện chung sức liên quân</strong> lật thẻ trúng skin SS.</p>
+            
+            <h2>Dịch Vụ Thuê Acc và Cày Thuê Rank Liên Quân Chuyên Nghiệp</h2>
+            <p>Shop cung cấp dịch vụ <strong>Thuê Acc Liên Quân theo giờ</strong> giúp bạn trải nghiệm hàng loạt các skin bậc SSS, Tuyệt Sắc hiếm có (như Nakroth Thứ Nguyên Vệ Thần, Raz Muay Thái) chỉ với vài ngàn đồng. Bên cạnh đó, đội ngũ Thách Đấu của chúng tôi nhận <strong>Cày Thuê Rank Liên Quân</strong> siêu tốc, cam kết 100% cày tay, không sử dụng hack/mod, bảo mật tuyệt đối cho tài khoản của bạn.</p>
+            
+            <h3>Sự kiện Săn Acc 1đ và Nạp Thẻ Garena Chiết Khấu Cao</h3>
+            <p>Đừng bỏ lỡ cơ hội <strong>săn acc liên quân 1đ</strong> tại shop. Chỉ với 1 VNĐ, bạn có cơ hội rước ngay tài khoản có Flo Tinh Hệ hay Ngộ Không Nhóc Tì. Đặc biệt, hệ thống <strong>bán thẻ garena giá rẻ</strong>, nạp tiền tự động bằng thẻ cào điện thoại hoặc ATM/Momo hoạt động 24/7 giúp bạn có ngay số dư để mua sắm chỉ trong vòng 3 giây.</p>
+        </article>
+
+    </main>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/modals') %>
+    <%- include('../../includes/scripts') %>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Khởi tạo Slider cho Banner Chính Trên Cùng
+            const mainSwiper = new Swiper('.banner-slider', {
+                loop: true,
+                autoplay: { 
+                    delay: 4000, 
+                    disableOnInteraction: false 
+                },
+                pagination: { 
+                    el: '.swiper-pagination', 
+                    clickable: true 
+                },
+                effect: 'fade', 
+                fadeEffect: { crossFade: true }
+            });
+
+            // 2. Khởi tạo Slider cho Kho Tài Khoản ngang
+            const accSwiper = new Swiper('.acc-slider-container', {
+                slidesPerView: 2, /* Trên điện thoại hiện 2 card dọc */
+                spaceBetween: 15,
+                freeMode: true, /* Cho phép vuốt tự do, mượt mà */
+                breakpoints: {
+                    768: {
+                        slidesPerView: 3,
+                        spaceBetween: 20,
+                    },
+                    1024: {
+                        slidesPerView: 4,
+                        spaceBetween: 20,
+                        freeMode: false,
+                        navigation: true, 
+                    }
+                }
+            });
+
+            // 3. Khởi tạo hiệu ứng Fade-in Scroll (Tạo cảm giác App cao cấp)
+            const aosElements = document.querySelectorAll('.aos-init');
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1 // Hiện lên khi phần tử lộ diện 10%
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('aos-animate');
+                        // Có thể bỏ theo dõi sau khi đã hiện để tối ưu hiệu năng
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            aosElements.forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+
+</body>
+</html>

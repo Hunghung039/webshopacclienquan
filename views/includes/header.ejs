@@ -1,0 +1,101 @@
+<div class="marquee-top">
+    <div class="container">
+        <marquee behavior="scroll" direction="left">
+            🧧 SHOP LIÊN QUÂN UY TÍN 2026: SĂN ACC 1Đ KHUNG GIỜ VÀNG - TÚI MÙ 100% TRÚNG NICK VIP 🧧 
+            &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; 
+            🔥 BÁN THẺ GARENA, VIETTEL CHIẾT KHẤU SIÊU CAO - GIAO DỊCH TỰ ĐỘNG 24/7 🔥
+        </marquee>
+    </div>
+</div>
+
+<header class="header">
+    <div class="container header-content">
+        <a href="/" class="logo">
+            SHOP <span class="logo-accent">LIÊN QUÂN</span>
+        </a>
+
+        <nav class="nav-desktop">
+            <a href="/" class="nav-item active">Trang Chủ</a>
+
+            <div class="nav-item has-dropdown">
+                <a href="/tai-khoan">Kho Tài Khoản <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="/tai-khoan?category=lienquan"><i class="fa-solid fa-gamepad" style="color: #3498db;"></i> Nick Liên Quân Mobile</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-item has-dropdown">
+                <a href="#" style="color: #e14eca; font-weight: 800;">Giải Trí & Gacha <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="/tui-mu"><i class="fa-solid fa-gift" style="color: #e14eca;"></i> Phiên Chợ Túi Mù</a></li>
+                    <li><a href="/san-acc-1d"><i class="fa-solid fa-bolt" style="color: #f1c40f;"></i> Săn Acc 1đ (Flash Sale)</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-item has-dropdown">
+                <a href="#" style="color: #f39c12; font-weight: 800;">Dịch Vụ Game <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="/ghep-doi"><i class="fa-solid fa-satellite-dish" style="color: #00f2c3;"></i> Trạm Ghép Đội LFG 
+                            <span style="background: #e74c3c; color: #fff; font-size: 9px; padding: 2px 5px; border-radius: 4px; margin-left: 5px; font-weight: bold; animation: pulse 1s infinite;">HOT</span>
+                        </a>
+                    </li>
+                    <li><a href="/kho-vip"><i class="fa-solid fa-crown" style="color: #f1c40f;"></i> Kho Đổi Nick VIP</a></li>
+                    <hr style="border: 0.5px solid #eee; margin: 5px 10px;">
+                    <li><a href="/mua-the"><i class="fa-solid fa-credit-card" style="color: #2ecc71;"></i> Mua Thẻ Giá Rẻ</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-item has-dropdown">
+                <a href="/tin-tuc">Cẩm Nang <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="/tin-tuc?category=tin-tuc"><i class="fa-solid fa-newspaper"></i> Tin Tức Trò Chơi</a></li>
+                    <li><a href="/tin-tuc?category=huong-dan"><i class="fa-solid fa-book-open"></i> Hướng Dẫn Mua Hàng</a></li>
+                </ul>
+            </div>
+
+            <a href="/check-uy-tin" class="nav-item" style="color: #00f2c3; font-weight: 900;">
+                <i class="fa-solid fa-shield-halved"></i> Check Uy Tín
+            </a>
+
+            <a href="https://zalo.me/<%= typeof settings !== 'undefined' ? settings.admin_zalo : '' %>" target="_blank" class="nav-item">
+                <i class="fa-brands fa-rocketchat" style="color: #0068ff;"></i> Hỗ Trợ
+            </a>
+        </nav>
+
+        <div class="header-actions">
+            <% if (typeof user !== 'undefined' && user) { %>
+                <div class="nav-item has-dropdown">
+                    <a href="/user/profile" class="btn btn-secondary" style="display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-user-astronaut"></i> 
+                        <span style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= user.username %></span>
+                    </a>
+                    
+                    <ul class="dropdown-menu dropdown-right">
+                        <li><a href="/user/profile"><i class="fa-solid fa-address-card"></i> Thông tin tài khoản</a></li>
+                        <li><a href="/tu-do" style="color: #e14eca; font-weight: bold;"><i class="fa-solid fa-backpack"></i> Tủ Đồ Của Bạn</a></li>
+                        
+                        <% if(user.role === 'admin') { %>
+                            <hr style="border: 0.5px solid #eee; margin: 5px 10px;">
+                            <li><a href="/admin" style="color: var(--primary); font-weight: bold;"><i class="fa-solid fa-user-shield"></i> Trang Quản Trị</a></li>
+                        <% } %>
+                        
+                        <hr style="border: 0.5px solid #eee; margin: 5px 10px;">
+                        <li><a href="/auth/logout" style="color: var(--danger);"><i class="fa-solid fa-power-off"></i> Đăng xuất</a></li>
+                    </ul>
+                </div>
+            <% } else { %>
+                <a href="/auth/login" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập</a>
+            <% } %>
+        </div>
+    </div>
+</header>
+
+<style>
+    /* Thêm CSS cho hiệu ứng nhấp nháy chữ HOT của Trạm Ghép Đội */
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>

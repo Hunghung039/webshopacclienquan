@@ -1,0 +1,115 @@
+<style>
+    /* Vùng chứa thông báo: Nằm cố định góc phải trên */
+    #toast-wrapper {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 99999; /* Luôn nổi trên cùng */
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none; /* Để click xuyên qua vùng trống */
+    }
+
+    /* Bản thân mỗi thông báo */
+    .toast-msg {
+        background: #fff;
+        min-width: 300px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        animation: slideInRight 0.4s ease forwards;
+        border-left: 5px solid #ccc;
+        pointer-events: auto; /* Để click đóng được */
+        opacity: 0; transform: translateX(100%);
+    }
+
+    /* Màu sắc theo loại */
+    .toast-msg.success { border-left-color: #00b894; }
+    .toast-msg.success i { color: #00b894; }
+
+    .toast-msg.error { border-left-color: #e74c3c; }
+    .toast-msg.error i { color: #e74c3c; }
+
+    .toast-msg.warning { border-left-color: #f1c40f; }
+    .toast-msg.warning i { color: #f1c40f; }
+
+    .toast-content { display: flex; flex-direction: column; }
+    .toast-title { font-weight: 700; font-size: 14px; color: #333; }
+    .toast-desc { font-size: 13px; color: #666; margin-top: 3px; }
+
+    @keyframes slideInRight {
+        to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeOutRight {
+        to { opacity: 0; transform: translateX(100%); }
+    }
+</style>
+
+<div id="toast-wrapper"></div>
+
+<script>
+    // 1. Hàm tạo HTML cho Thông báo (Dùng chung cho toàn web)
+    function showToast(msg, type = 'success') {
+        const wrapper = document.getElementById('toast-wrapper');
+        if (!wrapper) return; // Tránh lỗi nếu chưa load xong DOM
+
+        const toast = document.createElement('div');
+        toast.className = `toast-msg ${type}`;
+        
+        let icon = 'fa-check-circle';
+        let title = 'Thành công';
+        
+        if (type === 'error') { icon = 'fa-circle-xmark'; title = 'Thất bại'; }
+        if (type === 'warning') { icon = 'fa-triangle-exclamation'; title = 'Cảnh báo'; }
+
+        // Đổ dữ liệu vào khung UI của bạn
+        toast.innerHTML = `
+            <i class="fa-solid ${icon}" style="font-size: 24px;"></i>
+            <div class="toast-content">
+                <span class="toast-title">${title}</span>
+                <span class="toast-desc">${msg}</span>
+            </div>
+        `;
+
+        wrapper.appendChild(toast);
+
+        // Tự động cho thông báo bay ra ngoài sau 3.5 giây
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.4s forwards';
+            setTimeout(() => { toast.remove(); }, 400); // Đợi animation xong rồi xóa
+        }, 3500);
+    }
+
+    // 2. TỰ ĐỘNG BẮT THÔNG BÁO TỪ SERVER (THÔNG QUA CONNECT-FLASH)
+    // Code backend của bạn có dùng req.flash('success_msg') hoặc 'error_msg'
+    <% if (typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+        showToast('<%= success_msg %>', 'success');
+    <% } %>
+
+    <% if (typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+        showToast('<%= error_msg %>', 'error');
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error.length > 0) { %>
+        showToast('<%= error %>', 'error'); // Biến error mặc định của Passport.js
+    <% } %>
+
+    // 3. TỰ ĐỘNG BẮT THÔNG BÁO TỪ ĐƯỜNG DẪN URL (?message=...&type=...)
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        const type = urlParams.get('type') || 'success';
+
+        if (message) {
+            showToast(message, type);
+            
+            // Xóa đoạn ?message=... trên thanh địa chỉ cho URL sạch đẹp chuẩn SEO
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+        }
+    });
+</script>

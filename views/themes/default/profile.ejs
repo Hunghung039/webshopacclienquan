@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <%- include('../../includes/head', locals) %>
+    <style>
+        /* CSS PROFILE PRO */
+        .profile-header {
+            background: #fff;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .user-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); padding: 3px; }
+        .user-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .user-info h2 { margin: 0; color: #2d3436; font-size: 24px; }
+        .vip-badge { background: linear-gradient(45deg, #f1c40f, #e67e22); color: #fff; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .money-box { margin-left: auto; text-align: right; }
+        .money-val { font-size: 24px; font-weight: 900; color: #e74c3c; }
+
+        /* TABS NAVIGATION */
+        .profile-tabs { display: flex; gap: 10px; margin-top: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn {
+            background: #fff; border: 1px solid #ddd; padding: 10px 20px;
+            border-radius: 30px; cursor: pointer; font-weight: 600; color: #636e72;
+            transition: 0.3s; white-space: nowrap;
+        }
+        .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 5px 15px rgba(142, 68, 173, 0.3); }
+        .tab-btn:hover { transform: translateY(-2px); }
+
+        /* TAB CONTENT */
+        .tab-pane { display: none; animation: fadeIn 0.4s; }
+        .tab-pane.active { display: block; }
+        
+        .history-card { background: #fff; border-radius: 12px; padding: 20px; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+
+        /* TABLES */
+        .c-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .c-table th { text-align: left; color: #999; padding: 15px 10px; border-bottom: 1px solid #eee; font-size: 12px; text-transform: uppercase; }
+        .c-table td { padding: 15px 10px; border-bottom: 1px solid #f9f9f9; vertical-align: middle; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .st-success { background: #e3f9e5; color: #2ecc71; }
+        .st-pending { background: #fff8e1; color: #f1c40f; }
+        .st-failed { background: #ffebee; color: #e74c3c; }
+        .st-process { background: #e3f2fd; color: #3498db; }
+
+        /* Copy Button */
+        .btn-copy { background: #eee; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .btn-copy:hover { background: #ddd; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media(max-width: 768px) { 
+            .profile-header { flex-direction: column; text-align: center; } 
+            .money-box { margin: 0; text-align: center; }
+            .c-table th, .c-table td { padding: 10px 5px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <%- include('../../includes/header') %>
+    <%- include('../../includes/mobile-nav') %>
+
+    <main class="container">
+        
+        <div class="profile-header">
+            <div class="user-avatar">
+                <img src="/images/default-avatar.png" alt="Avatar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+            </div>
+            <div class="user-info">
+                <h2><%= user.username %> <span class="vip-badge">VIP <%= vipLevel %></span></h2>
+                <p style="color: #636e72; margin-top: 5px; font-size: 14px;"><%= user.email || 'Chưa cập nhật email' %></p>
+                
+                <a href="/auth/logout" style="display: inline-block; margin-top: 15px; padding: 8px 20px; background: #ffeaa7; color: #d35400; border-radius: 20px; font-weight: bold; text-decoration: none; font-size: 13px; transition: 0.3s;" onmouseover="this.style.background='#fdcb6e'" onmouseout="this.style.background='#ffeaa7'">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất
+                </a>
+                <% if (user.role === 'admin') { %>
+                    <a href="/admin" class="btn-profile-action admin-btn" style="display: inline-block; margin-top: 15px; padding: 8px 20px; background: #e74c3c; color: #fff; border-radius: 20px; font-weight: bold; text-decoration: none; font-size: 13px; margin-left: 10px;">
+                        <i class="fa-solid fa-user-shield"></i> Trang Quản Trị
+                    </a>
+                <% } %>
+            </div>
+            <div class="money-box">
+                <div style="color: #636e72; font-size: 13px; font-weight: bold;">SỐ DƯ TÀI KHOẢN</div>
+                <div class="money-val"><%= new Intl.NumberFormat('vi-VN').format(user.money) %>đ</div>
+                <a href="/#nap-the" class="btn-deposit" style="display: inline-block; margin-top: 10px; padding: 8px 20px; background: #00f2c3; color: #000; border-radius: 20px; font-weight: bold; text-decoration: none; font-size: 13px;"><i class="fa-solid fa-plus-circle"></i> Nạp Thêm</a>
+            </div>
+        </div>
+
+        <div class="profile-tabs">
+            <button class="tab-btn active" onclick="openTab('activities')"><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Chung</button>
+            <button class="tab-btn" onclick="openTab('acc')"><i class="fa-solid fa-gamepad"></i> Tài Khoản Đã Mua</button>
+            <button class="tab-btn" onclick="openTab('event')"><i class="fa-solid fa-gift"></i> Đơn Sự Kiện</button>
+            <button class="tab-btn" onclick="openTab('card')"><i class="fa-solid fa-credit-card"></i> Lịch Sử Nạp</button>
+            <button class="tab-btn" onclick="openTab('wallet')"><i class="fa-solid fa-wallet"></i> Biến Động Số Dư</button>
+        </div>
+
+        <div id="tab-activities" class="tab-pane active">
+            <div class="history-card">
+                <div style="overflow-x: auto;">
+                    <table class="c-table">
+                        <thead>
+                            <tr>
+                                <th>Thời Gian</th>
+                                <th>Dịch Vụ</th>
+                                <th>Hành Động</th>
+                                <th>Chi Phí</th>
+                                <th>Kết Quả / Phần Thưởng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (typeof activityLogs !== 'undefined' && activityLogs.length > 0) { %>
+                                <% activityLogs.forEach(log => { %>
+                                    <tr>
+                                        <td style="font-size: 12px; color: #888;"><%= new Date(log.created_at).toLocaleString('vi-VN') %></td>
+                                        <td>
+                                            <span style="background: rgba(142, 68, 173, 0.1); color: #8e44ad; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #8e44ad;">
+                                                <%= log.module %>
+                                            </span>
+                                        </td>
+                                        <td style="font-weight: bold; color: #2c3e50;"><%= log.action_name %></td>
+                                        <td>
+                                            <% if (log.price_spent > 0) { %>
+                                                <span style="color: #e74c3c; font-weight: bold;">-<%= new Intl.NumberFormat('vi-VN').format(log.price_spent) %>đ</span>
+                                            <% } else { %>
+                                                <span style="color: #2ecc71; font-weight: bold;">Miễn phí</span>
+                                            <% } %>
+                                        </td>
+                                        <td style="color: var(--primary); font-family: monospace; font-size: 14px; font-weight: bold;"><%= log.reward_result %></td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr><td colspan="5" style="text-align:center; padding:30px; color:#888;">Bạn chưa tham gia hoạt động nào. Hãy thử chơi Gacha nhé!</td></tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-acc" class="tab-pane">
+            <div class="history-card">
+                <% if(accOrders.length > 0) { %>
+                    <div style="overflow-x: auto;">
+                        <table class="c-table">
+                            <thead>
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Tài khoản / Mật khẩu</th>
+                                    <th>Giá mua</th>
+                                    <th>Thời gian</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% accOrders.forEach(o => { %>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:bold; color:var(--primary)"><%= o.title %></div>
+                                            <span style="font-size:11px; color:#999">ID Đơn: #<%= o.order_id %></span>
+                                        </td>
+                                        <td>
+                                            <div style="margin-bottom:3px;">
+                                                TK: <b><%= o.acc_username %></b> 
+                                                <button class="btn-copy" onclick="copyText('<%= o.acc_username %>')"><i class="fa-regular fa-copy"></i></button>
+                                            </div>
+                                            <div>
+                                                MK: <b style="color:#e74c3c"><%= o.acc_password %></b>
+                                                <button class="btn-copy" onclick="copyText('<%= o.acc_password %>')"><i class="fa-regular fa-copy"></i></button>
+                                            </div>
+                                        </td>
+                                        <td style="font-weight:bold;"><%= new Intl.NumberFormat('vi-VN').format(o.price_new) %>đ</td>
+                                        <td style="color:#888; font-size:12px;"><%= new Date(o.created_at).toLocaleString('vi-VN') %></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fa-solid fa-basket-shopping" style="font-size:40px; margin-bottom:10px;"></i>
+                        <p>Bạn chưa mua tài khoản nào.</p>
+                        <a href="/?category=all#shop-acc" class="btn btn-secondary" style="display:inline-block; padding:8px 20px; background:var(--primary); color:#fff; border-radius:20px; text-decoration:none;">Mua ngay</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div id="tab-event" class="tab-pane">
+            <div class="history-card">
+                <% if(eventOrders.length > 0) { %>
+                    <div style="overflow-x: auto;">
+                        <table class="c-table">
+                            <thead>
+                                <tr>
+                                    <th>Gói sự kiện</th>
+                                    <th>Info (Name/Code)</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% eventOrders.forEach(e => { %>
+                                    <tr>
+                                        <td>
+                                            <b><%= e.package_name || (e.package_type == 'full_1000' ? 'Gói Full 1000' : 'Gói Lẻ 200') %></b>
+                                            <div style="font-size:11px; color:#2ecc71"><%= new Intl.NumberFormat('vi-VN').format(e.price) %>đ</div>
+                                        </td>
+                                        <td>
+                                            <div style="font-size:12px;">Name: <%= e.ingame_name %></div>
+                                            <div style="font-size:12px;">Code: <%= e.event_code %></div>
+                                        </td>
+                                        <td>
+                                            <% if(e.status == 'pending') { %>
+                                                <span class="status-badge st-pending">Chờ xử lý</span>
+                                            <% } else if(e.status == 'processing') { %>
+                                                <span class="status-badge st-process">Đang chạy</span>
+                                            <% } else if(e.status == 'completed') { %>
+                                                <span class="status-badge st-success">Hoàn thành</span>
+                                            <% } else { %>
+                                                <span class="status-badge st-failed">Đã hủy</span>
+                                            <% } %>
+                                        </td>
+                                        <td style="font-size:12px; color:#666;"><%= e.admin_note || '---' %></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <p>Chưa có đơn sự kiện nào.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div id="tab-card" class="tab-pane">
+            <div class="history-card">
+                <div style="overflow-x: auto;">
+                    <table class="c-table">
+                        <thead>
+                            <tr>
+                                <th>Loại thẻ</th>
+                                <th>Mệnh giá</th>
+                                <th>Mã/Seri</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày nạp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(cardHistory.length > 0) { %>
+                                <% cardHistory.forEach(c => { %>
+                                    <tr>
+                                        <td><b style="text-transform:uppercase"><%= c.network %></b></td>
+                                        <td><%= new Intl.NumberFormat('vi-VN').format(c.amount) %>đ</td>
+                                        <td>
+                                            <div style="font-size:11px;">Mã: <%= c.pin %></div>
+                                            <div style="font-size:11px;">Seri: <%= c.seri %></div>
+                                        </td>
+                                        <td>
+                                            <% if(c.status == 'success') { %>
+                                                <span class="status-badge st-success">Thành công</span>
+                                            <% } else if(c.status == 'pending') { %>
+                                                <span class="status-badge st-pending">Chờ duyệt</span>
+                                            <% } else { %>
+                                                <span class="status-badge st-failed">Thất bại</span>
+                                            <% } %>
+                                        </td>
+                                        <td style="font-size:12px; color:#999"><%= new Date(c.created_at).toLocaleString('vi-VN') %></td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr><td colspan="5" style="text-align:center; padding:20px;">Chưa có giao dịch nạp thẻ.</td></tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-wallet" class="tab-pane">
+            <div class="history-card">
+                <div style="overflow-x: auto;">
+                    <table class="c-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Thay đổi</th>
+                                <th>Số dư cuối</th>
+                                <th>Nội dung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(transactions.length > 0) { %>
+                                <% transactions.forEach(t => { %>
+                                    <tr>
+                                        <td style="font-size:12px; color:#999"><%= new Date(t.created_at).toLocaleString('vi-VN') %></td>
+                                        <td>
+                                            <% if(t.amount > 0) { %>
+                                                <span style="color:#2ecc71; font-weight:bold;">+<%= new Intl.NumberFormat('vi-VN').format(t.amount) %>đ</span>
+                                            <% } else { %>
+                                                <span style="color:#e74c3c; font-weight:bold;"><%= new Intl.NumberFormat('vi-VN').format(t.amount) %>đ</span>
+                                            <% } %>
+                                        </td>
+                                        <td><%= new Intl.NumberFormat('vi-VN').format(t.new_balance) %>đ</td>
+                                        <td style="font-size:12px;"><%= t.description %></td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr><td colspan="4" style="text-align:center; padding:20px;">Chưa có biến động số dư.</td></tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Đã copy: " + text);
+            }).catch(err => {
+                alert("Lỗi không thể copy!");
+            });
+        }
+    </script>
+
+    <%- include('../../includes/footer') %>
+    <%- include('../../includes/modals') %>
+    <%- include('../../includes/scripts') %>
+
+</body>
+</html>

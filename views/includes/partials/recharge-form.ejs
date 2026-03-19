@@ -1,0 +1,241 @@
+<style>
+    /* --- CSS FORM NẠP PRO --- */
+    .recharge-box { background: #fff; padding: 5px; }
+    .form-group { margin-bottom: 20px; position: relative; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 700; color: #2d3436; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-control { width: 100%; padding: 12px 15px; font-size: 15px; border: 2px solid #eee; border-radius: 10px; background: #f9f9f9; color: #333; transition: all 0.3s ease; box-sizing: border-box; font-family: sans-serif; }
+    .form-control:focus { border-color: var(--primary); background: #fff; outline: none; box-shadow: 0 0 0 4px rgba(225, 78, 202, 0.1); }
+    select.form-control { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; }
+    .discount-badge { background: linear-gradient(90deg, #fff3cd, #fff); border-left: 4px solid #f1c40f; color: #856404; padding: 12px 15px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .btn-recharge { background: linear-gradient(45deg, #e14eca, #ba38a4); color: #fff; width: 100%; padding: 14px; border: none; border-radius: 50px; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(225, 78, 202, 0.4); }
+    .btn-recharge:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(225, 78, 202, 0.6); }
+    .btn-recharge:disabled { background: #888; cursor: not-allowed; box-shadow: none; transform: none; }
+    
+    .warning-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .w-box { background: #fff; width: 90%; max-width: 380px; padding: 30px; border-radius: 20px; text-align: center; animation: zoomIn 0.3s; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .w-title { color: #e74c3c; font-size: 22px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; }
+    .w-text { font-size: 15px; color: #555; margin-bottom: 20px; line-height: 1.6; }
+    .w-info { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: left; font-size: 14px; border: 1px dashed #ccc; }
+    .w-info p { margin: 8px 0; display: flex; justify-content: space-between; }
+    .w-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+
+<marquee style="background: #2c3e50; color: #fff; padding: 5px; font-size: 13px; margin-bottom: 15px; border-radius: 4px;">
+    <%= typeof settings !== 'undefined' ? settings.notify_header : 'Hệ thống nạp thẻ tự động 24/7 - Sai mệnh giá mất thẻ - Vui lòng kiểm tra kỹ!' %>
+</marquee>
+
+<div class="tab-header" style="margin-bottom: 20px;">
+    <div class="tab-link active" onclick="switchTab('card')"><i class="fa-solid fa-ticket"></i> Thẻ Cào</div>
+    <div class="tab-link" onclick="switchTab('qr')"><i class="fa-solid fa-qrcode"></i> QR Banking</div>
+</div>
+
+<div id="tab-card" class="tab-content active recharge-box">
+    <% if (!user) { %>
+        <div style="background: rgba(253, 93, 147, 0.1); border-left: 4px solid #fd5d93; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+            <b style="color: #fd5d93;"><i class="fa-solid fa-triangle-exclamation"></i> Chú ý:</b>
+            <span style="font-size: 13px; color: #555;">Sếp cần đăng nhập để nạp. Lỡ điền thẻ thì cứ yên tâm, hệ thống sẽ lưu tạm cho sếp!</span>
+        </div>
+    <% } %>
+
+    <div class="discount-badge">
+        <i class="fa-solid fa-tags" style="font-size: 18px; color: #f1c40f;"></i>
+        <div>
+            <div><b>KHUYẾN MÃI HOT</b></div>
+            <div style="font-weight: normal; font-size: 12px;">Chiết khấu cực thấp chỉ 14% cho mọi loại thẻ!</div>
+        </div>
+    </div>
+
+    <form id="form-recharge">
+        <div class="form-group">
+            <label><i class="fa-solid fa-sim-card" style="color:var(--primary)"></i> Chọn Nhà Mạng</label>
+            <select name="network" id="rc-network" class="form-control" required>
+                <option value="">-- Vui lòng chọn --</option>
+                <option value="VIETTEL">Viettel (CK 14%)</option>
+                <option value="VINAPHONE">Vinaphone (CK 14%)</option>
+                <option value="MOBIFONE">Mobifone (CK 14%)</option>
+                <option value="ZING">Zing (CK 14%)</option>
+                <option value="GARENA">Garena (CK 14%)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label><i class="fa-solid fa-money-bill-wave" style="color:#2ecc71"></i> Chọn Mệnh Giá <span style="color:red; font-size:11px; text-transform:none;">(Sai mất thẻ)</span></label>
+            <select name="amount" id="rc-amount" class="form-control" required>
+                <option value="">-- Vui lòng chọn --</option>
+                <option value="10000">10.000đ</option>
+                <option value="20000">20.000đ</option>
+                <option value="50000">50.000đ</option>
+                <option value="100000">100.000đ</option>
+                <option value="200000">200.000đ</option>
+                <option value="500000">500.000đ</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label><i class="fa-solid fa-barcode" style="color:#e67e22"></i> Số Seri Thẻ</label>
+            <input type="text" name="seri" id="rc-seri" class="form-control" placeholder="Nhập dãy số seri in trên thẻ..." required>
+        </div>
+        <div class="form-group">
+            <label><i class="fa-solid fa-key" style="color:#3498db"></i> Mã Thẻ Cào</label>
+            <input type="text" name="pin" id="rc-pin" class="form-control" placeholder="Nhập mã số sau lớp tráng bạc..." required>
+        </div>
+        <button type="button" onclick="confirmRecharge()" class="btn-recharge" id="btn-main-recharge">
+            <i class="fa-solid fa-paper-plane"></i> NẠP THẺ NGAY
+        </button>
+    </form>
+
+    <div class="history-wrap" style="margin-top: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h4 style="margin: 0; font-size: 14px; text-transform: uppercase; color: #666; border-left: 3px solid var(--primary); padding-left: 10px;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Giao dịch gần đây
+            </h4>
+            
+            <% if (typeof user !== 'undefined' && user) { %>
+                <a href="/user/profile" style="background: rgba(225, 78, 202, 0.1); color: var(--primary); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-decoration: none; transition: 0.3s; border: 1px solid rgba(225, 78, 202, 0.3);">
+                    Lịch sử của tôi <i class="fa-solid fa-arrow-right-long"></i>
+                </a>
+            <% } %>
+        </div>
+        
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Người nạp</th>
+                    <th>Mệnh giá</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="real-history">
+                <% if (typeof cardHistory !== 'undefined' && cardHistory.length > 0) { %>
+                    <% cardHistory.forEach(item => { %>
+                        <tr style="background: rgba(225, 78, 202, 0.04); border-left: 3px solid var(--primary);">
+                            <td style="color:#555; font-size:12px;">
+                                <%= new Date(item.created_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) %>
+                            </td>
+                            <td style="color:var(--primary); font-weight:bold;">Sếp (Bạn)</td>
+                            <td style="font-weight: bold;"><%= new Intl.NumberFormat('vi-VN').format(item.amount) %>đ</td>
+                            <td>
+                                <% if(item.status == 'success') { %> 
+                                    <span style="color:#27ae60; font-weight:bold; font-size:12px;"><i class="fa-solid fa-check"></i> Thành công</span>
+                                <% } else if(item.status == 'pending') { %> 
+                                    <span style="color:#f39c12; font-weight:bold; font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang duyệt</span>
+                                <% } else { %> 
+                                    <span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-xmark"></i> Lỗi / Sai thẻ</span> 
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+            <tbody id="fake-history"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="tab-qr" class="tab-content">
+    <% 
+        // Logic tạo Nội dung chuyển khoản thông minh
+        let qrContent = "DONET";
+        if (typeof user !== 'undefined' && user) {
+            // Lấy 3 chữ cái đầu của Username, loại bỏ dấu tiếng Việt và in hoa
+            let prefix = user.username.substring(0, 3).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            qrContent = `DONET ${prefix}${user.id}`;
+        }
+    %>
+    
+    <div class="qr-container" style="text-align: center; padding: 10px;">
+        <p style="margin-bottom:15px; font-weight:900; font-size:16px; color:var(--primary); text-transform: uppercase;">
+            <i class="fa-solid fa-qrcode"></i> Quét mã nạp tiền tự động
+        </p>
+        
+        <% if (typeof user === 'undefined' || !user) { %>
+            <div style="background: #fff3cd; color: #856404; padding: 20px; border-radius: 12px; border: 1px dashed #ffeeba;">
+                <i class="fa-solid fa-lock" style="font-size: 30px; margin-bottom: 10px;"></i>
+                <p style="font-weight: bold; margin: 0;">Vui lòng Đăng nhập để lấy Mã QR Nạp Tiền!</p>
+                <a href="/auth/login" class="btn-recharge" style="display: inline-block; margin-top: 15px; width: auto; padding: 10px 25px; text-decoration: none;">Đăng Nhập Ngay</a>
+            </div>
+        <% } else { %>
+            <img src="https://img.vietqr.io/image/ACB-32483377-compact2.jpg?amount=0&addInfo=<%= encodeURIComponent(qrContent) %>&accountName=NGUYEN%20VIET%20HUNG" class="qr-code-img" alt="QR Nạp Tiền ACB" style="width: 220px; border: 4px solid var(--primary); border-radius: 15px; padding: 5px; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+            
+            <div style="margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 12px; text-align: left; border: 1px dashed #ddd;">
+                <p style="margin: 8px 0; font-size: 14px;">Ngân hàng: <b>ACB (Á Châu)</b></p>
+                <p style="margin: 8px 0; font-size: 14px;">Chủ TK: <b>NGUYEN VIET HUNG</b></p>
+                
+                <p style="margin: 8px 0; font-size: 14px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Số TK: <b style="color:#2d3436; font-size:17px;">32483377</b></span>
+                    <button type="button" onclick="copyDynamicText('32483377', this)" style="background:#e8f0fe; color:#2980b9; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;"><i class="fa-regular fa-copy"></i> Copy</button>
+                </p>
+                
+                <p style="margin: 8px 0; font-size: 14px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Nội dung: <b style="color:#e74c3c; font-size:18px;"><%= qrContent %></b></span>
+                    <button type="button" onclick="copyDynamicText('<%= qrContent %>', this)" style="background:#ffeaa7; color:#d35400; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;"><i class="fa-regular fa-copy"></i> Copy</button>
+                </p>
+            </div>
+            
+            <div style="margin-top: 15px; background: #fff5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                <div style="font-size: 13px; color: #e74c3c; font-weight: bold;"><i class="fa-solid fa-circle-exclamation"></i> LƯU Ý KHI NẠP:</div>
+                <ul style="font-size: 12px; color: #555; margin: 8px 0 0 18px; padding: 0; text-align: left; line-height: 1.6;">
+                    <li>Nạp tối thiểu (Min): <b>10.000đ</b>.</li>
+                    <li>Bắt buộc ghi đúng Nội dung chuyển khoản: <b style="color:#e74c3c; background: #fbe9e7; padding: 2px 5px;"><%= qrContent %></b> để hệ thống tự nhận diện.</li>
+                    <li>Tiền sẽ tự động cộng vào tài khoản web trong <b>1 - 3 phút</b>.</li>
+                </ul>
+            </div>
+
+            <a href="https://zalo.me/<%= typeof settings !== 'undefined' ? settings.admin_zalo : '0392232180' %>" target="_blank" class="btn-recharge" style="display: block; margin-top: 20px; text-decoration: none; background: linear-gradient(45deg, #ff7675, #d63031); box-shadow: 0 5px 15px rgba(214, 48, 49, 0.4);">
+                <i class="fa-solid fa-headset"></i> QUÁ 5 PHÚT CHƯA CÓ TIỀN? BẤM LIÊN HỆ ADMIN!
+            </a>
+        <% } %>
+    </div>
+</div>
+
+<div class="warning-modal" id="modal-confirm-recharge">
+    <div class="w-box">
+        <div style="width: 60px; height: 60px; background: #ffeaa7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 30px; color: #d35400;"></i>
+        </div>
+        <div class="w-title">CẢNH BÁO QUAN TRỌNG</div>
+        <div class="w-text">
+            Bạn có chắc chắn mệnh giá thẻ là đúng không?<br>
+            <b style="color:red; text-transform: uppercase; background: #ffebee; padding: 2px 5px;">Chọn sai mệnh giá = Mất thẻ</b><br>
+            <span style="font-size: 13px; color: #666;">Admin sẽ không chịu trách nhiệm hoàn tiền nếu bạn chọn sai.</span>
+        </div>
+        <div class="w-info">
+            <p><span>Nhà mạng:</span> <b id="c-network">...</b></p>
+            <p><span>Mệnh giá:</span> <b id="c-amount" style="color:var(--primary); font-size: 16px;">...</b></p>
+        </div>
+        <div class="w-btn-group">
+            <button onclick="closeConfirmModal()" class="btn-recharge" style="background: #fff; color: #333; border: 1px solid #ddd; font-size: 14px; box-shadow: none;">Xem lại</button>
+            <button onclick="submitRealForm()" class="btn-recharge" id="btn-submit-real" style="background: linear-gradient(45deg, #e74c3c, #c0392b); font-size: 14px;">TÔI CHỌN ĐÚNG</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const window_IS_LOGGED_IN = <%= typeof user !== 'undefined' && user ? 'true' : 'false' %>;
+
+    // Hàm copy nội dung chuẩn xác
+    function copyDynamicText(text, btnElement) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHtml = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Đã Copy';
+            btnElement.style.background = '#27ae60';
+            btnElement.style.color = '#fff';
+            
+            setTimeout(() => {
+                btnElement.innerHTML = originalHtml;
+                // Khôi phục màu cũ tùy theo nút
+                if(text === '32483377') {
+                    btnElement.style.background = '#e8f0fe';
+                    btnElement.style.color = '#2980b9';
+                } else {
+                    btnElement.style.background = '#ffeaa7';
+                    btnElement.style.color = '#d35400';
+                }
+            }, 2000);
+        }).catch(err => {
+            alert("Lỗi! Trình duyệt của bạn không hỗ trợ copy tự động.");
+        });
+    }
+
+    // Các script chuyển Tab và Gửi Thẻ cũ sếp giữ nguyên ở file gốc nhé!
+</script>
